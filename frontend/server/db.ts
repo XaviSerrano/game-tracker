@@ -13,251 +13,9 @@ interface DbSchema {
   activities: Activity[];
 }
 
-const DB_FILE = path.join(process.cwd(), 'gamedb.json');
+const DB_FILE = path.join(process.cwd(), 'appdata.json');
 
-// Preseeded Game Data
-const INITIAL_GAMES: Game[] = [
-  {
-    igdbId: 119133,
-    name: "Elden Ring",
-    slug: "elden-ring",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co4kbj.jpg",
-    summary: "Elden Ring is a wide-open-world fantasy action-RPG set in the Lands Between, created by Hidetaka Miyazaki in collaboration with George R. R. Martin. Players take on the role of a Tarnished, guided by grace to brandish the power of the Elden Ring and become an Elden Lord.",
-    genres: ["RPG", "Adventure", "Action"],
-    platforms: ["PC", "PlayStation 5", "Xbox Series X/S", "PlayStation 4"],
-    releaseDate: "2022-02-25",
-    rating: 96,
-    popularity: 99
-  },
-  {
-    igdbId: 112875,
-    name: "The Legend of Zelda: Tears of the Kingdom",
-    slug: "zelda-totk",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co68v4.jpg",
-    summary: "An epic adventure across the land and skies of Hyrule awaits in The Legend of Zelda: Tears of the Kingdom for Nintendo Switch. The adventure is yours to create in a world fueled by your imagination.",
-    genres: ["Adventure", "Action", "Puzzle"],
-    platforms: ["Nintendo Switch"],
-    releaseDate: "2023-05-12",
-    rating: 95,
-    popularity: 97
-  },
-  {
-    igdbId: 119171,
-    name: "Baldur's Gate 3",
-    slug: "baldurs-gate-3",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co67cn.jpg",
-    summary: "Gather your party, and return to the Forgotten Realms in a tale of fellowship and betrayal, sacrifice and survival, and the lure of absolute power. Mysterious abilities are awakening within you, drawn from a mind flayer parasite planted in your brain.",
-    genres: ["RPG", "Strategy", "Tactical"],
-    platforms: ["PC", "PlayStation 5", "Mac", "Xbox Series X/S"],
-    releaseDate: "2023-08-03",
-    rating: 97,
-    popularity: 98
-  },
-  {
-    igdbId: 113112,
-    name: "Hades",
-    slug: "hades",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2vdv.jpg",
-    summary: "Defy the god of the dead as you hack and slash out of the Underworld in this rogue-like dungeon crawler from the creators of Bastion and Transistor. Guided by Olympian gods, you'll grow stronger and unravel more of the story with each unique escape attempt.",
-    genres: ["Roguelike", "Action", "Indie"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 5", "Xbox Series X/S", "iOS"],
-    releaseDate: "2020-09-17",
-    rating: 93,
-    popularity: 94
-  },
-  {
-    igdbId: 1877,
-    name: "Cyberpunk 2077",
-    slug: "cyberpunk-2077",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co48af.jpg",
-    summary: "Cyberpunk 2077 is an open-world, action-adventure story set in Night City, a megalopolis obsessed with power, glamour and body modification. You play as V, a mercenary outlaw going after a one-of-a-kind implant that is the key to immortality.",
-    genres: ["Action", "RPG", "Sci-Fi"],
-    platforms: ["PC", "PlayStation 5", "Xbox Series X/S", "PlayStation 4", "Xbox One"],
-    releaseDate: "2020-12-10",
-    rating: 84,
-    popularity: 92
-  },
-  {
-    igdbId: 19404,
-    name: "Hollow Knight",
-    slug: "hollow-knight",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r7f.jpg",
-    summary: "Forge your own path in Hollow Knight! An epic action adventure through a vast ruined kingdom of insects and heroes. Explore twisting caverns, battle tainted creatures and befriend bizarre bugs, all in a classic, hand-drawn 2D style.",
-    genres: ["Metroidvania", "Platformer", "Indie", "Action"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 4", "Xbox One", "Mac", "Linux"],
-    releaseDate: "2017-02-24",
-    rating: 90,
-    popularity: 95
-  },
-  {
-    igdbId: 25076,
-    name: "Red Dead Redemption 2",
-    slug: "red-dead-redemption-2",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg",
-    summary: "America, 1899. The end of the wild west era has begun as lawmen hunt down the last remaining outlaw gangs. Those who will not surrender or succumb are killed. From the creators of Grand Theft Auto V and Red Dead Redemption, Red Dead Redemption 2 is an epic tale of life in America's unforgiving heartland.",
-    genres: ["Action", "Adventure", "Open World"],
-    platforms: ["PC", "PlayStation 4", "Xbox One"],
-    releaseDate: "2018-10-26",
-    rating: 97,
-    popularity: 99
-  },
-  {
-    igdbId: 1942,
-    name: "The Witcher 3: Wild Hunt",
-    slug: "the-witcher-3-wild-hunt",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg",
-    summary: "The Witcher: Wild Hunt is a story-driven, next-generation open world role-playing game set in a visually stunning fantasy universe full of meaningful choices and impactful consequences. In The Witcher you play as the professional monster hunter, Geralt of Rivia, tasked with finding a child of prophecy in a vast open world.",
-    genres: ["RPG", "Action", "Adventure", "Fantasy"],
-    platforms: ["PC", "PlayStation 5", "Xbox Series X/S", "Nintendo Switch", "PlayStation 4", "Xbox One"],
-    releaseDate: "2015-05-19",
-    rating: 96,
-    popularity: 98
-  },
-  {
-    igdbId: 121,
-    name: "Minecraft",
-    slug: "minecraft",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg",
-    summary: "Minecraft is a sandbox video game in which players create and break apart various kinds of blocks in three-dimensional worlds. The game's two primary modes are Survival and Creative. In Survival, players must find their own building supplies and food, while interacting with blocklike moving creatures.",
-    genres: ["Sandbox", "Survival", "Adventure"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 4", "Xbox One", "iOS", "Android", "Mac"],
-    releaseDate: "2011-11-18",
-    rating: 93,
-    popularity: 99
-  },
-  {
-    igdbId: 26999,
-    name: "Celeste",
-    slug: "celeste",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v9g.jpg",
-    summary: "Help Madeline survive her inner demons on her journey to the top of Celeste Mountain, in this super-tight, hand-crafted platformer from the creators of multiplayer classic TowerFall. A narrative-driven, single-player adventure with a touching story, colorful cast, and tight platforming.",
-    genres: ["Platformer", "Indie", "Adventure"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 4", "Xbox One", "Mac", "Linux"],
-    releaseDate: "2018-01-25",
-    rating: 89,
-    popularity: 88
-  },
-  {
-    igdbId: 72,
-    name: "Portal 2",
-    slug: "portal-2",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r78.jpg",
-    summary: "Portal 2 draws from the award-winning formula of innovative gameplay, story, and music that earned the original Portal over 70 industry accolades and created a cult following. The single-player portion of Portal 2 introduces a cast of dynamic new characters, a host of fresh puzzle elements, and a much larger set of devious test chambers.",
-    genres: ["Puzzle", "Sci-Fi", "Comedy"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 3", "Xbox 360", "Mac", "Linux"],
-    releaseDate: "2011-04-19",
-    rating: 98,
-    popularity: 96
-  },
-  {
-    igdbId: 19560,
-    name: "God of War",
-    slug: "god-of-war-2018",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v6b.jpg",
-    summary: "Kratos is a father again. As mentor and protector to Atreus, a son determined to earn his respect, he is forced to deal with and control the rage that has long defined him while out in a very dangerous world with his son. Surviving in the harsh Norse wilderness, he must teach his son to do the same.",
-    genres: ["Action", "Adventure", "RPG"],
-    platforms: ["PlayStation 4", "PC", "PlayStation 5"],
-    releaseDate: "2018-04-20",
-    rating: 94,
-    popularity: 97
-  },
-  {
-    igdbId: 26758,
-    name: "Super Mario Odyssey",
-    slug: "super-mario-odyssey",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1m8b.jpg",
-    summary: "Explore incredible places far from the Mushroom Kingdom with Mario and his new ally Cappy in a massive, globe-trotting 3D adventure. Use amazing new abilities—like the power to capture and control objects, animals, and enemies—to collect Power Moons so you can power up the Odyssey airship and save Princess Peach from Bowser's wedding plans!",
-    genres: ["Platformer", "Adventure", "3D"],
-    platforms: ["Nintendo Switch"],
-    releaseDate: "2017-10-27",
-    rating: 95,
-    popularity: 93
-  },
-  {
-    igdbId: 38430,
-    name: "Disco Elysium",
-    slug: "disco-elysium",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r8c.jpg",
-    summary: "Disco Elysium is a groundbreaking open world role playing game. You’re a detective with a unique skill system at your disposal and a whole city block to carve your path across. Interrogate unforgettable characters, crack murders or take bribes. Become a hero or an absolute disaster of a human being.",
-    genres: ["RPG", "Narrative", "Mystery", "Indie"],
-    platforms: ["PC", "PlayStation 5", "Nintendo Switch", "Mac", "Xbox Series X/S"],
-    releaseDate: "2019-10-15",
-    rating: 96,
-    popularity: 91
-  },
-  {
-    igdbId: 1253,
-    name: "Chrono Trigger",
-    slug: "chrono-trigger",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co3v90.jpg",
-    summary: "A timeless RPG classic that tells a story of time-traveling heroes on a quest to save their world from an ancient parasite. Boasting a battle-ready party system, dynamic combat, and stellar artwork by Akira Toriyama, it stands as a pillar of game design.",
-    genres: ["RPG", "Classic", "Sci-Fi", "Fantasy"],
-    platforms: ["PC", "iOS", "Android", "PlayStation", "Super Nintendo Entertainment System"],
-    releaseDate: "1995-03-11",
-    rating: 97,
-    popularity: 89
-  },
-  {
-    igdbId: 384,
-    name: "Silent Hill 2",
-    slug: "silent-hill-2",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co8j9u.jpg",
-    summary: "Receiving a letter from his deceased wife, James Sunderland travels to the fog-shrouded lakeside resort town of Silent Hill in search of answers, only to face a surreal nightmare embodying his deepest guilt and desires.",
-    genres: ["Horror", "Adventure", "Puzzle"],
-    platforms: ["PlayStation 2", "PC", "Xbox", "PlayStation 5"],
-    releaseDate: "2001-09-24",
-    rating: 92,
-    popularity: 85
-  },
-  {
-    igdbId: 142100,
-    name: "Chained Echoes",
-    slug: "chained-echoes",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co5pms.jpg",
-    summary: "Chained Echoes is a 16-bit style JRPG set in a fantasy world where dragons are as common as piloted mechanical suits. Follow a group of heroes as they explore a land torn by war between three kingdoms.",
-    genres: ["RPG", "Indie", "Turn-Based"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 4", "Xbox One", "Mac"],
-    releaseDate: "2022-12-08",
-    rating: 87,
-    popularity: 86
-  },
-  {
-    igdbId: 215160,
-    name: "Dave the Diver",
-    slug: "dave-the-diver",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co649g.jpg",
-    summary: "Dave the Diver is a casual, single-player adventure RPG featuring deep-sea exploration and fishing during the day and sushi restaurant management at night. Join Dave and his quirky friends as they uncover the secrets of the mysterious Blue Hole.",
-    genres: ["Adventure", "Indie", "Management", "Casual"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 5", "Mac"],
-    releaseDate: "2023-06-28",
-    rating: 90,
-    popularity: 91
-  },
-  {
-    igdbId: 180126,
-    name: "Alan Wake 2",
-    slug: "alan-wake-2",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co6iof.jpg",
-    summary: "Alan Wake 2 is a psychological survival horror game about Saga Anderson, an FBI profiler investigating serial murders in Bright Falls, and Alan Wake, a trapped writer scripting a nightmare to escape his prison in the Dark Place.",
-    genres: ["Horror", "Action", "Adventure", "Sci-Fi"],
-    platforms: ["PC", "PlayStation 5", "Xbox Series X/S"],
-    releaseDate: "2023-10-27",
-    rating: 89,
-    popularity: 92
-  },
-  {
-    igdbId: 13177,
-    name: "Stardew Valley",
-    slug: "stardew-valley",
-    cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tw0.jpg",
-    summary: "You've inherited your grandfather's old farm plot in Stardew Valley. Armed with hand-me-down tools and a few coins, you set out to begin your new life. Can you learn to live off the land and turn these overgrown fields into a thriving home?",
-    genres: ["Cozy", "RPG", "Simulation", "Indie"],
-    platforms: ["PC", "Nintendo Switch", "PlayStation 4", "Xbox One", "iOS", "Android", "Mac"],
-    releaseDate: "2016-02-26",
-    rating: 94,
-    popularity: 97
-  }
-];
+// Catalog now comes from IGDB at runtime (no local game seed).
 
 const INITIAL_USERS: User[] = [
   {
@@ -420,7 +178,8 @@ class GameDatabase {
         this.data = JSON.parse(content);
         // Ensure standard keys exist
         this.data.users = this.data.users || [];
-        this.data.games = this.data.games || [];
+        // Games are hydrated from IGDB at runtime; avoid seeding from persisted JSON.
+        this.data.games = [];
         this.data.userGames = this.data.userGames || [];
         this.data.reviews = this.data.reviews || [];
         this.data.customLists = this.data.customLists || [];
@@ -447,7 +206,7 @@ class GameDatabase {
   private seed() {
     this.data = {
       users: [...INITIAL_USERS],
-      games: [...INITIAL_GAMES],
+      games: [],
       userGames: [...INITIAL_USER_GAMES],
       reviews: [...INITIAL_REVIEWS],
       customLists: [...INITIAL_CUSTOM_LISTS],
@@ -519,6 +278,22 @@ class GameDatabase {
 
   getUserGame(userId: string, gameId: number): UserGame | null {
     return this.data.userGames.find(ug => ug.userId === userId && ug.gameId === gameId) || null;
+  }
+  
+  saveGame(game: Game): Game {
+    const idx = this.data.games.findIndex(
+      g => g.igdbId === game.igdbId
+    );
+
+    if (idx >= 0) {
+      this.data.games[idx] = game;
+    } else {
+      this.data.games.push(game);
+    }
+
+    this.save();
+
+    return game;
   }
 
   saveUserGame(userGame: UserGame): UserGame {

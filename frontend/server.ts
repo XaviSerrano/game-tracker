@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
@@ -144,6 +145,34 @@ app.get('/api/social/feed', (req, res) => {
   res.json(feed);
 });
 
+  app.post('/api/games/import/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+      const existing = db.getGame(id);
+
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const game = await IgdbService.getGameDetails(id);
+
+      if (!game) {
+        return res.status(404).json({
+          error: 'Juego no encontrado'
+        });
+      }
+
+      db.saveGame(game);
+
+      res.json(game);
+    } catch (err: any) {
+      res.status(500).json({
+        error: err.message
+      });
+    }
+  });
+
 // Seguir/Dejar de seguir a un usuario
 app.post('/api/social/follow/:userId', authenticate, (req: AuthenticatedRequest, res) => {
   const me = req.currUser!;
@@ -190,39 +219,39 @@ app.get('/api/social/following/:userId', (req, res) => {
 
 // --- ENDPOINTS DE VIDEOJUEGOS ---
 
-// Descubrimiento & Lista de juegos locales
-app.get('/api/games', (req, res) => {
-  let games = db.getGames();
+// Descubrimiento de juegos desde IGDB
+app.get('/api/games', async (req, res) => {
+  try {
+    const search = (req.query.search as string) || '';
+    const genre = (req.query.genre as string) || '';
+    const platform = (req.query.platform as string) || '';
+    const sort = (req.query.sort as string) || 'popularity'; // rating | popularity | name | newest
 
-  // Filtros query
-  const search = req.query.search as string;
-  const genre = req.query.genre as string;
-  const platform = req.query.platform as string;
-  const sort = req.query.sort as string; // 'rating' | 'popularity' | 'name' | 'newest'
+    let games = search.trim()
+      ? await IgdbService.searchGames(search, 50)
+      : await IgdbService.getPopularGames(80);
 
-  if (search) {
-    const q = search.toLowerCase();
-    games = games.filter(g => g.name.toLowerCase().includes(q) || g.summary.toLowerCase().includes(q));
-  }
-  if (genre) {
-    games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
-  }
-  if (platform) {
-    games = games.filter(g => g.platforms.some(p => p.toLowerCase() === platform.toLowerCase()));
-  }
+    if (genre) {
+      games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
+    }
+    if (platform) {
+      games = games.filter(g => g.platforms.some(p => p.toLowerCase() === platform.toLowerCase()));
+    }
 
-  // Ordenar
-  if (sort === 'rating') {
-    games = [...games].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  } else if (sort === 'popularity') {
-    games = [...games].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-  } else if (sort === 'name') {
-    games = [...games].sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sort === 'newest') {
-    games = [...games].sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
-  }
+    if (sort === 'rating') {
+      games = [...games].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sort === 'popularity') {
+      games = [...games].sort((a, b) => (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0));
+    } else if (sort === 'name') {
+      games = [...games].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sort === 'newest') {
+      games = [...games].sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
+    }
 
-  res.json(games);
+    res.json(games);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Buscar en IGDB (con fallback a local)
@@ -257,16 +286,22 @@ app.get('/api/games/:id', async (req, res) => {
 // --- ENDPOINTS DE BIBLIOTECA (USERGAMES) ---
 
 // Biblioteca de un usuario
-app.get('/api/users/:id/library', (req, res) => {
+app.get('/api/users/:id/library', async (req, res) => {
   const userId = req.params.id;
   const userGames = db.getUserGames(userId);
-  
-  // Enlazar los detalles completos del videojuego
-  const completeLibrary = userGames.map(ug => {
-    const g = db.getGame(ug.gameId);
+
+  const completeLibrary = await Promise.all(userGames.map(async (ug) => {
+    let game = db.getGame(ug.gameId);
+    if (!game) {
+      game = await IgdbService.getGameDetails(ug.gameId);
+      if (game) {
+        db.saveGame(game);
+      }
+    }
+
     return {
       ...ug,
-      game: g || {
+      game: game || {
         igdbId: ug.gameId,
         name: `Juego #${ug.gameId}`,
         slug: 'unknown',
@@ -277,7 +312,7 @@ app.get('/api/users/:id/library', (req, res) => {
         releaseDate: ''
       }
     };
-  });
+  }));
 
   res.json(completeLibrary);
 });
@@ -433,31 +468,50 @@ app.post('/api/reviews/:id/like', authenticate, (req: AuthenticatedRequest, res)
 // --- ENDPOINTS DE LISTAS PERSONALIZADAS ---
 
 // Listas de todos
-app.get('/api/lists', (req, res) => {
+app.get('/api/lists', async (req, res) => {
   const userId = req.query.userId as string;
   const lists = db.getLists(userId);
 
-  const fullLists = lists.map(l => {
+  const fullLists = await Promise.all(lists.map(async (l) => {
     const author = db.getUser(l.userId);
     const gameIds = db.getListItems(l.id);
-    const games = gameIds.map(gId => db.getGame(gId)).filter(Boolean);
+    const games = (await Promise.all(gameIds.map(async (gId) => {
+      let game = db.getGame(gId);
+      if (!game) {
+        game = await IgdbService.getGameDetails(gId);
+        if (game) {
+          db.saveGame(game);
+        }
+      }
+      return game;
+    }))).filter(Boolean);
+
     return {
       ...l,
       author,
       games
     };
-  });
+  }));
 
   res.json(fullLists);
 });
 
 // Detalle de lista
-app.get('/api/lists/:id', (req, res) => {
+app.get('/api/lists/:id', async (req, res) => {
   const list = db.getList(req.params.id);
   if (!list) return res.status(404).json({ error: 'Lista no encontrada' });
   const author = db.getUser(list.userId);
   const gameIds = db.getListItems(list.id);
-  const games = gameIds.map(gId => db.getGame(gId)).filter(Boolean);
+  const games = (await Promise.all(gameIds.map(async (gId) => {
+    let game = db.getGame(gId);
+    if (!game) {
+      game = await IgdbService.getGameDetails(gId);
+      if (game) {
+        db.saveGame(game);
+      }
+    }
+    return game;
+  }))).filter(Boolean);
 
   res.json({
     ...list,
@@ -525,8 +579,15 @@ app.get('/api/users/:id/stats', (req, res) => {
 // --- ENDPOINTS DE RECOMENDACIONES INTELIGENTES ---
 app.get('/api/recommendations', authenticate, (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
-  const recs = db.getRecommendations(user.id);
-  res.json(recs);
+  IgdbService.getPopularGames(120)
+    .then((popularGames) => {
+      popularGames.forEach(game => db.saveGame(game));
+      const recs = db.getRecommendations(user.id);
+      res.json(recs);
+    })
+    .catch((err: any) => {
+      res.status(500).json({ error: err.message });
+    });
 });
 
 // --- VITE EXPRES INTERFACE ---

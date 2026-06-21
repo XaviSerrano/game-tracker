@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Game, UserGame, Review, CustomList, User } from '../types.ts';
+import { Game, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
 import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft } from 'lucide-react';
 
 interface GameDetailsProps {
@@ -18,7 +18,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [loading, setLoading] = useState(true);
 
   // Form states for library tracking
-  const [status, setStatus] = useState<'WISHLIST' | 'PLAYING' | 'PLAYED' | 'COMPLETED' | 'ABANDONED'>('WISHLIST');
+  const [status, setStatus] = useState<GameStatus>('WISHLIST');
   const [rating, setRating] = useState<number>(0);
   const [hoursPlayed, setHoursPlayed] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
@@ -31,6 +31,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [reviewRating, setReviewRating] = useState(5);
 
   const [message, setMessage] = useState('');
+  const [savingWishlist, setSavingWishlist] = useState(false);
 
   const fetchGameData = async () => {
     setLoading(true);
@@ -81,8 +82,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     fetchGameData();
   }, [gameId]);
 
-  const handleSaveTracking = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveTracking = async (nextStatus: GameStatus, successMessage = '¡Biblioteca actualizada con éxito!') => {
     setMessage('');
     try {
       const res = await fetch('/api/library', {
@@ -93,7 +93,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
         },
         body: JSON.stringify({
           gameId,
-          status,
+          status: nextStatus,
           rating,
           hoursPlayed,
           notes,
@@ -105,12 +105,23 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
       if (!res.ok) throw new Error(data.error || 'Failed to save tracking');
       
       setUserGame(data);
-      setMessage('¡Biblioteca actualizada con éxito!');
-      // Refresh reviews if library star rating has changed
+      setStatus(nextStatus);
+      setMessage(successMessage);
       setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     }
+  };
+
+  const handleSaveTracking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveTracking(status);
+  };
+
+  const handleAddToWishlist = async () => {
+    setSavingWishlist(true);
+    await saveTracking('WISHLIST', '¡Juego añadido a tu wishlist!');
+    setSavingWishlist(false);
   };
 
   const handleDeleteTracking = async () => {
@@ -322,15 +333,25 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                 <CheckSquare className="w-4 h-4 text-blue-400" />
                 Tú diario de Juego (Track)
               </h3>
-              {userGame && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleDeleteTracking}
-                  className="p-1 px-2.5 text-[10px] text-red-400 border border-red-500/20 hover:bg-red-500/10 transition cursor-pointer rounded-lg"
+                  onClick={handleAddToWishlist}
+                  disabled={savingWishlist || (userGame?.status === 'WISHLIST' && status === 'WISHLIST')}
+                  className="p-1 px-2.5 text-[10px] text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/10 transition cursor-pointer rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Eliminar tracking
+                  {savingWishlist ? 'Guardando...' : 'Añadir a wishlist'}
                 </button>
-              )}
+                {userGame && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteTracking}
+                    className="p-1 px-2.5 text-[10px] text-red-400 border border-red-500/20 hover:bg-red-500/10 transition cursor-pointer rounded-lg"
+                  >
+                    Eliminar tracking
+                  </button>
+                )}
+              </div>
             </div>
 
             {message && (
@@ -349,7 +370,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                 >
                   <option value="WISHLIST">Wishlist (Lista de deseos)</option>
                   <option value="PLAYING">Jugando actualmente 🎮</option>
-                  <option value="PLAYED">Jugado antes</option>
+                  <option value="PLAYED">Jugado</option>
                   <option value="COMPLETED">Completado 🏆</option>
                   <option value="ABANDONED">Abandonado o pausado ❌</option>
                 </select>

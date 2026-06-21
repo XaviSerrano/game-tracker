@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Game } from '../types.ts';
-import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw } from 'lucide-react';
+import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw, Bookmark } from 'lucide-react';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
+  token: string;
 }
 
-export const Discover: React.FC<DiscoverProps> = ({ onSelectGame }) => {
+export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
   const [games, setGames] = useState<Game[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [sortBy, setSortBy] = useState('popularity'); // 'popularity' | 'rating' | 'newest' | 'name'
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
+  const [quickActionMessage, setQuickActionMessage] = useState('');
 
   // Preseeded Categories
   const GENRES = ["Action", "Adventure", "RPG", "Indie", "Metroidvania", "Platformer", "Roguelike", "Horror", "Survival", "Cozy", "Strategy", "Puzzle"];
@@ -21,57 +26,116 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame }) => {
 
   const searchGames = async (searchVal: string, genreVal: string, platformVal: string, sortVal: string) => {
     setLoading(true);
+    setApiError(null);
     try {
-      // If there is an active search query, call IGDB search endpoint
-      if (searchVal.trim()) {
-        const res = await fetch(`/api/games/igdb/search?q=${encodeURIComponent(searchVal.trim())}`);
-        const data = await res.json();
-        
-        // Post-filter IGDB results on elements
-        let filtered = data;
-        
-        console.log(
-          filtered.map((g: Game) => ({
-            name: g.name,
-            cover: g.cover
-          }))
-        );
+      const params = new URLSearchParams();
+      params.set('sort', sortVal);
+      if (searchVal.trim()) params.set('search', searchVal.trim());
+      if (genreVal) params.set('genre', genreVal);
+      if (platformVal) params.set('platform', platformVal);
 
-        if (genreVal) {
-          filtered = filtered.filter((g: Game) => g.genres.some(gen => gen.toLowerCase() === genreVal.toLowerCase()));
-        }
-        if (platformVal) {
-          filtered = filtered.filter((g: Game) => g.platforms.some(plat => plat.toLowerCase() === platformVal.toLowerCase()));
-        }
-        console.log("IGDB DATA: ", filtered)
-        setGames(filtered);
-      } else {
-        // Fetch local database games with query parameters
-        let url = `/api/games?sort=${sortVal}`;
-        if (genreVal) url += `&genre=${encodeURIComponent(genreVal)}`;
-        if (platformVal) url += `&platform=${encodeURIComponent(platformVal)}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        setGames(data);
+      const res = await fetch(`/api/games?${params.toString()}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        const message = typeof data?.error === 'string' ? data.error : 'No se pudo cargar el catálogo.';
+        throw new Error(message);
       }
+
+      setGames(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Discover Error:", err);
+      setGames([]);
+      setApiError(err instanceof Error ? err.message : 'Error inesperado al consultar la API.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Wait for typing or update instantly on filter changes
-    if (!query) {
-      searchGames('', selectedGenre, selectedPlatform, sortBy);
-    }
-  }, [selectedGenre, selectedPlatform, sortBy, query]);
+    const timeout = setTimeout(() => {
+      searchGames(
+        query,
+        selectedGenre,
+        selectedPlatform,
+        sortBy
+      );
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [
+    query,
+    selectedGenre,
+    selectedPlatform,
+    sortBy
+  ]);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const me = await res.json();
+
+        const libraryRes = await fetch(`/api/users/${me.id}/library`);
+        if (!libraryRes.ok) return;
+        const libraryData = await libraryRes.json();
+        const ids = new Set<number>(
+          (Array.isArray(libraryData) ? libraryData : [])
+            .filter((item: any) => item?.status === 'WISHLIST')
+            .map((item: any) => item.gameId)
+        );
+        setWishlistIds(ids);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchWishlist();
+  }, [token]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     searchGames(query, selectedGenre, selectedPlatform, sortBy);
+  };
+
+  const handleQuickWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (wishlistIds.has(gameId) || savingWishlistGameId === gameId) return;
+
+    setSavingWishlistGameId(gameId);
+    setQuickActionMessage('');
+
+    try {
+      const importRes = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+      const importData = await importRes.json();
+      if (!importRes.ok) {
+        throw new Error(importData?.error || 'No se pudo importar el juego.');
+      }
+
+      const saveRes = await fetch('/api/library', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ gameId, status: 'WISHLIST' })
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) {
+        throw new Error(saveData?.error || 'No se pudo añadir a wishlist.');
+      }
+
+      setWishlistIds(prev => new Set([...prev, gameId]));
+      setQuickActionMessage('¡Juego añadido a wishlist!');
+      setTimeout(() => setQuickActionMessage(''), 3000);
+    } catch (err: any) {
+      setQuickActionMessage(`Error: ${err.message}`);
+    } finally {
+      setSavingWishlistGameId(null);
+    }
   };
 
   return (
@@ -179,6 +243,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame }) => {
         )}
       </div>
 
+      {quickActionMessage && (
+        <div className={`p-2.5 border text-xs rounded-xl ${quickActionMessage.includes('Error') ? 'bg-red-950/40 border-red-500/20 text-red-400' : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400'}`}>
+          {quickActionMessage}
+        </div>
+      )}
+
       {/* Grid listing */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -189,6 +259,18 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame }) => {
               <div className="h-3 bg-slate-800 rounded w-1/2"></div>
             </div>
           ))}
+        </div>
+      ) : apiError ? (
+        <div className="bg-[#0f121d] border border-red-500/20 p-12 rounded-2xl text-center space-y-3">
+          <Gamepad2 className="w-10 h-10 text-red-400 mx-auto" />
+          <p className="text-red-300 text-sm font-semibold">Error cargando juegos</p>
+          <p className="text-slate-400 text-xs max-w-sm mx-auto">{apiError}</p>
+          <button
+            onClick={() => searchGames(query, selectedGenre, selectedPlatform, sortBy)}
+            className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl hover:text-white transition cursor-pointer flex items-center gap-1.5 mx-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+          </button>
         </div>
       ) : games.length === 0 ? (
         <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-3">
@@ -225,6 +307,15 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame }) => {
                     {game.rating}
                   </div>
                 )}
+                <button
+                  type="button"
+                  onClick={(e) => handleQuickWishlist(game.igdbId, e)}
+                  disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
+                  className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
+                  aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
+                >
+                  <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
+                </button>
               </div>
 
               <div className="mt-3.5 flex-1 min-w-0">
