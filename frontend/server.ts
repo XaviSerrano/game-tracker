@@ -7,7 +7,7 @@ import { IgdbService } from './server/igdb.ts';
 import { Activity, User, UserGame, CustomList, Review } from './src/types.ts';
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000');
 
 app.use(express.json());
 
