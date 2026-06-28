@@ -1,9 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database import create_tables
 from app.routers import games
+from app.routers import library
 
-app = FastAPI(title="GameTracker API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_tables()
+    yield
+
+
+app = FastAPI(title="GameTracker API", lifespan=lifespan)
 
 # Permite peticiones desde el dev server de Vite
 app.add_middleware(
@@ -15,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(games.router)
+app.include_router(library.router)
 
 
 @app.get("/health")
