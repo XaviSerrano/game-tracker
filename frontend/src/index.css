@@ -128,3 +128,42 @@ body {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   transition-duration: 300ms;
 }
+
+@keyframes shimmer-slide {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: -200% 50%;
+  }
+}
+
+.shimmer-text {
+  animation: shimmer-slide 5.5s linear infinite;
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(8px, -14px, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(0, -28px, 0) scale(0.96);
+  }
+}
+
+.particle-dot {
+  animation-name: particle-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  box-shadow: 0 0 12px rgba(217, 163, 82, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text,
+  .particle-dot {
+    animation: none !important;
+  }
+}

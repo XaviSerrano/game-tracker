@@ -1,5 +1,7 @@
 import 'dotenv/config';
+import crypto from 'crypto';
 import express from 'express';
+import nodemailer from 'nodemailer';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { db } from './server/db.ts';
@@ -8,89 +10,250 @@ import { Activity, User, UserGame, CustomList, Review } from './src/types.ts';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000');
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
+const MIN_PASSWORD_LENGTH = 8;
+const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 app.use(express.json());
 
-// --- AUTENTICACIÓN MIDDLEWARE ---
+// --- AUTENTICACI�N MIDDLEWARE ---
 interface AuthenticatedRequest extends express.Request {
   currUser?: User;
+  authToken?: string;
 }
+
+const hashPassword = (password: string, salt = crypto.randomBytes(16).toString('hex')) => ({
+  passwordHash: crypto.scryptSync(password, salt, 64).toString('hex'),
+  passwordSalt: salt
+});
+
+const verifyPassword = (password: string, passwordHash?: string, passwordSalt?: string) => {
+  if (!passwordHash || !passwordSalt) return false;
+  const computedHash = crypto.scryptSync(password, passwordSalt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(passwordHash, 'hex'));
+};
+
+const createSessionToken = (userId: string) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  db.createSession(userId, token, new Date(Date.now() + SESSION_TTL_MS).toISOString());
+  return token;
+};
+
+const hashResetToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+const createAuthMailer = () => {
+  const from = process.env.SMTP_FROM || 'GameTracker <no-reply@gametracker.local>';
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    return {
+      transport: nodemailer.createTransport({
+        host,
+        port,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: { user, pass }
+      }),
+      from,
+      configured: true
+    };
+  }
+
+  console.warn('SMTP no configurado. Los emails de recuperaci�n se registrar�n en consola para entorno local.');
+  return {
+    transport: nodemailer.createTransport({ jsonTransport: true }),
+    from,
+    configured: false
+  };
+};
+
+const authMailer = createAuthMailer();
+
+const buildResetUrl = (req: express.Request, token: string) => {
+  const host = req.get('host');
+  return `${req.protocol}://${host}/?resetToken=${encodeURIComponent(token)}`;
+};
+
+const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken: string) => {
+  const resetUrl = buildResetUrl(req, rawToken);
+  const info = await authMailer.transport.sendMail({
+    from: authMailer.from,
+    to: user.email,
+    subject: 'Recupera tu contrase�a de GameTracker',
+    text: `Hola ${user.username},\n\nHemos recibido una solicitud para restablecer tu contrase�a. Usa este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.`,
+    html: `<p>Hola <strong>${user.username}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contrase�a.</p><p><a href="${resetUrl}">Restablecer contrase�a</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
+  });
+
+  if (!authMailer.configured) {
+    console.info('Password reset email payload:', info.message);
+  }
+
+  return {
+    resetUrl,
+    usingDebugMailer: !authMailer.configured
+  };
+};
 
 const authenticate = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Falta token de autorización' });
+    return res.status(401).json({ error: 'Falta token de autorizaci�n' });
   }
-  const userId = authHeader.split(' ')[1];
-  const user = db.getUser(userId);
+
+  const token = authHeader.split(' ')[1];
+  const user = db.getUserBySessionToken(token);
   if (!user) {
-    return res.status(401).json({ error: 'Usuario no encontrado o no autorizado' });
+    return res.status(401).json({ error: 'Sesi�n inv�lida o expirada.' });
   }
+
+  req.authToken = token;
   req.currUser = user;
   next();
 };
 
-// --- ENDPOINTS DE AUTENTICACIÓN ---
+// --- ENDPOINTS DE AUTENTICACI�N ---
 
-// Registrarse
 app.post('/api/auth/register', (req, res) => {
-  const { username, email, bio, avatar } = req.body;
-  if (!username || !email) {
-    return res.status(400).json({ error: 'Username y email son obligatorios.' });
+  const { username, email, password, bio, avatar } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'Username, email y contrase�a son obligatorios.' });
   }
 
-  const existingEmail = db.getUserByEmail(email);
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `La contrase�a debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedUsername = String(username).trim();
+  const existingEmail = db.getUserByEmail(normalizedEmail);
   if (existingEmail) {
-    return res.status(400).json({ error: 'El email ya está registrado.' });
+    return res.status(400).json({ error: 'El email ya est� registrado.' });
   }
 
-  const existingUser = db.getUserByUsername(username);
+  const existingUser = db.getUserByUsername(normalizedUsername);
   if (existingUser) {
-    return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
+    return res.status(400).json({ error: 'El nombre de usuario ya est� en uso.' });
   }
 
   const id = `user_${Date.now()}`;
   const newUser: User = {
     id,
-    username,
-    email,
-    avatar: avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${username}`,
-    bio: bio || '¡Hola! Soy nuevo en GameTracker.',
+    username: normalizedUsername,
+    email: normalizedEmail,
+    avatar: avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${normalizedUsername}`,
+    bio: bio || '�Hola! Soy nuevo en GameTracker.',
     createdAt: new Date().toISOString()
   };
 
-  db.createUser(newUser);
+  const passwordData = hashPassword(password);
+  db.createUser(newUser, passwordData);
 
-  // Auto activity
   db.addActivity({
     id: `act_${Date.now()}`,
     userId: id,
     type: 'FOLLOWED',
-    details: 'se unió a GameTracker 🎉',
+    details: 'se uni� a GameTracker ??',
     createdAt: new Date().toISOString()
   });
 
-  res.status(201).json({ user: newUser, token: id });
+  const token = createSessionToken(id);
+  res.status(201).json({ user: newUser, token });
 });
 
-// Iniciar sesión
 app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'El email y la contrase�a son obligatorios.' });
+  }
+
+  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  if (!authUser || !verifyPassword(password, authUser.passwordHash, authUser.passwordSalt)) {
+    return res.status(401).json({ error: 'Email o contrase�a incorrectos.' });
+  }
+
+  const user = db.getUser(authUser.id)!;
+  const token = createSessionToken(authUser.id);
+  res.json({ user, token });
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'El email es obligatorio.' });
   }
 
-  const user = db.getUserByEmail(email);
-  if (!user) {
-    return res.status(404).json({ error: 'Usuario no encontrado.' });
+  const genericResponse = {
+    message: 'Si existe una cuenta con ese email, recibir�s un enlace para restablecer la contrase�a.'
+  };
+
+  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  if (!authUser) {
+    return res.json(genericResponse);
   }
 
-  res.json({ user, token: user.id });
+  try {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    db.savePasswordResetToken(
+      authUser.id,
+      hashResetToken(rawToken),
+      new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString()
+    );
+
+    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, db.getUser(authUser.id)!, rawToken);
+    res.json({
+      ...genericResponse,
+      ...(usingDebugMailer ? { debugResetUrl: resetUrl } : {})
+    });
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    res.status(500).json({ error: 'No se pudo enviar el correo de recuperaci�n.' });
+  }
 });
 
-// Obtener usuario actual
+app.post('/api/auth/reset-password', (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ error: 'El token y la nueva contrase�a son obligatorios.' });
+  }
+
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `La contrase�a debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+  }
+
+  const authUser = db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
+  if (!authUser) {
+    return res.status(400).json({ error: 'El enlace de recuperaci�n es inv�lido o ha caducado.' });
+  }
+
+  const passwordData = hashPassword(password);
+  db.setUserPassword(authUser.id, passwordData.passwordHash, passwordData.passwordSalt);
+  db.revokeSessionsForUser(authUser.id);
+  const sessionToken = createSessionToken(authUser.id);
+  const user = db.getUser(authUser.id)!;
+
+  res.json({
+    message: 'Contrase�a actualizada correctamente.',
+    user,
+    token: sessionToken
+  });
+});
+
+app.post('/api/auth/logout', authenticate, (req: AuthenticatedRequest, res) => {
+  if (req.authToken) {
+    db.revokeSession(req.authToken);
+  }
+  res.status(204).end();
+});
+
 app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
   res.json(req.currUser);
+});
+
+app.get('/api/auth/demo-credentials', (_req, res) => {
+  res.json({ password: DEMO_ACCOUNT_PASSWORD });
 });
 
 // --- ENDPOINTS DE USUARIOS ---
@@ -226,10 +389,13 @@ app.get('/api/games', async (req, res) => {
     const genre = (req.query.genre as string) || '';
     const platform = (req.query.platform as string) || '';
     const sort = (req.query.sort as string) || 'popularity'; // rating | popularity | name | newest
+    const hasSearch = search.trim().length > 0;
 
-    let games = search.trim()
+    let games = hasSearch
       ? await IgdbService.searchGames(search, 50)
-      : await IgdbService.getPopularGames(80);
+      : (sort === 'newest'
+        ? await IgdbService.getRecentGames(80)
+        : await IgdbService.getPopularGames(80));
 
     if (genre) {
       games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
@@ -239,13 +405,22 @@ app.get('/api/games', async (req, res) => {
     }
 
     if (sort === 'rating') {
-      games = [...games].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    } else if (sort === 'popularity') {
+      games = [...games].sort((a, b) => {
+        const ratingDifference = (b.rating || 0) - (a.rating || 0);
+        if (ratingDifference !== 0) return ratingDifference;
+
+        return (b.popularity || 0) - (a.popularity || 0);
+      });
+    } else if (sort === 'popularity' && hasSearch) {
       games = [...games].sort((a, b) => (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0));
     } else if (sort === 'name') {
       games = [...games].sort((a, b) => a.name.localeCompare(b.name));
     } else if (sort === 'newest') {
-      games = [...games].sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
+      games = [...games].sort((a, b) => {
+        const bTime = Date.parse(b.releaseDate);
+        const aTime = Date.parse(a.releaseDate);
+        return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+      });
     }
 
     res.json(games);
@@ -290,31 +465,36 @@ app.get('/api/users/:id/library', async (req, res) => {
   const userId = req.params.id;
   const userGames = db.getUserGames(userId);
 
-  const completeLibrary = await Promise.all(userGames.map(async (ug) => {
-    let game = db.getGame(ug.gameId);
-    if (!game) {
-      game = await IgdbService.getGameDetails(ug.gameId);
-      if (game) {
-        db.saveGame(game);
+  try {
+    const completeLibrary = await Promise.all(userGames.map(async (ug) => {
+      let game = db.getGame(ug.gameId);
+      if (!game) {
+        game = await IgdbService.getGameDetails(ug.gameId);
+        if (game) {
+          db.saveGame(game);
+        }
       }
-    }
 
-    return {
-      ...ug,
-      game: game || {
-        igdbId: ug.gameId,
-        name: `Juego #${ug.gameId}`,
-        slug: 'unknown',
-        cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg',
-        summary: 'Detalles desconocidos.',
-        genres: [],
-        platforms: [],
-        releaseDate: ''
-      }
-    };
-  }));
+      return {
+        ...ug,
+        game: game || {
+          igdbId: ug.gameId,
+          name: `Juego #${ug.gameId}`,
+          slug: 'unknown',
+          cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg',
+          summary: 'Detalles desconocidos.',
+          genres: [],
+          platforms: [],
+          releaseDate: ''
+        }
+      };
+    }));
 
-  res.json(completeLibrary);
+    res.json(completeLibrary);
+  } catch (err: any) {
+    console.error('Error loading library for user', userId, err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Guardar o cambiar estado de progreso/puntuación
@@ -391,8 +571,10 @@ app.get('/api/reviews/:gameId', (req, res) => {
   // Decorar con perfiles de usuarios
   const fullReviews = reviews.map(r => {
     const author = db.getUser(r.userId);
+    const tracking = db.getUserGame(r.userId, r.gameId);
     return {
       ...r,
+      rating: tracking?.rating ?? 0,
       author: author || { username: 'desconocido', avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=unknown' }
     };
   });
@@ -426,21 +608,25 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
 
   db.saveReview(review);
 
-  // If rating is passed, ensure it is saved inside user's library as well
-  if (rating) {
-    const existingUg = db.getUserGame(user.id, game.igdbId);
-    db.saveUserGame({
-      userId: user.id,
-      gameId: game.igdbId,
-      status: existingUg ? existingUg.status : 'PLAYED',
-      rating: parseInt(rating),
-      hoursPlayed: existingUg ? existingUg.hoursPlayed : 0,
-      notes: existingUg ? existingUg.notes : '',
-      startedAt: existingUg ? existingUg.startedAt : null,
-      completedAt: existingUg ? existingUg.completedAt : null,
-      updatedAt: new Date().toISOString()
-    });
-  }
+  // Single source of truth for rating: always persist/read from UserGame.
+  const existingUg = db.getUserGame(user.id, game.igdbId);
+  const parsedRating = Number.parseInt(String(rating), 10);
+  const normalizedRating =
+    Number.isInteger(parsedRating) && parsedRating >= 1 && parsedRating <= 5
+      ? parsedRating
+      : (existingUg?.rating ?? 0);
+
+  const syncedUserGame = db.saveUserGame({
+    userId: user.id,
+    gameId: game.igdbId,
+    status: existingUg ? existingUg.status : 'PLAYED',
+    rating: normalizedRating,
+    hoursPlayed: existingUg ? existingUg.hoursPlayed : 0,
+    notes: existingUg ? existingUg.notes : '',
+    startedAt: existingUg ? existingUg.startedAt : null,
+    completedAt: existingUg ? existingUg.completedAt : null,
+    updatedAt: new Date().toISOString()
+  });
 
   // Register social activity
   db.addActivity({
@@ -448,7 +634,7 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
     userId: user.id,
     type: 'REVIEWED',
     gameId: game.igdbId,
-    details: `reseñó ${game.name}: "${title}" (${rating ? rating : 'sin'} ⭐)`,
+    details: `reseñó ${game.name}: "${title}" (${syncedUserGame.rating > 0 ? syncedUserGame.rating : 'sin'} ⭐)`,
     createdAt: new Date().toISOString()
   });
 
@@ -612,3 +798,5 @@ async function startServer() {
 }
 
 startServer();
+
+

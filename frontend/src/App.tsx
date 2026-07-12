@@ -10,7 +10,7 @@ import {
   LogOut,
   ChevronRight,
   RefreshCw,
-  Sparkles
+  Search
 } from 'lucide-react';
 
 import { User } from './types.ts';
@@ -51,6 +51,7 @@ export default function App() {
           const userData = await res.json();
           setCurrentUser(userData);
           setToken(storedToken);
+          setAllUsers(prev => prev.some(user => user.id === userData.id) ? prev : [...prev, userData]);
         } else {
           localStorage.removeItem('gt_token');
         }
@@ -88,36 +89,32 @@ export default function App() {
   const handleLoginSuccess = (user: User, userToken: string) => {
     setCurrentUser(user);
     setToken(userToken);
+    setAllUsers(prev => prev.some(existingUser => existingUser.id === user.id) ? prev : [...prev, user]);
     localStorage.setItem('gt_token', userToken);
     setActiveTab('feed');
     setSelectedGameId(null);
     setSelectedUserId(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (token) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+    }
+
     setCurrentUser(null);
     setToken(null);
     localStorage.removeItem('gt_token');
     setSelectedGameId(null);
     setSelectedUserId(null);
-  };
-
-  const handleSwapAccount = async (targetEmail: string) => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email: targetEmail })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        handleLoginSuccess(data.user, data.token);
-      }
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleNavigation = (tab: MainTab) => {
@@ -220,7 +217,7 @@ export default function App() {
 
   const navItems = [
     { id: 'feed', label: 'Inicio', icon: Compass },
-    { id: 'discover', label: 'Descubrir', icon: Sparkles },
+    { id: 'discover', label: 'Descubrir', icon: Search },
     { id: 'library', label: 'Biblioteca', icon: LibIcon },
     { id: 'lists', label: 'Listas', icon: List },
     { id: 'stats', label: 'Estadísticas', icon: BarChart2 },
@@ -258,19 +255,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Persona Switch dropdown */}
-            <div className="space-y-1">
-              <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-widest pl-1">Alternar cuenta</label>
-              <select
-                onChange={(e) => handleSwapAccount(e.target.value)}
-                value={currentUser.email}
-                className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-1 px-1.5 text-[10px] text-slate-400 outline-none hover:border-slate-700 transition"
-              >
-                {allUsers.map(u => (
-                  <option key={u.id} value={u.email}>@{u.username}</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           {/* Navigation Links */}
@@ -370,3 +354,4 @@ export default function App() {
     </div>
   );
 }
+

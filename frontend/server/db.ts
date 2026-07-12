@@ -1,9 +1,24 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { User, Game, UserGame, Review, CustomList, CustomListItem, Follow, Activity, GameStatus } from '../src/types.ts';
 
+interface StoredUser extends User {
+  passwordHash?: string;
+  passwordSalt?: string;
+  passwordResetTokenHash?: string | null;
+  passwordResetExpiresAt?: string | null;
+}
+
+interface AuthSession {
+  token: string;
+  userId: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 interface DbSchema {
-  users: User[];
+  users: StoredUser[];
   games: Game[];
   userGames: UserGame[];
   reviews: Review[];
@@ -11,45 +26,61 @@ interface DbSchema {
   customListItems: CustomListItem[];
   follows: Follow[];
   activities: Activity[];
+  sessions: AuthSession[];
 }
 
 const DB_FILE = path.join(process.cwd(), 'appdata.json');
+const DEMO_ACCOUNT_PASSWORD = 'demo1234';
+
+function hashPassword(password: string, salt = crypto.randomBytes(16).toString('hex')) {
+  const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { passwordHash, passwordSalt: salt };
+}
+
+function createSeedUser(user: User): StoredUser {
+  return {
+    ...user,
+    ...hashPassword(DEMO_ACCOUNT_PASSWORD),
+    passwordResetTokenHash: null,
+    passwordResetExpiresAt: null
+  };
+}
 
 // Catalog now comes from IGDB at runtime (no local game seed).
 
-const INITIAL_USERS: User[] = [
-  {
+const INITIAL_USERS: StoredUser[] = [
+  createSeedUser({
     id: "user_alex",
     username: "alex_gamer",
     email: "alex@gametracker.com",
     avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=alex",
     bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.",
     createdAt: "2025-01-10T12:00:00Z"
-  },
-  {
+  }),
+  createSeedUser({
     id: "user_sam",
     username: "vance_retro",
     email: "sam@gametracker.com",
     avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=sam",
     bio: "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.",
     createdAt: "2025-02-15T15:30:00Z"
-  },
-  {
+  }),
+  createSeedUser({
     id: "user_lucia",
     username: "lucia_indie",
     email: "lucia@gametracker.com",
     avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=lucia",
     bio: "Indie games advocate. Pixel art, cozy farm simulators, and rogue-lites make my day.",
     createdAt: "2025-03-01T09:45:00Z"
-  },
-  {
+  }),
+  createSeedUser({
     id: "user_marcos",
     username: "marcos_rpg",
     email: "marcos@gametracker.com",
     avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=marcos",
     bio: "JRPG player & completionist. Elden Ring was brilliant, but Chrono Trigger is art.",
     createdAt: "2025-03-12T18:20:00Z"
-  }
+  })
 ];
 
 const INITIAL_USER_GAMES: UserGame[] = [
@@ -166,7 +197,8 @@ class GameDatabase {
       customLists: [],
       customListItems: [],
       follows: [],
-      activities: []
+      activities: [],
+      sessions: []
     };
     this.load();
   }
@@ -177,7 +209,7 @@ class GameDatabase {
         const content = fs.readFileSync(DB_FILE, 'utf-8');
         this.data = JSON.parse(content);
         // Ensure standard keys exist
-        this.data.users = this.data.users || [];
+        this.data.users = (this.data.users || []).map(user => this.hydrateStoredUser(user));
         // Games are hydrated from IGDB at runtime; avoid seeding from persisted JSON.
         this.data.games = [];
         this.data.userGames = this.data.userGames || [];
@@ -186,6 +218,7 @@ class GameDatabase {
         this.data.customListItems = this.data.customListItems || [];
         this.data.follows = this.data.follows || [];
         this.data.activities = this.data.activities || [];
+        this.data.sessions = this.purgeExpiredSessions(this.data.sessions || []);
       } catch (error) {
         console.error("Failed to parse database file, rebuilding with seed data:", error);
         this.seed();
@@ -212,36 +245,129 @@ class GameDatabase {
       customLists: [...INITIAL_CUSTOM_LISTS],
       customListItems: [...INITIAL_CUSTOM_LIST_ITEMS],
       follows: [...INITIAL_FOLLOWS],
-      activities: [...INITIAL_ACTIVITIES]
+      activities: [...INITIAL_ACTIVITIES],
+      sessions: []
     };
     this.save();
     console.log("Database successfully seeded with mock data!");
+  }
+
+    private isDemoUserId(userId: string): boolean {
+    return INITIAL_USERS.some((user) => user.id === userId);
+  }
+
+  private hydrateStoredUser(user: Partial<StoredUser> & User): StoredUser {
+    const normalized: StoredUser = {
+      ...user,
+      passwordResetTokenHash: user.passwordResetTokenHash ?? null,
+      passwordResetExpiresAt: user.passwordResetExpiresAt ?? null
+    };
+
+    if ((!normalized.passwordHash || !normalized.passwordSalt) && this.isDemoUserId(normalized.id)) {
+      return {
+        ...normalized,
+        ...hashPassword(DEMO_ACCOUNT_PASSWORD)
+      };
+    }
+
+    return normalized;
+  }
+
+  private toPublicUser(user: StoredUser): User {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      bio: user.bio,
+      createdAt: user.createdAt
+    };
+  }
+
+  private purgeExpiredSessions(sessions: AuthSession[]): AuthSession[] {
+    const now = Date.now();
+    return sessions.filter((session) => new Date(session.expiresAt).getTime() > now);
   }
 
   // --- QUERY APIS ---
 
   // User methods
   getUsers(): User[] {
-    return this.data.users;
+    return this.data.users.map((user) => this.toPublicUser(user));
   }
 
   getUser(userId: string): User | null {
-    return this.data.users.find(u => u.id === userId) || null;
+    const user = this.data.users.find(u => u.id === userId);
+    return user ? this.toPublicUser(user) : null;
   }
 
   getUserByEmail(email: string): User | null {
-    return this.data.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+    const user = this.data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return user ? this.toPublicUser(user) : null;
   }
 
   getUserByUsername(username: string): User | null {
-    return this.data.users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
+    const user = this.data.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    return user ? this.toPublicUser(user) : null;
   }
 
-  createUser(user: User): User {
-    // Check conflicts
-    if (this.getUser(user.id)) return this.getUser(user.id)!;
-    
-    this.data.users.push(user);
+  getAuthUserByEmail(email: string): StoredUser | null {
+    return this.data.users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
+  }
+
+  getAuthUserById(userId: string): StoredUser | null {
+    return this.data.users.find(u => u.id === userId) || null;
+  }
+
+  getUserBySessionToken(token: string): User | null {
+    this.data.sessions = this.purgeExpiredSessions(this.data.sessions);
+    const session = this.data.sessions.find((entry) => entry.token === token);
+    if (!session) {
+      this.save();
+      return null;
+    }
+
+    const user = this.getAuthUserById(session.userId);
+    return user ? this.toPublicUser(user) : null;
+  }
+
+  createSession(userId: string, token: string, expiresAt: string): string {
+    this.data.sessions = this.purgeExpiredSessions(this.data.sessions).filter((session) => session.token !== token);
+    this.data.sessions.push({
+      token,
+      userId,
+      expiresAt,
+      createdAt: new Date().toISOString()
+    });
+    this.save();
+    return token;
+  }
+
+  revokeSession(token: string): boolean {
+    const initialLength = this.data.sessions.length;
+    this.data.sessions = this.data.sessions.filter((session) => session.token !== token);
+    if (this.data.sessions.length !== initialLength) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  revokeSessionsForUser(userId: string): void {
+    this.data.sessions = this.data.sessions.filter((session) => session.userId !== userId);
+    this.save();
+  }
+
+  createUser(user: User, auth?: { passwordHash: string; passwordSalt: string }): User {
+    if (this.getAuthUserById(user.id)) return this.getUser(user.id)!;
+
+    this.data.users.push({
+      ...user,
+      passwordHash: auth?.passwordHash,
+      passwordSalt: auth?.passwordSalt,
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null
+    });
     this.save();
     return user;
   }
@@ -251,7 +377,47 @@ class GameDatabase {
     if (idx === -1) return null;
     this.data.users[idx] = { ...this.data.users[idx], ...updates };
     this.save();
-    return this.data.users[idx];
+    return this.toPublicUser(this.data.users[idx]);
+  }
+
+  setUserPassword(userId: string, passwordHash: string, passwordSalt: string): User | null {
+    const user = this.getAuthUserById(userId);
+    if (!user) return null;
+
+    user.passwordHash = passwordHash;
+    user.passwordSalt = passwordSalt;
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
+    this.save();
+    return this.toPublicUser(user);
+  }
+
+  savePasswordResetToken(userId: string, tokenHash: string, expiresAt: string): User | null {
+    const user = this.getAuthUserById(userId);
+    if (!user) return null;
+
+    user.passwordResetTokenHash = tokenHash;
+    user.passwordResetExpiresAt = expiresAt;
+    this.save();
+    return this.toPublicUser(user);
+  }
+
+  clearPasswordResetToken(userId: string): void {
+    const user = this.getAuthUserById(userId);
+    if (!user) return;
+
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
+    this.save();
+  }
+
+  getAuthUserByPasswordResetTokenHash(tokenHash: string): StoredUser | null {
+    const now = Date.now();
+    return this.data.users.find((user) => (
+      user.passwordResetTokenHash === tokenHash
+      && !!user.passwordResetExpiresAt
+      && new Date(user.passwordResetExpiresAt).getTime() > now
+    )) || null;
   }
 
   // Game methods

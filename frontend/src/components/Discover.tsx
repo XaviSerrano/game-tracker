@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Game } from '../types.ts';
 import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw, Bookmark } from 'lucide-react';
+import { SpotlightPanel } from './SpotlightPanel.tsx';
+import { ParticleBackdrop } from './ParticleBackdrop.tsx';
+import { ShimmerText } from './ShimmerText.tsx';
+import { TiltCard } from './TiltCard.tsx';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
@@ -141,19 +145,23 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
       {/* Search Header */}
-      <div className="space-y-4">
+      <SpotlightPanel className="space-y-6 rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0f121d] via-[#111317] to-[#0b0c0e] p-6 md:p-7">
+        <ParticleBackdrop className="opacity-60" count={14} />
         <div className="flex items-center justify-between">
-          <div>
+          <div className="space-y-3">
+            <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-blue-400">
+              React Bits Inspired
+            </span>
             <h2 className="text-2xl font-bold font-display text-white tracking-tight">
-              Descubrir Videojuegos
+              Descubrir <ShimmerText>Videojuegos</ShimmerText>
             </h2>
-            <p className="text-slate-400 text-xs">
+            <p className="max-w-2xl text-slate-400 text-xs leading-relaxed">
               Busca en el catálogo completo de IGDB o filtra según tus categorías preferidas
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="flex gap-2.5">
+        <form onSubmit={handleSearchSubmit} className="mt-3 flex gap-3">
           <div className="relative flex-1">
             <input
               type="text"
@@ -181,14 +189,14 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
 
         {/* Extended filters */}
         {showFilters && (
-          <div className="p-4 bg-[#0f121d] border border-slate-850 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+          <div className="mt-1 p-5 md:p-6 bg-[#0f121d] border border-slate-850 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 animate-fade-in">
             {/* Genre filter */}
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Género</label>
               <select
                 value={selectedGenre}
                 onChange={(e) => setSelectedGenre(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500 transition"
+                className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
               >
                 <option value="">Todos los géneros</option>
                 {GENRES.map(g => (
@@ -198,12 +206,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
             </div>
 
             {/* Platform Filter */}
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Plataforma</label>
               <select
                 value={selectedPlatform}
                 onChange={(e) => setSelectedPlatform(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500 transition"
+                className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
               >
                 <option value="">Todas las plataformas</option>
                 {PLATFORMS.map(p => (
@@ -213,27 +221,27 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
             </div>
 
             {/* Sorting */}
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ordenar Catálogo</label>
-              <div className="flex gap-1 bg-[#07090e] p-1 rounded-lg border border-slate-800">
+              <div className="flex gap-1.5 bg-[#07090e] p-1.5 rounded-lg border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setSortBy('popularity')}
-                  className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'popularity' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'popularity' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
                 >
                   <Flame className="w-3 h-3" /> Popular tags
                 </button>
                 <button
                   type="button"
                   onClick={() => setSortBy('rating')}
-                  className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'rating' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'rating' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
                 >
                   <Star className="w-3 h-3" /> Rating
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSortBy('newest')}
-                  className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'newest' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                  onClick={() => { setQuery(''); setSortBy('newest'); }}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'newest' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
                 >
                   <Calendar className="w-3 h-3" /> Fecha
                 </button>
@@ -241,7 +249,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
             </div>
           </div>
         )}
-      </div>
+      </SpotlightPanel>
 
       {quickActionMessage && (
         <div className={`p-2.5 border text-xs rounded-xl ${quickActionMessage.includes('Error') ? 'bg-red-950/40 border-red-500/20 text-red-400' : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400'}`}>
@@ -289,47 +297,49 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {games.map(game => (
-            <div
-              key={game.igdbId}
-              onClick={() => onSelectGame(game.igdbId)}
-              className="group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-200 cursor-pointer block"
-            >
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 group-hover:shadow-lg group-hover:scale-[1.02] transition duration-200">
-                <img
-                  src={game.cover}
-                  alt={game.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
-                />
-                {game.rating && (
-                  <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold text-yellow-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    {game.rating}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => handleQuickWishlist(game.igdbId, e)}
-                  disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
-                  className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
-                  aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
-                >
-                  <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
-                </button>
-              </div>
+            <TiltCard key={game.igdbId} className="rounded-xl">
+              <div
+                onClick={() => onSelectGame(game.igdbId)}
+                className="group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-200 cursor-pointer block"
+              >
+                <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 group-hover:shadow-lg group-hover:scale-[1.02] transition duration-200">
+                  <img
+                    src={game.cover}
+                    alt={game.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                  {game.rating && (
+                    <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold text-yellow-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      {game.rating}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickWishlist(game.igdbId, e)}
+                    disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
+                    className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
+                    aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
+                  </button>
+                </div>
 
-              <div className="mt-3.5 flex-1 min-w-0">
-                <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
-                  {game.name}
-                </h3>
-                <p className="text-[10px] text-slate-500 mt-1 truncate">
-                  {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
-                </p>
+                <div className="mt-3.5 flex-1 min-w-0">
+                  <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
+                    {game.name}
+                  </h3>
+                  <p className="text-[10px] text-slate-500 mt-1 truncate">
+                    {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
+                  </p>
+                </div>
               </div>
-            </div>
+            </TiltCard>
           ))}
         </div>
       )}
     </div>
   );
 };
+

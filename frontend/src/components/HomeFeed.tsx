@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Game, Activity, User, UserGame } from '../types.ts';
-import { Heart, Stars, Users, Globe, ExternalLink, Library, CheckCircle2 } from 'lucide-react';
+import { Heart, Stars, Users, Globe, ExternalLink } from 'lucide-react';
+import { SpotlightPanel } from './SpotlightPanel.tsx';
+import { ParticleBackdrop } from './ParticleBackdrop.tsx';
+import { ShimmerText } from './ShimmerText.tsx';
+import { TiltCard } from './TiltCard.tsx';
 
 interface HomeFeedProps {
   currentUser: User;
@@ -14,6 +18,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
   const [feedScope, setFeedScope] = useState<'all' | 'following'>('all');
   const [activities, setActivities] = useState<Activity[]>([]);
   const [recs, setRecs] = useState<{ game: Game; score: number }[]>([]);
+  const [activityGames, setActivityGames] = useState<Record<number, Game>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchFeedAndRecs = async () => {
@@ -23,6 +28,35 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
       const feedRes = await fetch(`/api/social/feed?userId=${currentUser.id}&scope=${feedScope}`);
       const feedData = await feedRes.json();
       setActivities(feedData);
+
+      const activityGameIds = Array.isArray(feedData)
+        ? Array.from(new Set(feedData
+            .map((activity: Activity) => activity.gameId)
+            .filter((gameId: number | undefined): gameId is number => typeof gameId === 'number')))
+        : [];
+
+      if (activityGameIds.length > 0) {
+        const detailsResponses = await Promise.allSettled(
+          activityGameIds.map(async (gameId) => {
+            const gameRes = await fetch(`/api/games/${gameId}`);
+            if (!gameRes.ok) {
+              throw new Error(`No se pudo cargar juego ${gameId}`);
+            }
+            const gameData = await gameRes.json();
+            return gameData as Game;
+          })
+        );
+
+        const resolvedGames: Record<number, Game> = {};
+        detailsResponses.forEach((result) => {
+          if (result.status === 'fulfilled' && typeof result.value?.igdbId === 'number') {
+            resolvedGames[result.value.igdbId] = result.value;
+          }
+        });
+        setActivityGames(resolvedGames);
+      } else {
+        setActivityGames({});
+      }
 
       // 2. Fetch recommendations
       const recsRes = await fetch('/api/recommendations', {
@@ -92,7 +126,8 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
       {/* Welcome Hero card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-[#0f121d] to-[#07090e] border border-slate-800 p-6 rounded-2xl">
+      <SpotlightPanel className="bg-gradient-to-r from-slate-900 via-[#0f121d] to-[#07090e] border border-slate-800 p-6 rounded-2xl">
+        <ParticleBackdrop className="opacity-70" count={18} />
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -100,7 +135,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
               Activo hoy
             </span>
             <h2 className="text-2xl md:text-3xl font-bold font-display text-white mt-3 tracking-tight">
-              ¡Hola de nuevo, @{currentUser.username}!
+              ¡Hola de <ShimmerText>nuevo</ShimmerText>, @{currentUser.username}!
             </h2>
             <p className="text-slate-400 text-xs mt-1 md:max-w-md">
               Echa un vistazo a la actividad reciente de tus compañeros y explora tu motor de recomendación personalizado.
@@ -121,7 +156,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
             </button>
           </div>
         </div>
-      </div>
+      </SpotlightPanel>
 
       {/* Grid container */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -176,6 +211,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
             <div className="space-y-3">
               {activities.map(act => {
                 const actor = mapUserIdToUser(act.userId);
+                const relatedGame = typeof act.gameId === 'number' ? activityGames[act.gameId] : undefined;
                 return (
                   <div
                     key={act.id}
@@ -207,16 +243,21 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
                         <div className="mt-3 flex gap-3 p-2 rounded-lg bg-[#07090e]/60 border border-slate-800/50 hover:bg-[#07090e]/90 cursor-pointer transition"
                              onClick={() => act.gameId && onSelectGame(act.gameId)}>
                           <img
-                            src="https://images.igdb.com/igdb/image/upload/t_cover_big/co4kbj.jpg" // fallback is replaced if detailed data is loaded, let's keep it clean
-                            style={{ display: 'none' }}
+                            src={relatedGame?.cover || 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg'}
+                            alt={relatedGame?.name || `Juego ${act.gameId}`}
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-14 rounded object-cover border border-slate-800 flex-shrink-0"
                           />
-                          <div className="flex-1 min-w-0 flex items-center justify-between">
-                            <div>
+                          <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              {relatedGame?.name && (
+                                <p className="text-[10px] text-slate-500 truncate">{relatedGame.name}</p>
+                              )}
                               <p className="text-xs font-bold text-white hover:text-blue-400 transition truncate">
                                 Ver juego en el catálogo
                               </p>
                               <p className="text-[10px] text-slate-500 mt-0.5">
-                                Ver puntuaciones medas, plataformas y añadir a biblioteca
+                                Ver puntuaciones medias, plataformas y añadir a biblioteca
                               </p>
                             </div>
                             <ExternalLink className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
@@ -234,94 +275,76 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
         {/* Personalized recommendations & stats snippet column */}
         <div className="space-y-6">
           {/* Smart recommendation widget */}
-          <div className="bg-[#0f121d] border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <h3 className="font-semibold text-slate-300 font-display flex items-center gap-2">
-                <Stars className="w-4 h-4 text-indigo-400" />
-                Tu Rincón Inteligente
-              </h3>
-              <span className="text-[9px] bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">
-                HÍBRIDO 40-35-25%
-              </span>
-            </div>
+          <TiltCard className="rounded-2xl">
+            <div className="bg-[#0f121d] border border-slate-800 p-5 rounded-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <h3 className="font-semibold text-slate-300 font-display flex items-center gap-2">
+                  <Stars className="w-4 h-4 text-indigo-400" />
+                  Tu <ShimmerText className="font-semibold">Rincón Inteligente</ShimmerText>
+                </h3>
+                <span className="text-[9px] bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold">
+                  HÍBRIDO 40-35-25%
+                </span>
+              </div>
 
-            {loading ? (
-              <div className="space-y-2.5">
-                {[1, 2].map(i => (
-                  <div key={i} className="flex gap-2.5 animate-pulse">
-                    <div className="w-10 h-14 bg-slate-800 rounded"></div>
-                    <div className="space-y-1.5 flex-1 py-1">
-                      <div className="h-3 bg-slate-800 rounded w-2/3"></div>
-                      <div className="h-2.5 bg-slate-800 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : recs.length === 0 ? (
-              <div className="text-center py-4 space-y-1">
-                <Stars className="w-6 h-6 text-slate-700 mx-auto" />
-                <p className="text-slate-500 text-xs">Registra nuevos ratings en tu biblioteca para habilitar recomendaciones personalizadas por similitud cosine.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recs.map(({ game, score }) => (
-                  <button
-                    key={game.igdbId}
-                    onClick={() => onSelectGame(game.igdbId)}
-                    className="w-full text-left flex gap-3 p-2 bg-[#07090e]/40 hover:bg-[#07090e] border border-slate-800/40 rounded-xl transition group cursor-pointer"
-                  >
-                    <img
-                      src={game.cover}
-                      alt={game.name}
-                      referrerPolicy="no-referrer"
-                      className="w-10 h-14 rounded object-cover shadow border border-slate-850 group-hover:scale-105 transition"
-                    />
-                    <div className="flex-1 min-w-0 py-0.5">
-                      <h4 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
-                        {game.name}
-                      </h4>
-                      <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider truncate font-mono">
-                        {game.genres.slice(0, 2).join(' / ')}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-                            style={{ width: `${score}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-[9px] font-bold text-indigo-400 font-mono">
-                          {score}% coincidencia
-                        </span>
+              {loading ? (
+                <div className="space-y-2.5">
+                  {[1, 2].map(i => (
+                    <div key={i} className="flex gap-2.5 animate-pulse">
+                      <div className="w-10 h-14 bg-slate-800 rounded"></div>
+                      <div className="space-y-1.5 flex-1 py-1">
+                        <div className="h-3 bg-slate-800 rounded w-2/3"></div>
+                        <div className="h-2.5 bg-slate-800 rounded w-1/2"></div>
                       </div>
                     </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick instructions / tips box */}
-          <div className="bg-slate-900/30 border border-slate-800 p-4 rounded-xl space-y-3">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-              <Library className="w-3.5 h-3.5 text-blue-500" /> Centro de Pruebas
-            </h4>
-            <div className="space-y-2 text-xs text-slate-400">
-              <div className="flex gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p>Navega a **Descubrir** para buscar juegos e integrarlos en wishlists.</p>
-              </div>
-              <div className="flex gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p>Usa la barra de arriba a la derecha en PC para alternar de perfil instantáneamente.</p>
-              </div>
-              <div className="flex gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <p>Crea estadísticas interactivas agregando horas y puntuaciones.</p>
-              </div>
+                  ))}
+                </div>
+              ) : recs.length === 0 ? (
+                <div className="text-center py-4 space-y-1">
+                  <Stars className="w-6 h-6 text-slate-700 mx-auto" />
+                  <p className="text-slate-500 text-xs">Registra nuevos ratings en tu biblioteca para habilitar recomendaciones personalizadas por similitud cosine.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recs.map(({ game, score }) => (
+                    <button
+                      key={game.igdbId}
+                      onClick={() => onSelectGame(game.igdbId)}
+                      className="w-full text-left flex gap-3 p-2 bg-[#07090e]/40 hover:bg-[#07090e] border border-slate-800/40 rounded-xl transition group cursor-pointer"
+                    >
+                      <img
+                        src={game.cover}
+                        alt={game.name}
+                        referrerPolicy="no-referrer"
+                        className="w-10 h-14 rounded object-cover shadow border border-slate-850 group-hover:scale-105 transition"
+                      />
+                      <div className="flex-1 min-w-0 py-0.5">
+                        <h4 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
+                          {game.name}
+                        </h4>
+                        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider truncate font-mono">
+                          {game.genres.slice(0, 2).join(' / ')}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                              style={{ width: `${score}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-[9px] font-bold text-indigo-400 font-mono">
+                            {score}% coincidencia
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          </TiltCard>
+
         </div>
       </div>
     </div>

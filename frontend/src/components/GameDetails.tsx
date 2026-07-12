@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Game, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
-import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft } from 'lucide-react';
+import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
+import { DatePicker } from './DatePicker.tsx';
 
 interface GameDetailsProps {
   gameId: number;
@@ -10,7 +12,166 @@ interface GameDetailsProps {
   onSelectUser: (userId: string) => void;
 }
 
+interface PlatformStyle {
+  label: string;
+  badgeClass: string;
+  logoWrapperClass: string;
+  logo:
+    | { kind: 'simple'; icon: SimpleIcon; className: string; colorClass: string }
+    | { kind: 'remote'; src: string; className: string }
+    | { kind: 'text'; text: string; className: string; colorClass: string };
+}
+
+const PROGRESS_PHASE_OPTIONS: Array<{ value: GameStatus; label: string; helper: string; icon: string }> = [
+  { value: 'WISHLIST', label: 'Wishlist', helper: 'Lista de deseos', icon: '⭐' },
+  { value: 'PLAYING', label: 'Jugando', helper: 'En progreso', icon: '🎮' },
+  { value: 'PLAYED', label: 'Jugado', helper: 'Sesión cerrada', icon: '🕹️' },
+  { value: 'COMPLETED', label: 'Completado', helper: 'Objetivo cumplido', icon: '🏆' },
+  { value: 'ABANDONED', label: 'Abandonado', helper: 'Pausado o cancelado', icon: '❌' }
+];
+
+const getPlatformStyle = (platformName: string): PlatformStyle => {
+  const normalized = platformName.toLowerCase();
+
+  if (normalized.includes('playstation') || normalized === 'ps5' || normalized === 'ps4') {
+    return {
+      label: platformName,
+      badgeClass: 'bg-[#003087]/18 border-[#0ea5ff]/25 text-[#8fd3ff]',
+      logoWrapperClass: 'bg-[#001d52]/45',
+      logo: { kind: 'simple', icon: siPlaystation, className: 'h-3.5 w-3.5', colorClass: 'text-[#8fd3ff]' }
+    };
+  }
+
+  if (normalized.includes('xbox')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-[#107c10]/18 border-[#7ddf64]/25 text-[#baf5ac]',
+      logoWrapperClass: 'bg-white/95',
+      logo: {
+        kind: 'remote',
+        src: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Xbox_logo_%282019%29.svg',
+        className: 'h-3 w-auto'
+      }
+    };
+  }
+
+  if (normalized.includes('nintendo switch') || normalized === 'switch') {
+    return {
+      label: platformName,
+      badgeClass: 'bg-[#e60012]/16 border-[#ff6b7a]/25 text-[#ffbcc4]',
+      logoWrapperClass: 'bg-white/95',
+      logo: {
+        kind: 'remote',
+        src: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Nintendo_Switch_logo.svg',
+        className: 'h-4 w-auto'
+      }
+    };
+  }
+
+  if (normalized.includes('nintendo')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-[#e60012]/12 border-[#ff6b7a]/20 text-[#ffc7cf]',
+      logoWrapperClass: 'bg-white/15',
+      logo: { kind: 'text', text: 'N', className: 'text-[10px] font-black', colorClass: 'text-[#ffc7cf]' }
+    };
+  }
+
+  if (normalized.includes('steam')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-slate-700/25 border-slate-500/20 text-slate-200',
+      logoWrapperClass: 'bg-slate-900/55',
+      logo: { kind: 'simple', icon: siSteam, className: 'h-3.5 w-3.5', colorClass: 'text-slate-200' }
+    };
+  }
+
+  if (normalized.includes('ios') || normalized.includes('iphone') || normalized.includes('ipad')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-slate-500/15 border-slate-300/20 text-slate-100',
+      logoWrapperClass: 'bg-white/10',
+      logo: { kind: 'simple', icon: siApple, className: 'h-3.5 w-3.5', colorClass: 'text-slate-100' }
+    };
+  }
+
+  if (normalized.includes('android')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-[#3ddc84]/14 border-[#9fe870]/20 text-[#cbf7b1]',
+      logoWrapperClass: 'bg-[#143822]/55',
+      logo: { kind: 'simple', icon: siAndroid, className: 'h-3.5 w-3.5', colorClass: 'text-[#cbf7b1]' }
+    };
+  }
+
+  if (normalized.includes('linux')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-slate-700/20 border-slate-400/20 text-slate-200',
+      logoWrapperClass: 'bg-slate-900/55',
+      logo: { kind: 'simple', icon: siLinux, className: 'h-3.5 w-3.5', colorClass: 'text-slate-200' }
+    };
+  }
+
+  if (normalized.includes('mac') || normalized.includes('os x')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-slate-500/15 border-slate-300/20 text-slate-100',
+      logoWrapperClass: 'bg-white/10',
+      logo: { kind: 'simple', icon: siApple, className: 'h-3.5 w-3.5', colorClass: 'text-slate-100' }
+    };
+  }
+
+  if (normalized.includes('pc') || normalized.includes('windows')) {
+    return {
+      label: platformName,
+      badgeClass: 'bg-slate-700/25 border-slate-500/20 text-slate-200',
+      logoWrapperClass: 'bg-slate-900/55',
+      logo: { kind: 'text', text: 'PC', className: 'text-[9px] font-black tracking-wide', colorClass: 'text-slate-200' }
+    };
+  }
+
+  return {
+    label: platformName,
+    badgeClass: 'bg-violet-500/10 border-violet-400/20 text-violet-200',
+    logoWrapperClass: 'bg-violet-950/35',
+    logo: {
+      kind: 'text',
+      text: platformName.slice(0, 2).toUpperCase(),
+      className: 'text-[9px] font-black tracking-wide',
+      colorClass: 'text-violet-200'
+    }
+  };
+};
+
+const PlatformBadgeLogo: React.FC<{ platform: PlatformStyle }> = ({ platform }) => {
+  if (platform.logo.kind === 'simple') {
+    return (
+      <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 ${platform.logoWrapperClass}`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" className={`${platform.logo.className} ${platform.logo.colorClass}`}>
+          <path fill="currentColor" d={platform.logo.icon.path} />
+        </svg>
+      </span>
+    );
+  }
+
+  if (platform.logo.kind === 'remote') {
+    return (
+      <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 ${platform.logoWrapperClass}`}>
+        <img src={platform.logo.src} alt="" aria-hidden="true" className={platform.logo.className} />
+      </span>
+    );
+  }
+
+  return (
+    <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 ${platform.logoWrapperClass} ${platform.logo.className} ${platform.logo.colorClass}`}>
+      {platform.logo.text}
+    </span>
+  );
+};
+
 export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, token, onBack, onSelectUser }) => {
+  const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [userGame, setUserGame] = useState<UserGame | null>(null);
   const [reviews, setReviews] = useState<(Review & { author: User })[]>([]);
@@ -28,10 +189,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   // Form states for new review
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewContent, setReviewContent] = useState('');
-  const [reviewRating, setReviewRating] = useState(5);
 
   const [message, setMessage] = useState('');
   const [savingWishlist, setSavingWishlist] = useState(false);
+  const [progressMenuOpen, setProgressMenuOpen] = useState(false);
+  const selectedProgressOption = PROGRESS_PHASE_OPTIONS.find(option => option.value === status) || PROGRESS_PHASE_OPTIONS[0];
 
   const fetchGameData = async () => {
     setLoading(true);
@@ -81,6 +243,21 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   useEffect(() => {
     fetchGameData();
   }, [gameId]);
+
+  useEffect(() => {
+    if (!progressMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!progressMenuRef.current?.contains(event.target as Node)) {
+        setProgressMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [progressMenuOpen]);
 
   const saveTracking = async (nextStatus: GameStatus, successMessage = '¡Biblioteca actualizada con éxito!') => {
     setMessage('');
@@ -164,7 +341,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
           gameId,
           title: reviewTitle,
           content: reviewContent,
-          rating: reviewRating
+          rating
         })
       });
       if (res.ok) {
@@ -285,8 +462,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
             <div>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-1 text-slate-500 text-xs">
                 <span>{game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Desconocido'}</span>
-                <span>•</span>
-                <span className="truncate">{game.platforms.slice(0, 3).join(', ')}</span>
               </div>
               <h1 className="text-2xl md:text-4xl font-bold font-display text-white tracking-tight mt-1.5">
                 {game.name}
@@ -307,6 +482,29 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                 </span>
               ))}
             </div>
+
+            {game.platforms.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Plataformas</p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                  {game.platforms.map(platform => {
+                    const style = getPlatformStyle(platform);
+                    return (
+                      <span
+                        key={platform}
+                        className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${style.badgeClass}`}
+                        title={platform}
+                      >
+                        <PlatformBadgeLogo platform={style} />
+                        <span className="text-left leading-none">
+                          <span className="block">{style.label}</span>
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {game.rating && (
@@ -363,17 +561,55 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
             <form onSubmit={handleSaveTracking} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Fase de Progreso</label>
-                <select
-                  value={status}
-                  onChange={(e: any) => setStatus(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
-                >
-                  <option value="WISHLIST">Wishlist (Lista de deseos)</option>
-                  <option value="PLAYING">Jugando actualmente 🎮</option>
-                  <option value="PLAYED">Jugado</option>
-                  <option value="COMPLETED">Completado 🏆</option>
-                  <option value="ABANDONED">Abandonado o pausado ❌</option>
-                </select>
+                <div className="relative" ref={progressMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setProgressMenuOpen(prev => !prev)}
+                    className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">{selectedProgressOption.icon}</span>
+                      <span className="text-left">
+                        <span className="font-semibold text-slate-200 block">{selectedProgressOption.label}</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">{selectedProgressOption.helper}</span>
+                      </span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-slate-500 transition ${progressMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {progressMenuOpen && (
+                    <div className="absolute z-20 mt-2 w-full bg-[#07090e] border border-slate-800 rounded-xl p-1.5 shadow-2xl space-y-1">
+                      {PROGRESS_PHASE_OPTIONS.map(option => {
+                        const active = status === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setStatus(option.value);
+                              setProgressMenuOpen(false);
+                            }}
+                            className={`w-full text-left rounded-lg px-2.5 py-2 transition cursor-pointer flex items-start gap-2 ${
+                              active
+                                ? 'bg-blue-600/15 border border-blue-500/25'
+                                : 'border border-transparent hover:bg-slate-800/80'
+                            }`}
+                          >
+                            <span className="text-sm leading-4 mt-0.5">{option.icon}</span>
+                            <span>
+                              <span className={`text-xs font-semibold block ${active ? 'text-blue-300' : 'text-slate-200'}`}>
+                                {option.label}
+                              </span>
+                              <span className={`text-[10px] block mt-0.5 ${active ? 'text-blue-400/85' : 'text-slate-500'}`}>
+                                {option.helper}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -416,23 +652,17 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                   <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" /> Empezado el
                   </label>
-                  <input
-                    type="date"
-                    value={startedAt}
-                    onChange={(e) => setStartedAt(e.target.value)}
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
-                  />
+                  <DatePicker value={startedAt} onChange={setStartedAt} placeholder="Selecciona inicio" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" /> Completado el
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={completedAt}
-                    disabled={status !== 'COMPLETED'}
-                    onChange={(e) => setCompletedAt(e.target.value)}
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition disabled:opacity-40"
+                    onChange={setCompletedAt}
+                    placeholder="Selecciona fin"
+                    disabled={status !== 'COMPLETED' && status !== 'PLAYED'}
                   />
                 </div>
               </div>
@@ -507,6 +737,19 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                     </div>
 
                     <div className="space-y-1">
+                      {(rev.rating ?? 0) > 0 && (
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star
+                              key={star}
+                              className={`w-3.5 h-3.5 ${(rev.rating ?? 0) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`}
+                            />
+                          ))}
+                          <span className="text-[10px] text-slate-500 font-semibold ml-1">
+                            {(rev.rating ?? 0)}/5
+                          </span>
+                        </div>
+                      )}
                       <h4 className="text-xs font-bold text-slate-200">{rev.title}</h4>
                       <p className="text-xs text-slate-450 leading-relaxed">{rev.content}</p>
                     </div>
@@ -525,19 +768,24 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
             <h3 className="font-bold text-slate-300 font-display text-sm">Reseñar este juego</h3>
             <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
               <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">Rating general</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Rating general (mismo del tracking)
+                </label>
                 <div className="flex gap-1.5 bg-[#07090e] p-2 border border-slate-800 rounded-xl justify-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
-                      onClick={() => setReviewRating(star)}
+                      onClick={() => setRating(star)}
                       className="p-0.5 hover:scale-110 transition cursor-pointer"
                     >
-                      <Star className={`w-5 h-5 ${reviewRating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
+                      <Star className={`w-5 h-5 ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
                     </button>
                   ))}
                 </div>
+                <p className="text-[10px] text-slate-500 mt-1 text-center">
+                  Este valor es único y se comparte entre tu diario y tu reseña.
+                </p>
               </div>
 
               <div>

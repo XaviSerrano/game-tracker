@@ -54,6 +54,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, currentUser, o
           id: `rev_${lib.gameId}`,
           userId: userId,
           gameId: lib.gameId,
+          rating: lib.rating,
           title: lib.notes ? "Anotación de Diario" : "Valoración",
           content: lib.notes || "Añadido con nota rápida.",
           likes: [],
@@ -303,10 +304,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, currentUser, o
                         {rev.game.name}
                       </button>
                       <div className="flex gap-0.5 text-yellow-400">
-                        {rev.id.includes('rev_') ? (
+                        {(rev.rating ?? 0) > 0 ? (
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(star => (
-                              <Star key={star} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              <Star
+                                key={star}
+                                className={`w-3 h-3 ${(rev.rating ?? 0) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`}
+                              />
                             ))}
                           </div>
                         ) : null}

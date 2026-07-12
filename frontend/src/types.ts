@@ -40,6 +40,7 @@ export interface Review {
   gameId: number;
   title: string;
   content: string;
+  rating?: number; // normalized from user's library rating (1-5, 0 unrated)
   likes: string[]; // array of user IDs who liked this review
   createdAt: string;
 }
