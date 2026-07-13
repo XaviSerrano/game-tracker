@@ -17,7 +17,7 @@ const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 app.use(express.json());
 
-// --- AUTENTICACI�N MIDDLEWARE ---
+// --- AUTENTICACIÓN MIDDLEWARE ---
 interface AuthenticatedRequest extends express.Request {
   currUser?: User;
   authToken?: string;
@@ -62,7 +62,7 @@ const createAuthMailer = () => {
     };
   }
 
-  console.warn('SMTP no configurado. Los emails de recuperaci�n se registrar�n en consola para entorno local.');
+  console.warn('SMTP no configurado. Los emails de recuperación se registraron en consola para entorno local.');
   return {
     transport: nodemailer.createTransport({ jsonTransport: true }),
     from,
@@ -82,9 +82,9 @@ const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken
   const info = await authMailer.transport.sendMail({
     from: authMailer.from,
     to: user.email,
-    subject: 'Recupera tu contrase�a de GameTracker',
-    text: `Hola ${user.username},\n\nHemos recibido una solicitud para restablecer tu contrase�a. Usa este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.`,
-    html: `<p>Hola <strong>${user.username}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contrase�a.</p><p><a href="${resetUrl}">Restablecer contrase�a</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
+    subject: 'Recupera tu contraseña de GameTracker',
+    text: `Hola ${user.username},\n\nHemos recibido una solicitud para restablecer tu contraseña. Usa este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.`,
+    html: `<p>Hola <strong>${user.username}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contraseña.</p><p><a href="${resetUrl}">Restablecer contraseña</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
   });
 
   if (!authMailer.configured) {
@@ -100,13 +100,13 @@ const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken
 const authenticate = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Falta token de autorizaci�n' });
+    return res.status(401).json({ error: 'Falta token de autorización' });
   }
 
   const token = authHeader.split(' ')[1];
   const user = db.getUserBySessionToken(token);
   if (!user) {
-    return res.status(401).json({ error: 'Sesi�n inv�lida o expirada.' });
+    return res.status(401).json({ error: 'Sesión inválida o expirada.' });
   }
 
   req.authToken = token;
@@ -114,28 +114,28 @@ const authenticate = (req: AuthenticatedRequest, res: express.Response, next: ex
   next();
 };
 
-// --- ENDPOINTS DE AUTENTICACI�N ---
+// --- ENDPOINTS DE AUTENTICACIÓN ---
 
 app.post('/api/auth/register', (req, res) => {
   const { username, email, password, bio, avatar } = req.body;
   if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Username, email y contrase�a son obligatorios.' });
+    return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
   }
 
   if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-    return res.status(400).json({ error: `La contrase�a debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+    return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
   }
 
   const normalizedEmail = String(email).trim().toLowerCase();
   const normalizedUsername = String(username).trim();
   const existingEmail = db.getUserByEmail(normalizedEmail);
   if (existingEmail) {
-    return res.status(400).json({ error: 'El email ya est� registrado.' });
+    return res.status(400).json({ error: 'El email ya está registrado.' });
   }
 
   const existingUser = db.getUserByUsername(normalizedUsername);
   if (existingUser) {
-    return res.status(400).json({ error: 'El nombre de usuario ya est� en uso.' });
+    return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
   }
 
   const id = `user_${Date.now()}`;
@@ -144,7 +144,7 @@ app.post('/api/auth/register', (req, res) => {
     username: normalizedUsername,
     email: normalizedEmail,
     avatar: avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${normalizedUsername}`,
-    bio: bio || '�Hola! Soy nuevo en GameTracker.',
+    bio: bio || 'Hola! Soy nuevo en GameTracker.',
     createdAt: new Date().toISOString()
   };
 
@@ -155,7 +155,7 @@ app.post('/api/auth/register', (req, res) => {
     id: `act_${Date.now()}`,
     userId: id,
     type: 'FOLLOWED',
-    details: 'se uni� a GameTracker ??',
+    details: 'se unió a GameTracker 🎮',
     createdAt: new Date().toISOString()
   });
 
@@ -166,12 +166,12 @@ app.post('/api/auth/register', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: 'El email y la contrase�a son obligatorios.' });
+    return res.status(400).json({ error: 'El email y la contraseña son obligatorios.' });
   }
 
   const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
   if (!authUser || !verifyPassword(password, authUser.passwordHash, authUser.passwordSalt)) {
-    return res.status(401).json({ error: 'Email o contrase�a incorrectos.' });
+    return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
   }
 
   const user = db.getUser(authUser.id)!;
@@ -186,7 +186,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 
   const genericResponse = {
-    message: 'Si existe una cuenta con ese email, recibir�s un enlace para restablecer la contrase�a.'
+    message: 'Si existe una cuenta con ese email, recibirás un enlace para restablecer la contraseña.'
   };
 
   const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
@@ -209,23 +209,23 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     });
   } catch (error) {
     console.error('Error sending password reset email:', error);
-    res.status(500).json({ error: 'No se pudo enviar el correo de recuperaci�n.' });
+    res.status(500).json({ error: 'No se pudo enviar el correo de recuperación.' });
   }
 });
 
 app.post('/api/auth/reset-password', (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) {
-    return res.status(400).json({ error: 'El token y la nueva contrase�a son obligatorios.' });
+    return res.status(400).json({ error: 'El token y la nueva contraseña son obligatorios.' });
   }
 
   if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
-    return res.status(400).json({ error: `La contrase�a debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+    return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
   }
 
   const authUser = db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
   if (!authUser) {
-    return res.status(400).json({ error: 'El enlace de recuperaci�n es inv�lido o ha caducado.' });
+    return res.status(400).json({ error: 'El enlace de recuperación es inválido o ha caducado.' });
   }
 
   const passwordData = hashPassword(password);
@@ -235,7 +235,7 @@ app.post('/api/auth/reset-password', (req, res) => {
   const user = db.getUser(authUser.id)!;
 
   res.json({
-    message: 'Contrase�a actualizada correctamente.',
+    message: 'Contraseña actualizada correctamente.',
     user,
     token: sessionToken
   });
@@ -798,5 +798,3 @@ async function startServer() {
 }
 
 startServer();
-
-
