@@ -30,160 +30,12 @@ interface DbSchema {
 }
 
 const DB_FILE = path.join(process.cwd(), 'appdata.json');
-const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 function hashPassword(password: string, salt = crypto.randomBytes(16).toString('hex')) {
   const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
   return { passwordHash, passwordSalt: salt };
 }
 
-function createSeedUser(user: User): StoredUser {
-  return {
-    ...user,
-    ...hashPassword(DEMO_ACCOUNT_PASSWORD),
-    passwordResetTokenHash: null,
-    passwordResetExpiresAt: null
-  };
-}
-
-// Catalog now comes from IGDB at runtime (no local game seed).
-
-const INITIAL_USERS: StoredUser[] = [
-  createSeedUser({
-    id: "user_alex",
-    username: "alex_gamer",
-    email: "alex@gametracker.com",
-    avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=alex",
-    bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.",
-    createdAt: "2025-01-10T12:00:00Z"
-  }),
-  createSeedUser({
-    id: "user_sam",
-    username: "vance_retro",
-    email: "sam@gametracker.com",
-    avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=sam",
-    bio: "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.",
-    createdAt: "2025-02-15T15:30:00Z"
-  }),
-  createSeedUser({
-    id: "user_lucia",
-    username: "lucia_indie",
-    email: "lucia@gametracker.com",
-    avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=lucia",
-    bio: "Indie games advocate. Pixel art, cozy farm simulators, and rogue-lites make my day.",
-    createdAt: "2025-03-01T09:45:00Z"
-  }),
-  createSeedUser({
-    id: "user_marcos",
-    username: "marcos_rpg",
-    email: "marcos@gametracker.com",
-    avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=marcos",
-    bio: "JRPG player & completionist. Elden Ring was brilliant, but Chrono Trigger is art.",
-    createdAt: "2025-03-12T18:20:00Z"
-  })
-];
-
-const INITIAL_USER_GAMES: UserGame[] = [
-  // Alex Games
-  { userId: "user_alex", gameId: 119133, status: "COMPLETED", rating: 5, hoursPlayed: 145, startedAt: "2025-01-11", completedAt: "2025-02-28", notes: "Best boss designs in souls history. Malenia took 48 attempts but we got her!", updatedAt: "2025-02-28T22:00:00Z" },
-  { userId: "user_alex", gameId: 119171, status: "PLAYING", rating: 5, hoursPlayed: 62, startedAt: "2025-03-01", completedAt: null, notes: "Tactical combat behaves so well! Playing as a chaotic good bard.", updatedAt: "2025-03-24T12:00:00Z" },
-  { userId: "user_alex", gameId: 113112, status: "COMPLETED", rating: 4, hoursPlayed: 45, startedAt: "2025-01-20", completedAt: "2025-02-05", notes: "Incredibly tight controls and excellent voice acting. Zag is fantastic.", updatedAt: "2025-02-05T19:30:00Z" },
-  { userId: "user_alex", gameId: 13177, status: "WISHLIST", rating: 0, hoursPlayed: 0, startedAt: null, completedAt: null, notes: "Need a cozy game to wind down after intensive raiding", updatedAt: "2025-03-10T14:15:00Z" },
-
-  // Sam Games
-  { userId: "user_sam", gameId: 1253, status: "COMPLETED", rating: 5, hoursPlayed: 85, startedAt: "2025-01-01", completedAt: "2025-01-25", notes: "The absolute standard of story pacing, music, and art synergy.", updatedAt: "2025-01-25T11:00:00Z" },
-  { userId: "user_sam", gameId: 384, status: "COMPLETED", rating: 5, hoursPlayed: 14, startedAt: "2025-02-01", completedAt: "2025-02-05", notes: "Terrifying atmosphere. Unparalleled psychological horror elements.", updatedAt: "2025-02-05T23:30:00Z" },
-  { userId: "user_sam", gameId: 1942, status: "PLAYED", rating: 4, hoursPlayed: 92, startedAt: "2025-01-15", completedAt: "2025-03-10", notes: "Amazing story, although combat feels a bit simplistic. Geralt is a legend.", updatedAt: "2025-03-10T18:00:00Z" },
-  { userId: "user_sam", gameId: 215160, status: "PLAYING", rating: 4, hoursPlayed: 11, startedAt: "2025-03-15", completedAt: null, notes: "Loving the shift between daytime deep sea dive and night sushi tycoon!", updatedAt: "2025-03-20T21:00:00Z" },
-
-  // Lucia Games
-  { userId: "user_lucia", gameId: 19404, status: "COMPLETED", rating: 5, hoursPlayed: 56, startedAt: "2025-01-05", completedAt: "2025-02-12", notes: "Breathtaking soundtrack, beautiful and tragic world structure. Pantheon of Hallownest is brutal.", updatedAt: "2025-02-12T16:00:00Z" },
-  { userId: "user_lucia", gameId: 26999, status: "COMPLETED", rating: 5, hoursPlayed: 28, startedAt: "2025-02-15", completedAt: "2025-02-28", notes: "Tightest controls in a 2D action platformer. Hit home emotionally in every chapter.", updatedAt: "2025-02-28T21:40:00Z" },
-  { userId: "user_lucia", gameId: 113112, status: "PLAYING", rating: 5, hoursPlayed: 22, startedAt: "2025-03-01", completedAt: null, notes: "Fists of Talos are my absolute favorite build.", updatedAt: "2025-03-22T19:00:00Z" },
-  { userId: "user_lucia", gameId: 215160, status: "COMPLETED", rating: 4, hoursPlayed: 29, startedAt: "2025-02-01", completedAt: "2025-02-20", notes: "Very charming and funny characters. Cozy fishing is great.", updatedAt: "2025-02-20T14:30:00Z" },
-  { userId: "user_lucia", gameId: 119133, status: "PLAYING", rating: 3, hoursPlayed: 18, startedAt: "2025-03-10", completedAt: null, notes: "Beautiful views, but I am constantly getting crushed. Need to find more seeds.", updatedAt: "2025-03-18T10:00:00Z" },
-
-  // Marcos Games
-  { userId: "user_marcos", gameId: 119171, status: "COMPLETED", rating: 5, hoursPlayed: 148, startedAt: "2025-01-05", completedAt: "2025-02-20", notes: "Unbelievable depth of choice. Act 3 was a performance grind but outstanding narrative payoffs.", updatedAt: "2025-02-20T23:00:00Z" },
-  { userId: "user_marcos", gameId: 1253, status: "COMPLETED", rating: 5, hoursPlayed: 78, startedAt: "2025-01-20", completedAt: "2025-02-10", notes: "Multi-character combo techniques are brilliant. Peak retro art style.", updatedAt: "2025-02-10T19:00:00Z" },
-  { userId: "user_marcos", gameId: 1942, status: "PLAYING", rating: 4, hoursPlayed: 35, startedAt: "2025-03-01", completedAt: null, notes: "Novigrad quests are extremely detailed. Skellige soundtrack is fantastic.", updatedAt: "2025-03-23T22:30:00Z" }
-];
-
-const INITIAL_REVIEWS: Review[] = [
-  {
-    id: "rev1",
-    userId: "user_alex",
-    gameId: 119133,
-    title: "Revolutionary Open World Masterpiece",
-    content: "Elden Ring takes the tight, legendary combat design of souls-like games and spreads it across a breathtaking canvas. No map markers, no chore lists. Just raw curiosity prompting exploration. Exploring Siofra River for the first time is a sensory experience I will never forget. Challenging but undeniably a design pinnacle.",
-    likes: ["user_sam", "user_lucia", "user_marcos"],
-    createdAt: "2025-02-28T22:15:00Z"
-  },
-  {
-    id: "rev2",
-    userId: "user_sam",
-    gameId: 1253,
-    title: "Chrono Trigger: A Flawless Standard",
-    content: "Even after three decades, Chrono Trigger remains completely flawless. Yasunori Mitsuda's score weaves melancholic beauty, Akira Toriyama's sprites have endless charisma, and the combat design features zero filler battles. The time travel mechanics are tidy, rewarding, and culminate in numerous clever endings. It isn't just an RPG; it is a masterpiece.",
-    likes: ["user_marcos", "user_alex"],
-    createdAt: "2025-01-25T11:30:00Z"
-  },
-  {
-    id: "rev3",
-    userId: "user_lucia",
-    gameId: 26999,
-    title: "Extremely Tight, Emotionally Heavy Platformer",
-    content: "Celeste is a miracle of a platformer. The dash mechanics, wind physics, and level gimmicks are polished to an insane degree. But what makes it immortal is how Madeline's ascent mimics her mental health journey. The mountain isn't just a hurdle; it's a mirror. A spectacular, tough-as-nails tribute to self-acceptance.",
-    likes: ["user_alex", "user_lucia"],
-    createdAt: "2025-02-28T21:50:00Z"
-  }
-];
-
-const INITIAL_CUSTOM_LISTS: CustomList[] = [
-  {
-    id: "list1",
-    userId: "user_lucia",
-    name: "Masterpieces of Pixel Art",
-    description: "Games where pixel density and visual choreography tell half the story. Absolute standouts in modern indie history.",
-    createdAt: "2025-02-20T15:00:00Z"
-  },
-  {
-    id: "list2",
-    userId: "user_sam",
-    name: "Legends of the Golden Era",
-    description: "The absolute pinnacles of RPG and atmospheric design that paved the road for contemporary mechanics.",
-    createdAt: "2025-02-10T12:00:00Z"
-  }
-];
-
-const INITIAL_CUSTOM_LIST_ITEMS: CustomListItem[] = [
-  { listId: "list1", gameId: 19404 }, // Hollow Knight
-  { listId: "list1", gameId: 26999 }, // Celeste
-  { listId: "list1", gameId: 113112 }, // Hades
-  { listId: "list1", gameId: 215160 }, // Dave the Diver
-  { listId: "list2", gameId: 1253 }, // Chrono Trigger
-  { listId: "list2", gameId: 384 }  // Silent Hill 2
-];
-
-const INITIAL_FOLLOWS: Follow[] = [
-  { followerId: "user_alex", followingId: "user_sam" },
-  { followerId: "user_alex", followingId: "user_lucia" },
-  { followerId: "user_sam", followingId: "user_marcos" },
-  { followerId: "user_sam", followingId: "user_alex" },
-  { followerId: "user_lucia", followingId: "user_alex" },
-  { followerId: "user_lucia", followingId: "user_sam" },
-  { followerId: "user_marcos", followingId: "user_alex" },
-  { followerId: "user_marcos", followingId: "user_sam" }
-];
-
-const INITIAL_ACTIVITIES: Activity[] = [
-  { id: "act1", userId: "user_alex", type: "COMPLETED", gameId: 119133, details: "with a rating of 5/5 ⭐", createdAt: "2025-02-28T22:00:00Z" },
-  { id: "act2", userId: "user_sam", type: "COMPLETED", gameId: 1253, details: "with a rating of 5/5 ⭐ and 85 hours played!", createdAt: "2025-01-25T11:00:00Z" },
-  { id: "act3", userId: "user_lucia", type: "REVIEWED", gameId: 26999, details: "written review 'Extremely Tight, Emotionally Heavy'", createdAt: "2025-02-28T21:50:00Z" },
-  { id: "act4", userId: "user_alex", type: "PLAYING", gameId: 119171, details: "just started playing!", createdAt: "2025-03-01T12:00:00Z" },
-  { id: "act5", userId: "user_lucia", type: "LIST_CREATED", details: "created 'Masterpieces of Pixel Art'", createdAt: "2025-02-20T15:00:00Z" },
-  { id: "act6", userId: "user_marcos", type: "FOLLOWED", targetUserId: "user_alex", details: "started following alex_gamer", createdAt: "2025-03-15T18:00:00Z" }
-];
 
 class GameDatabase {
   private data: DbSchema;
@@ -238,23 +90,20 @@ class GameDatabase {
 
   private seed() {
     this.data = {
-      users: [...INITIAL_USERS],
+      users: [],
       games: [],
-      userGames: [...INITIAL_USER_GAMES],
-      reviews: [...INITIAL_REVIEWS],
-      customLists: [...INITIAL_CUSTOM_LISTS],
-      customListItems: [...INITIAL_CUSTOM_LIST_ITEMS],
-      follows: [...INITIAL_FOLLOWS],
-      activities: [...INITIAL_ACTIVITIES],
+      userGames: [],
+      reviews: [],
+      customLists: [],
+      customListItems: [],
+      follows: [],
+      activities: [],
       sessions: []
     };
     this.save();
     console.log("Database successfully seeded with mock data!");
   }
 
-    private isDemoUserId(userId: string): boolean {
-    return INITIAL_USERS.some((user) => user.id === userId);
-  }
 
   private hydrateStoredUser(user: Partial<StoredUser> & User): StoredUser {
     const normalized: StoredUser = {
@@ -263,10 +112,9 @@ class GameDatabase {
       passwordResetExpiresAt: user.passwordResetExpiresAt ?? null
     };
 
-    if ((!normalized.passwordHash || !normalized.passwordSalt) && this.isDemoUserId(normalized.id)) {
+    if ((!normalized.passwordHash || !normalized.passwordSalt)) {
       return {
         ...normalized,
-        ...hashPassword(DEMO_ACCOUNT_PASSWORD)
       };
     }
 

@@ -234,7 +234,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
         )}
 
         {!isForgot && !isReset && (
-          <div className="flex bg-[#07090e] p-1 rounded-xl mb-6">
+          <div className="flex bg-[#07090e] p-1 rounded-xl">
             <button
               type="button"
               onClick={() => switchMode('login')}
@@ -254,46 +254,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
 
         {mode === 'login' && (
           <div>
-            <div className="mb-6">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-3">
-                Cuentas demo (contraseña: {DEMO_ACCOUNT_PASSWORD})
-              </span>
-              <div className="grid grid-cols-2 gap-3">
-                {preseededUsers.map(user => (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => prefillDemoUser(user)}
-                    disabled={loading}
-                    className="p-3 bg-[#07090e] border border-slate-800/80 hover:border-blue-600/50 rounded-xl transition text-left group"
-                  >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <img
-                        src={user.avatar}
-                        alt={user.username}
-                        referrerPolicy="no-referrer"
-                        className="w-8 h-8 rounded-full border border-slate-800 group-hover:border-blue-500/30"
-                      />
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
-                          @{user.username}
-                        </p>
-                        <p className="text-[9px] text-slate-500 truncate capitalize">
-                          Autocompletar acceso
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-slate-400 line-clamp-2 h-7">
-                      {user.bio}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <div className="relative flex py-4 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-4 text-xs text-slate-600">O entra manualmente</span>
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
 

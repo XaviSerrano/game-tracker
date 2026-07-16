@@ -13,7 +13,6 @@ const PORT = parseInt(process.env.PORT || '3000');
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 const MIN_PASSWORD_LENGTH = 8;
-const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 app.use(express.json());
 
@@ -252,9 +251,6 @@ app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
   res.json(req.currUser);
 });
 
-app.get('/api/auth/demo-credentials', (_req, res) => {
-  res.json({ password: DEMO_ACCOUNT_PASSWORD });
-});
 
 // --- ENDPOINTS DE USUARIOS ---
 
