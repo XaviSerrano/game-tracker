@@ -23,7 +23,6 @@ interface PlatformStyle {
 }
 
 const PROGRESS_PHASE_OPTIONS: Array<{ value: GameStatus; label: string; helper: string; icon: string }> = [
-  { value: 'WISHLIST', label: 'Wishlist', helper: 'Lista de deseos', icon: '⭐' },
   { value: 'PLAYING', label: 'Jugando', helper: 'En progreso', icon: '🎮' },
   { value: 'PLAYED', label: 'Jugado', helper: 'Sesión cerrada', icon: '🕹️' },
   { value: 'COMPLETED', label: 'Completado', helper: 'Objetivo cumplido', icon: '🏆' },
