@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Game, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
-import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft, ChevronDown, X } from 'lucide-react';
 import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
 import { DatePicker } from './DatePicker.tsx';
 
@@ -192,6 +192,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [message, setMessage] = useState('');
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
+  const [listModalOpen, setListModalOpen] = useState(false);
   const selectedProgressOption = PROGRESS_PHASE_OPTIONS.find(option => option.value === status) || PROGRESS_PHASE_OPTIONS[0];
 
   const fetchGameData = async () => {
@@ -525,12 +526,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
           
           {/* Tracking control form */}
           <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl space-y-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-blue-400" />
                 Tú diario de Juego (Track)
               </h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={handleAddToWishlist}
@@ -538,6 +539,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                   className="p-1 px-2.5 text-[10px] text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/10 transition cursor-pointer rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingWishlist ? 'Guardando...' : 'Añadir a wishlist'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListModalOpen(true)}
+                  className="p-1 px-2.5 text-[10px] text-blue-300 border border-blue-500/25 hover:bg-blue-500/10 transition cursor-pointer rounded-lg flex items-center gap-1"
+                >
+                  <ListPlus className="w-3 h-3" /> Añadir a lista personalizada
                 </button>
                 {userGame && (
                   <button
@@ -817,30 +825,61 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
               </button>
             </form>
           </div>
-
-          {/* Add to Custom List form */}
-          {myLists.length > 0 && (
-            <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl space-y-3">
-              <h4 className="font-bold text-slate-300 font-display text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <ListPlus className="w-4 h-4 text-blue-400" /> Añadir a mi lista de deseos
-              </h4>
-              <p className="text-[11px] text-slate-500">Agrega esta gema a una de tus listas personalizadas existentes:</p>
-              <div className="space-y-1.5 pt-1.5">
-                {myLists.map(list => (
-                  <button
-                    key={list.id}
-                    onClick={() => handleAddToList(list.id)}
-                    className="w-full text-left p-2.5 bg-[#07090e] hover:bg-blue-600/10 border border-slate-800 hover:border-blue-500/20 text-xs text-slate-300 hover:text-blue-400 rounded-xl font-medium transition cursor-pointer flex items-center justify-between"
-                  >
-                    <span>{list.name}</span>
-                    <span className="text-[10px] text-slate-500 font-normal">Añadir +</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Add to Custom List modal */}
+      {listModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setListModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#0f121d] border border-slate-850 rounded-2xl p-5 space-y-3 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-slate-300 font-display text-sm flex items-center gap-1.5">
+                <ListPlus className="w-4 h-4 text-blue-400" /> Añadir a lista personalizada
+              </h4>
+              <button
+                type="button"
+                onClick={() => setListModalOpen(false)}
+                className="text-slate-500 hover:text-slate-300 transition cursor-pointer p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {myLists.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">
+                Todavía no tienes listas personalizadas creadas.
+              </p>
+            ) : (
+              <>
+                <p className="text-[11px] text-slate-500">
+                  Agrega esta gema a una de tus listas personalizadas existentes:
+                </p>
+                <div className="space-y-1.5 pt-1 max-h-64 overflow-y-auto">
+                  {myLists.map(list => (
+                    <button
+                      key={list.id}
+                      onClick={() => {
+                        handleAddToList(list.id);
+                        setListModalOpen(false);
+                      }}
+                      className="w-full text-left p-2.5 bg-[#07090e] hover:bg-blue-600/10 border border-slate-800 hover:border-blue-500/20 text-xs text-slate-300 hover:text-blue-400 rounded-xl font-medium transition cursor-pointer flex items-center justify-between"
+                    >
+                      <span>{list.name}</span>
+                      <span className="text-[10px] text-slate-500 font-normal">Añadir +</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
