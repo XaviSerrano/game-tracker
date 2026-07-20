@@ -228,7 +228,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
       }
 
       // 4. Fetch my custom lists (for add-to-list action)
-      const listsRes = await fetch('/api/lists', {
+      const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

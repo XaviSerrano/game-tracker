@@ -14,9 +14,14 @@ interface HomeFeedProps {
   token: string;
 }
 
+type FeedActivity = Activity & {
+  author?: User | null;
+  targetUser?: User | null;
+};
+
 export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, onSelectUser, users, token }) => {
   const [feedScope, setFeedScope] = useState<'all' | 'following'>('all');
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<FeedActivity[]>([]);
   const [recs, setRecs] = useState<{ game: Game; score: number }[]>([]);
   const [activityGames, setActivityGames] = useState<Record<number, Game>>({});
   const [loading, setLoading] = useState(true);
@@ -27,7 +32,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
       // 1. Fetch Feed
       const feedRes = await fetch(`/api/social/feed?userId=${currentUser.id}&scope=${feedScope}`);
       const feedData = await feedRes.json();
-      setActivities(feedData);
+      setActivities(Array.isArray(feedData) ? feedData : []);
 
       const activityGameIds = Array.isArray(feedData)
         ? Array.from(new Set(feedData
@@ -79,8 +84,8 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
     fetchFeedAndRecs();
   }, [feedScope]);
 
-  const mapUserIdToUser = (uid: string) => {
-    return users.find(u => u.id === uid) || {
+  const mapUserIdToUser = (uid: string, resolvedUser?: User | null) => {
+    return resolvedUser || users.find(u => u.id === uid) || {
       id: uid,
       username: 'usuario',
       avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=user',
@@ -88,8 +93,8 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
     };
   };
 
-  const renderActivityDescription = (act: Activity) => {
-    const actor = mapUserIdToUser(act.userId);
+  const renderActivityDescription = (act: FeedActivity) => {
+    const actor = mapUserIdToUser(act.userId, act.author);
     let nameMarkup = (
       <button 
         onClick={() => onSelectUser(act.userId)}
@@ -100,7 +105,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
     );
 
     if (act.type === 'FOLLOWED' && act.targetUserId) {
-      const target = mapUserIdToUser(act.targetUserId);
+      const target = mapUserIdToUser(act.targetUserId, act.targetUser);
       return (
         <span className="text-xs text-slate-300">
           {nameMarkup} comenzó a seguir a <button onClick={() => onSelectUser(act.targetUserId)} className="font-bold text-white hover:text-blue-400 transition cursor-pointer">@{target.username}</button>
@@ -210,7 +215,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
           ) : (
             <div className="space-y-3">
               {activities.map(act => {
-                const actor = mapUserIdToUser(act.userId);
+                const actor = mapUserIdToUser(act.userId, act.author);
                 const relatedGame = typeof act.gameId === 'number' ? activityGames[act.gameId] : undefined;
                 return (
                   <div

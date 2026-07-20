@@ -300,15 +300,21 @@ app.get('/api/social/feed', (req, res) => {
   const userId = req.query.userId as string;
   const scope = req.query.scope as string; // 'all' or 'following'
 
+  const withUsers = (activities: Activity[]) => activities.map((activity) => ({
+    ...activity,
+    author: db.getUser(activity.userId),
+    targetUser: activity.targetUserId ? db.getUser(activity.targetUserId) : null
+  }));
+
   if (scope === 'following' && userId) {
     const following = db.getFollowing(userId);
     // Include user's own activity as well
     const feed = db.getActivities([...following, userId]);
-    return res.json(feed);
+    return res.json(withUsers(feed));
   }
 
   const feed = db.getActivities();
-  res.json(feed);
+  res.json(withUsers(feed));
 });
 
   app.post('/api/games/import/:id', async (req, res) => {
@@ -656,16 +662,13 @@ app.post('/api/reviews/:id/like', authenticate, (req: AuthenticatedRequest, res)
 
 // --- ENDPOINTS DE LISTAS PERSONALIZADAS ---
 
-// Listas privadas del usuario autenticado
+// Listas públicas, opcionalmente filtradas por creador.
 app.get(
   '/api/lists',
-  authenticate,
-  async (req: AuthenticatedRequest, res) => {
+  async (req, res) => {
     try {
-      const user = req.currUser!;
-
-      // Solo las listas del usuario autenticado
-      const lists = db.getLists(user.id);
+      const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+      const lists = db.getLists(userId);
 
       const fullLists = await Promise.all(
         lists.map(async (list) => {
@@ -709,13 +712,10 @@ app.get(
   }
 );
 
-// Detalle de lista: solo su creador puede consultarla.
-app.get('/api/lists/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+// Detalle público de lista.
+app.get('/api/lists/:id', async (req, res) => {
   const list = db.getList(req.params.id);
   if (!list) return res.status(404).json({ error: 'Lista no encontrada' });
-  if (list.userId !== req.currUser!.id) {
-    return res.status(403).json({ error: 'No tienes permiso para ver esta lista.' });
-  }
   const author = db.getUser(list.userId);
   const gameIds = db.getListItems(list.id);
   const games = (await Promise.all(gameIds.map(async (gId) => {

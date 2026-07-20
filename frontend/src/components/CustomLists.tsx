@@ -24,7 +24,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   const fetchLists = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/lists', {
+      const res = await fetch(`/api/lists?userId=${currentUser.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
