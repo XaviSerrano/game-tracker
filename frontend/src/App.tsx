@@ -186,7 +186,7 @@ export default function App() {
           />
         );
       case 'discover':
-        return <Discover onSelectGame={handleSelectGame} token={token} />;
+        return <Discover onSelectGame={handleSelectGame} onSelectUser={handleSelectUser} token={token} />;
       case 'library':
         return <Library userId={currentUser.id} onSelectGame={handleSelectGame} token={token} />;
       case 'lists':

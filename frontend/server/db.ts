@@ -359,6 +359,18 @@ class GameDatabase {
       .all() as User[];
   }
 
+  searchUsersByUsername(query: string): User[] {
+    return this.db
+      .prepare(`
+        SELECT id, username, email, avatar, bio, createdAt
+        FROM users
+        WHERE LOWER(username) LIKE LOWER(?)
+        ORDER BY username ASC
+        LIMIT 20
+      `)
+      .all(`%${query.trim()}%`) as User[];
+  }
+
   getUser(userId: string): User | null {
     const user = this.db
       .prepare(`

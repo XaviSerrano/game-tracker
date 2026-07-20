@@ -255,6 +255,13 @@ app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
 // --- ENDPOINTS DE USUARIOS ---
 
 // Obtener perfiles públicos
+app.get('/api/users', (req, res) => {
+  const query = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  if (!query) return res.json([]);
+
+  res.json(db.searchUsersByUsername(query));
+});
+
 app.get('/api/users/:id', (req, res) => {
   const user = db.getUser(req.params.id);
   if (!user) {

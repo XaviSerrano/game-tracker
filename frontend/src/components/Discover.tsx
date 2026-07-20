@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Game } from '../types.ts';
-import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw, Bookmark } from 'lucide-react';
+import { Game, User } from '../types.ts';
+import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw, Bookmark, Users } from 'lucide-react';
 import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
@@ -8,11 +8,13 @@ import { TiltCard } from './TiltCard.tsx';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
+  onSelectUser: (userId: string) => void;
   token: string;
 }
 
-export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
+export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token }) => {
   const [games, setGames] = useState<Game[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -23,6 +25,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
+  const isUserSearch = query.trim().startsWith('@');
 
   // Preseeded Categories
   const GENRES = ["Action", "Adventure", "RPG", "Indie", "Metroidvania", "Platformer", "Roguelike", "Horror", "Survival", "Cozy", "Strategy", "Puzzle"];
@@ -56,14 +59,42 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
     }
   };
 
+  const searchUsers = async (searchVal: string) => {
+    const username = searchVal.trim().slice(1).trim();
+    setLoading(true);
+    setApiError(null);
+    setGames([]);
+
+    if (!username) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users?search=${encodeURIComponent(username)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(typeof data?.error === 'string' ? data.error : 'No se pudieron buscar los usuarios.');
+      }
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('User search error:', err);
+      setUsers([]);
+      setApiError(err instanceof Error ? err.message : 'Error inesperado al buscar usuarios.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
-      searchGames(
-        query,
-        selectedGenre,
-        selectedPlatform,
-        sortBy
-      );
+      if (query.trim().startsWith('@')) {
+        searchUsers(query);
+      } else {
+        setUsers([]);
+        searchGames(query, selectedGenre, selectedPlatform, sortBy);
+      }
     }, 300);
 
     return () => clearTimeout(timeout);
@@ -102,7 +133,11 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    searchGames(query, selectedGenre, selectedPlatform, sortBy);
+    if (isUserSearch) {
+      searchUsers(query);
+    } else {
+      searchGames(query, selectedGenre, selectedPlatform, sortBy);
+    }
   };
 
   const handleQuickWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -165,7 +200,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Busca Elden Ring, Hollow Knight, Baldur's Gate..."
+              placeholder="Busca juegos o @usuarios..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl px-4 py-3 pl-11 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition outline-none"
@@ -178,17 +213,19 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
           >
             Buscar
           </button>
-          <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-3.5 py-3 border rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 ${showFilters ? 'bg-slate-800/80 text-blue-400 border-blue-500/20' : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'}`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-          </button>
+          {!isUserSearch && (
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3.5 py-3 border rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 ${showFilters ? 'bg-slate-800/80 text-blue-400 border-blue-500/20' : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          )}
         </form>
 
         {/* Extended filters */}
-        {showFilters && (
+        {showFilters && !isUserSearch && (
           <div className="mt-1 p-5 md:p-6 bg-[#0f121d] border border-slate-850 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 animate-fade-in">
             {/* Genre filter */}
             <div className="space-y-2.5">
@@ -257,8 +294,47 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, token }) => {
         </div>
       )}
 
-      {/* Grid listing */}
-      {loading ? (
+      {isUserSearch ? (
+        loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-[#0f121d] border border-slate-850 rounded-xl" />)}
+          </div>
+        ) : apiError ? (
+          <div className="bg-[#0f121d] border border-red-500/20 p-12 rounded-2xl text-center space-y-3">
+            <Users className="w-10 h-10 text-red-400 mx-auto" />
+            <p className="text-red-300 text-sm font-semibold">Error buscando usuarios</p>
+            <p className="text-slate-400 text-xs">{apiError}</p>
+          </div>
+        ) : query.trim() === '@' ? (
+          <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-2">
+            <Users className="w-10 h-10 text-slate-700 mx-auto" />
+            <p className="text-slate-400 text-sm font-semibold">Escribe un nombre de usuario</p>
+            <p className="text-slate-500 text-xs">Por ejemplo, <span className="text-blue-400">@alex</span>.</p>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-2">
+            <Users className="w-10 h-10 text-slate-700 mx-auto" />
+            <p className="text-slate-400 text-sm font-semibold">No se encontraron usuarios</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {users.map(user => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => onSelectUser(user.id)}
+                className="flex items-center gap-3 text-left bg-[#0f121d] border border-slate-850 hover:border-blue-500/40 p-4 rounded-xl transition cursor-pointer"
+              >
+                <img src={user.avatar} alt={user.username} referrerPolicy="no-referrer" className="w-11 h-11 rounded-full border border-slate-800 bg-[#07090e]" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-white truncate">@{user.username}</span>
+                  <span className="block mt-1 text-[11px] text-slate-500 line-clamp-2">{user.bio || 'Sin bio por ahora.'}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
             <div key={i} className="space-y-2 animate-pulse bg-[#0f121d]/40 p-2.5 border border-slate-850 rounded-xl">
