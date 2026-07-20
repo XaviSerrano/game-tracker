@@ -62,11 +62,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId, currentUser, o
         }));
       setReviews(userReviews);
 
-      // 3. Fetch user's lists
-      const listsRes = await fetch(`/api/lists?userId=${userId}`);
-      if (listsRes.ok) {
-        const listsData = await listsRes.json();
-        setLists(listsData);
+      // 3. Las listas son privadas: solo se cargan en el perfil del creador.
+      if (isOwnProfile) {
+        const listsRes = await fetch('/api/lists', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (listsRes.ok) {
+          const listsData = await listsRes.json();
+          setLists(listsData);
+        }
+      } else {
+        setLists([]);
       }
 
       // 4. Check if following

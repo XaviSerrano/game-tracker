@@ -228,7 +228,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
       }
 
       // 4. Fetch my custom lists (for add-to-list action)
-      const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`);
+      const listsRes = await fetch('/api/lists', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (listsRes.ok) {
         const listsData = await listsRes.json();
         setMyLists(listsData);
@@ -379,7 +383,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const handleAddToList = async (listId: string) => {
     try {
       // Fetch list details, add gameId to array, resave
-      const listRes = await fetch(`/api/lists/${listId}`);
+      const listRes = await fetch(`/api/lists/${listId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (listRes.ok) {
         const listData = await listRes.json();
         const activeIds = listData.games.map((g: Game) => g.igdbId);

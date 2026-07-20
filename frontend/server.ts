@@ -649,39 +649,66 @@ app.post('/api/reviews/:id/like', authenticate, (req: AuthenticatedRequest, res)
 
 // --- ENDPOINTS DE LISTAS PERSONALIZADAS ---
 
-// Listas de todos
-app.get('/api/lists', async (req, res) => {
-  const userId = req.query.userId as string;
-  const lists = db.getLists(userId);
+// Listas privadas del usuario autenticado
+app.get(
+  '/api/lists',
+  authenticate,
+  async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = req.currUser!;
 
-  const fullLists = await Promise.all(lists.map(async (l) => {
-    const author = db.getUser(l.userId);
-    const gameIds = db.getListItems(l.id);
-    const games = (await Promise.all(gameIds.map(async (gId) => {
-      let game = db.getGame(gId);
-      if (!game) {
-        game = await IgdbService.getGameDetails(gId);
-        if (game) {
-          db.saveGame(game);
-        }
-      }
-      return game;
-    }))).filter(Boolean);
+      // Solo las listas del usuario autenticado
+      const lists = db.getLists(user.id);
 
-    return {
-      ...l,
-      author,
-      games
-    };
-  }));
+      const fullLists = await Promise.all(
+        lists.map(async (list) => {
+          const author = db.getUser(list.userId);
+          const gameIds = db.getListItems(list.id);
 
-  res.json(fullLists);
-});
+          const games = (
+            await Promise.all(
+              gameIds.map(async (gameId) => {
+                let game = db.getGame(gameId);
 
-// Detalle de lista
-app.get('/api/lists/:id', async (req, res) => {
+                if (!game) {
+                  game = await IgdbService.getGameDetails(gameId);
+
+                  if (game) {
+                    db.saveGame(game);
+                  }
+                }
+
+                return game;
+              })
+            )
+          ).filter(Boolean);
+
+          return {
+            ...list,
+            author,
+            games
+          };
+        })
+      );
+
+      res.json(fullLists);
+    } catch (error) {
+      console.error('Error obteniendo las listas:', error);
+
+      res.status(500).json({
+        error: 'No se pudieron cargar las listas.'
+      });
+    }
+  }
+);
+
+// Detalle de lista: solo su creador puede consultarla.
+app.get('/api/lists/:id', authenticate, async (req: AuthenticatedRequest, res) => {
   const list = db.getList(req.params.id);
   if (!list) return res.status(404).json({ error: 'Lista no encontrada' });
+  if (list.userId !== req.currUser!.id) {
+    return res.status(403).json({ error: 'No tienes permiso para ver esta lista.' });
+  }
   const author = db.getUser(list.userId);
   const gameIds = db.getListItems(list.id);
   const games = (await Promise.all(gameIds.map(async (gId) => {
