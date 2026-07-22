@@ -100,6 +100,62 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
     }
   };
 
+  const handleRemoveGameFromList = async (gameId: number) => {
+    if (!selectedList) return;
+
+    if (!window.confirm('¿Seguro que quieres eliminar este juego de la lista?')) {
+      return;
+    }
+
+    try {
+      const newGameIds = selectedList.games
+        .map(game => game.igdbId)
+        .filter(id => id !== gameId);
+
+      const res = await fetch(`/api/lists/${selectedList.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: selectedList.name,
+          description: selectedList.description,
+          gameIds: newGameIds
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('No se pudo eliminar el juego de la lista');
+      }
+
+      // Actualizamos la lista seleccionada inmediatamente
+      setSelectedList(prev => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          games: prev.games.filter(game => game.igdbId !== gameId)
+        };
+      });
+
+      // También actualizamos la lista del listado general
+      setLists(prevLists =>
+        prevLists.map(list =>
+          list.id === selectedList.id
+            ? {
+                ...list,
+                games: list.games.filter(game => game.igdbId !== gameId)
+              }
+            : list
+        )
+      );
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const toggleSelectGame = (gameId: number) => {
     if (selectedGameIds.includes(gameId)) {
       setSelectedGameIds(selectedGameIds.filter(id => id !== gameId));
@@ -229,11 +285,14 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {selectedList.games.map(game => (
+              {selectedList.games.map(game => (
+                <div
+                  key={game.igdbId}
+                  className="group bg-[#0f121d] border border-slate-850 p-2.5 rounded-xl transition relative"
+                >
                   <button
-                    key={game.igdbId}
                     onClick={() => onSelectGame(game.igdbId)}
-                    className="group bg-[#0f121d] border border-slate-850 p-2.5 rounded-xl transition text-left cursor-pointer"
+                    className="w-full text-left cursor-pointer"
                   >
                     <img
                       src={game.cover}
@@ -241,10 +300,28 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       referrerPolicy="no-referrer"
                       className="w-full aspect-[3/4] object-cover rounded-md border border-slate-900 group-hover:scale-[1.03] transition"
                     />
-                    <h4 className="text-xs font-bold text-white group-hover:text-blue-400 mt-3 truncate">{game.name}</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">{game.genres.slice(0, 1).join(', ') || 'Videojuego'}</p>
+
+                    <h4 className="text-xs font-bold text-white group-hover:text-blue-400 mt-3 truncate">
+                      {game.name}
+                    </h4>
+
+                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                      {game.genres.slice(0, 1).join(', ') || 'Videojuego'}
+                    </p>
                   </button>
-                ))}
+
+                  {selectedList.userId === currentUser.id && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGameFromList(game.igdbId)}
+                      className="absolute top-4 right-4 p-1.5 rounded-lg bg-black/75 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                      title="Eliminar de la lista"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
               </div>
             )}
           </div>
