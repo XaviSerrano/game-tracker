@@ -712,6 +712,41 @@ app.get(
   }
 );
 
+// Actualizar lista
+app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const listId = req.params.id;
+  const { name, description, gameIds } = req.body;
+
+  const list = db.getList(listId);
+
+  if (!list) {
+    return res.status(404).json({ error: 'Lista no encontrada.' });
+  }
+
+  if (list.userId !== user.id) {
+    return res.status(403).json({
+      error: 'No tienes permiso para editar esta lista.'
+    });
+  }
+
+  const updatedList = db.updateList(listId, {
+    name: name !== undefined ? name : list.name,
+    description: description !== undefined
+      ? description
+      : list.description
+  });
+
+  if (gameIds && Array.isArray(gameIds)) {
+    db.saveListItems(
+      listId,
+      gameIds.map(id => parseInt(id))
+    );
+  }
+
+  res.json(updatedList);
+});
+
 // Detalle público de lista.
 app.get('/api/lists/:id', async (req, res) => {
   const list = db.getList(req.params.id);

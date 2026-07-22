@@ -1060,6 +1060,47 @@ class GameDatabase {
     return list;
   }
 
+  updateList(
+    id: string,
+    updates: {
+      name?: string;
+      description?: string;
+    }
+  ): CustomList | null {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (updates.name !== undefined) {
+      fields.push('name = ?');
+      values.push(updates.name);
+    }
+
+    if (updates.description !== undefined) {
+      fields.push('description = ?');
+      values.push(updates.description);
+    }
+
+    if (fields.length === 0) {
+      return this.getList(id);
+    }
+
+    values.push(id);
+
+    const result = this.db
+      .prepare(`
+        UPDATE customLists
+        SET ${fields.join(', ')}
+        WHERE id = ?
+      `)
+      .run(...values);
+
+    if (result.changes === 0) {
+      return null;
+    }
+
+    return this.getList(id);
+  }
+
   deleteList(id: string): boolean {
     const result = this.db
       .prepare(`

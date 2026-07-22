@@ -397,8 +397,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
         }
 
         const newGameIds = [...activeIds, gameId];
-        const updateRes = await fetch('/api/lists', {
-          method: 'POST',
+        const updateRes = await fetch(`/api/lists/${listId}`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
