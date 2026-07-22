@@ -176,7 +176,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [reviews, setReviews] = useState<(Review & { author: User })[]>([]);
   const [myLists, setMyLists] = useState<CustomList[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [listsWithGame, setListsWithGame] = useState<Set<string>>(new Set());
+  const [listMembership, setListMembership] = useState<Record<string, boolean>>({});
+  const [updatingListId, setUpdatingListId] = useState<string | null>(null);
+  
   // Form states for library tracking
   const [status, setStatus] = useState<GameStatus>('WISHLIST');
   const [rating, setRating] = useState<number>(0);
@@ -380,43 +383,119 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     }
   };
 
-  const handleAddToList = async (listId: string) => {
+  const handleToggleList = async (listId: string) => {
+    setUpdatingListId(listId);
+
     try {
-      // Fetch list details, add gameId to array, resave
       const listRes = await fetch(`/api/lists/${listId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (listRes.ok) {
-        const listData = await listRes.json();
-        const activeIds = listData.games.map((g: Game) => g.igdbId);
-        if (activeIds.includes(gameId)) {
-          alert('¡Este juego ya se encuentra en la lista!');
-          return;
-        }
 
-        const newGameIds = [...activeIds, gameId];
-        const updateRes = await fetch(`/api/lists/${listId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: listData.name,
-            description: listData.description,
-            gameIds: newGameIds
-          })
-        });
-
-        if (updateRes.ok) {
-          alert('¡Videojuego añadido a la lista con éxito!');
-        }
+      if (!listRes.ok) {
+        throw new Error('No se pudo obtener la lista');
       }
+
+      const listData = await listRes.json();
+
+      const activeIds = listData.games.map((g: Game) => g.igdbId);
+      const isCurrentlyInList = activeIds.includes(gameId);
+
+      const newGameIds = isCurrentlyInList
+        ? activeIds.filter((id: number) => id !== gameId)
+        : [...activeIds, gameId];
+
+      const updateRes = await fetch(`/api/lists/${listId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: listData.name,
+          description: listData.description,
+          gameIds: newGameIds
+        })
+      });
+
+      if (!updateRes.ok) {
+        throw new Error('No se pudo actualizar la lista');
+      }
+
+      // Actualización optimista del estado visual
+      setListMembership(prev => ({
+        ...prev,
+        [listId]: !isCurrentlyInList
+      }));
+
     } catch (err) {
       console.error(err);
+    } finally {
+      setUpdatingListId(null);
     }
+  };
+
+  const loadListsWithGame = async () => {
+    const listsContainingGame = new Set<string>();
+
+    await Promise.all(
+      myLists.map(async (list) => {
+        try {
+          const res = await fetch(`/api/lists/${list.id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!res.ok) return;
+
+          const listData = await res.json();
+
+          const containsGame = listData.games.some(
+            (game: Game) => game.igdbId === gameId
+          );
+
+          if (containsGame) {
+            listsContainingGame.add(list.id);
+          }
+        } catch (err) {
+          console.error(`Error comprobando la lista ${list.id}:`, err);
+        }
+      })
+    );
+
+    setListsWithGame(listsContainingGame);
+  };
+
+  const loadListMembership = async () => {
+    const membership: Record<string, boolean> = {};
+
+    await Promise.all(
+      myLists.map(async (list) => {
+        try {
+          const res = await fetch(`/api/lists/${list.id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!res.ok) return;
+
+          const listData = await res.json();
+
+          const isInList = listData.games.some(
+            (game: Game) => game.igdbId === gameId
+          );
+
+          membership[list.id] = isInList;
+        } catch (err) {
+          console.error(`Error comprobando la lista ${list.id}:`, err);
+        }
+      })
+    );
+
+    setListMembership(membership);
   };
 
   if (loading) {
@@ -550,7 +629,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                 </button>
                 <button
                   type="button"
-                  onClick={() => setListModalOpen(true)}
+                  onClick={async () => {
+                    setListModalOpen(true);
+                    await loadListMembership();
+                  }}
                   className="p-1 px-2.5 text-[10px] text-blue-300 border border-blue-500/25 hover:bg-blue-500/10 transition cursor-pointer rounded-lg flex items-center gap-1"
                 >
                   <ListPlus className="w-3 h-3" /> Añadir a lista personalizada
@@ -869,19 +951,37 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                   Agrega esta gema a una de tus listas personalizadas existentes:
                 </p>
                 <div className="space-y-1.5 pt-1 max-h-64 overflow-y-auto">
-                  {myLists.map(list => (
+                {myLists.map(list => {
+                  const isInList = listMembership[list.id] === true;
+                  const isUpdating = updatingListId === list.id;
+
+                  return (
                     <button
                       key={list.id}
-                      onClick={() => {
-                        handleAddToList(list.id);
-                        setListModalOpen(false);
-                      }}
-                      className="w-full text-left p-2.5 bg-[#07090e] hover:bg-blue-600/10 border border-slate-800 hover:border-blue-500/20 text-xs text-slate-300 hover:text-blue-400 rounded-xl font-medium transition cursor-pointer flex items-center justify-between"
+                      onClick={() => handleToggleList(list.id)}
+                      disabled={isUpdating}
+                      className={`w-full text-left p-2.5 border rounded-xl text-xs font-medium transition cursor-pointer flex items-center justify-between ${
+                        isInList
+                          ? 'bg-blue-600/15 border-blue-500/30 text-blue-300'
+                          : 'bg-[#07090e] hover:bg-blue-600/10 border-slate-800 hover:border-blue-500/20 text-slate-300 hover:text-blue-400'
+                      }`}
                     >
                       <span>{list.name}</span>
-                      <span className="text-[10px] text-slate-500 font-normal">Añadir +</span>
+
+                      <span
+                        className={`text-[10px] font-normal ${
+                          isInList ? 'text-blue-400' : 'text-slate-500'
+                        }`}
+                      >
+                        {isUpdating
+                          ? 'Actualizando...'
+                          : isInList
+                            ? '✓ Añadido'
+                            : 'Añadir +'}
+                      </span>
                     </button>
-                  ))}
+                  );
+                })}
                 </div>
               </>
             )}
