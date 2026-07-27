@@ -1,8 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Game, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
-import { Star, Clock, Calendar, CheckSquare, ListPlus, Send, MessageSquare, ThumbsUp, Trash2, ArrowLeft, ChevronDown, X } from 'lucide-react';
+import { GameRow, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
 import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
 import { DatePicker } from './DatePicker.tsx';
+import {
+  Star,
+  Clock,
+  Calendar,
+  CheckSquare,
+  ListPlus,
+  Send,
+  MessageSquare,
+  ThumbsUp,
+  Trash2,
+  ArrowLeft,
+  ChevronDown,
+  X,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface GameDetailsProps {
   gameId: number;
@@ -197,6 +213,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
   const selectedProgressOption = PROGRESS_PHASE_OPTIONS.find(option => option.value === status) || PROGRESS_PHASE_OPTIONS[0];
+  // Screenshot gallery
+  const [selectedScreenshot, setSelectedScreenshot] = useState(0);
+  const [fullscreenScreenshot, setFullscreenScreenshot] = useState<number | null>(null);
+
+  const screenshots = game?.screenshots ?? [];
+
 
   const fetchGameData = async () => {
     setLoading(true);
@@ -265,6 +287,35 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
       document.removeEventListener('mousedown', handlePointerDown);
     };
   }, [progressMenuOpen]);
+
+  useEffect(() => {
+    if (fullscreenScreenshot === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setFullscreenScreenshot(null);
+      }
+
+      if (event.key === 'ArrowLeft') {
+        goToPreviousFullscreenScreenshot();
+      }
+
+      if (event.key === 'ArrowRight') {
+        goToNextFullscreenScreenshot();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Evita que el usuario haga scroll detrás del modal
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [fullscreenScreenshot, screenshots.length]);
+
 
   const saveTracking = async (nextStatus: GameStatus, successMessage = '¡Biblioteca actualizada con éxito!') => {
     setMessage('');
@@ -496,6 +547,39 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     );
 
     setListMembership(membership);
+  };
+  
+
+  const goToPreviousScreenshot = () => {
+    if (screenshots.length === 0) return;
+
+    setSelectedScreenshot((current) =>
+      current === 0 ? screenshots.length - 1 : current - 1
+    );
+  };
+
+  const goToNextScreenshot = () => {
+    if (screenshots.length === 0) return;
+
+    setSelectedScreenshot((current) =>
+      current === screenshots.length - 1 ? 0 : current + 1
+    );
+  };
+
+  const goToPreviousFullscreenScreenshot = () => {
+    if (fullscreenScreenshot === null || screenshots.length === 0) return;
+
+    setFullscreenScreenshot((current) =>
+      current === 0 ? screenshots.length - 1 : current! - 1
+    );
+  };
+
+  const goToNextFullscreenScreenshot = () => {
+    if (fullscreenScreenshot === null || screenshots.length === 0) return;
+
+    setFullscreenScreenshot((current) =>
+      current === screenshots.length - 1 ? 0 : current! + 1
+    );
   };
 
   if (loading) {
@@ -784,6 +868,111 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
             </form>
           </div>
 
+          {screenshots.length > 0 && (
+            <section className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-slate-300 font-display flex items-center gap-2">
+                    <span className="w-1 h-5 rounded-full bg-blue-500"></span>
+                    Imágenes del juego
+                  </h2>
+
+                  <p className="text-[10px] text-slate-500 mt-1 ml-3">
+                    Explora capturas de {game.name}
+                  </p>
+                </div>
+
+                <span className="text-[10px] font-mono text-slate-500">
+                  {selectedScreenshot + 1} / {screenshots.length}
+                </span>
+              </div>
+
+              {/* Main image */}
+              <div className="relative group overflow-hidden rounded-2xl border border-slate-850 bg-[#07090e]">
+                <button
+                  type="button"
+                  onClick={() => setFullscreenScreenshot(selectedScreenshot)}
+                  className="block w-full cursor-zoom-in"
+                >
+                  <img
+                    src={screenshots[selectedScreenshot]}
+                    alt={`${game.name} screenshot ${selectedScreenshot + 1}`}
+                    referrerPolicy="no-referrer"
+                    className="w-full aspect-video object-cover transition duration-500 group-hover:scale-[1.02]"
+                  />
+
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition pointer-events-none" />
+
+                  {/* Fullscreen button */}
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+                    <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white">
+                      <Maximize2 className="w-4 h-4" />
+                    </span>
+                  </div>
+                </button>
+
+                {/* Previous */}
+                {screenshots.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={goToPreviousScreenshot}
+                    aria-label="Imagen anterior"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition cursor-pointer"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+
+                {/* Next */}
+                {screenshots.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={goToNextScreenshot}
+                    aria-label="Siguiente imagen"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition cursor-pointer"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Thumbnails */}
+              {screenshots.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                  {screenshots.map((screenshot, index) => {
+                    const isActive = selectedScreenshot === index;
+
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setSelectedScreenshot(index)}
+                        className={`relative flex-shrink-0 w-28 md:w-36 aspect-video rounded-xl overflow-hidden border transition ${
+                          isActive
+                            ? 'border-blue-500 ring-2 ring-blue-500/20'
+                            : 'border-slate-850 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img
+                          src={screenshot}
+                          alt={`Miniatura ${index + 1}`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+
+                        {isActive && (
+                          <div className="absolute inset-0 bg-blue-500/10" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+
           {/* Public comments / reviews */}
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
@@ -988,6 +1177,67 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
           </div>
         </div>
       )}
+        {fullscreenScreenshot !== null && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setFullscreenScreenshot(null)}
+          >
+            {/* Close */}
+            <button
+              type="button"
+              onClick={() => setFullscreenScreenshot(null)}
+              aria-label="Cerrar galería"
+              className="absolute top-5 right-5 z-20 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Counter */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-black/50 border border-white/10 text-xs text-slate-300 font-mono">
+              {fullscreenScreenshot + 1} / {screenshots.length}
+            </div>
+
+            {/* Previous */}
+            {screenshots.length > 1 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goToPreviousFullscreenScreenshot();
+                }}
+                aria-label="Imagen anterior"
+                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
+            {/* Image */}
+            <img
+              src={screenshots[fullscreenScreenshot]}
+              alt={`${game.name} screenshot ${fullscreenScreenshot + 1}`}
+              referrerPolicy="no-referrer"
+              onClick={(event) => event.stopPropagation()}
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+            />
+
+            {/* Next */}
+            {screenshots.length > 1 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  goToNextFullscreenScreenshot();
+                }}
+                aria-label="Siguiente imagen"
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+        )}
     </div>
   );
 };
+

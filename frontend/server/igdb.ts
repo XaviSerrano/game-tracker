@@ -71,8 +71,16 @@ function mapIgdbGame(item: any): Game {
     rating: item.total_rating ? Math.round(item.total_rating) : undefined,
     popularity: typeof item.popularity === 'number'
       ? Math.round(item.popularity)
-      : (typeof item.total_rating_count === 'number' ? Math.round(item.total_rating_count) : undefined)
+      : (typeof item.total_rating_count === 'number' ? Math.round(item.total_rating_count) : undefined),
+      screenshots: screenshotUrl(item)
   };
+}
+
+function screenshotUrl(item: any): string[] {
+  if (!Array.isArray(item.screenshots)) return [];
+  return item.screenshots
+    .filter((s: any) => s?.url)
+    .map((s: any) => `https:${s.url.replace('t_thumb', 't_1080p')}`);
 }
 
 function mapRankedIgdbGame(item: any): RankedIgdbGame {
@@ -186,7 +194,7 @@ export class IgdbService {
           'Content-Type': 'text/plain'
         },
         body: `search "${query}";
-               fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
+               fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
                limit ${limit};
                where cover != null;`
       });
@@ -216,11 +224,11 @@ export class IgdbService {
     const token = await getTwitchToken();
     const { clientId } = getIgdbCredentials();
     const candidateQueries = [
-      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
+      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
        where total_rating != null & total_rating_count > 25 & cover != null;
        sort total_rating_count desc;
        limit ${Math.max(limit * 2, 120)};`,
-      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
+      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
        where cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`
@@ -333,11 +341,11 @@ export class IgdbService {
     const dlcPattern = /\b(dlc|expansion|season pass|soundtrack|bundle|pack)\b/i;
     const slugDlcPattern = /(dlc|expansion|season-pass|soundtrack|bundle|pack)/i;
     const candidateQueries = [
-      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
+      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
        where first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & total_rating != null & cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`,
-      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
+      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
        where first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & total_rating != null & total_rating > 0 & cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`
@@ -435,7 +443,8 @@ export class IgdbService {
 
     // Check if it already exists in our db
     const local = db.getGame(id);
-    if (local) {
+
+    if (local && local.screenshots.length > 0) {
       return local;
     }
 
@@ -450,8 +459,7 @@ export class IgdbService {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'text/plain'
         },
-        body: `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
-               where id = ${id};`
+        body: `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url; where id = ${id};`
       });
 
       if (!response.ok) throw new Error('IGDB Details call failed');

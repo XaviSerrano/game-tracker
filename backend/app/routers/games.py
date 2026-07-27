@@ -59,10 +59,11 @@ async def get_catalog(
 
 @router.get("/{igdb_id}")
 async def get_game(igdb_id: int):
-    """
-    Detalle de un juego por ID. Usado por GameDetails.tsx.
-    """
+    print(f"ROUTER GET_GAME EJECUTADO: {igdb_id}", flush=True)
+
     game = await igdb_service.get_game_by_id(igdb_id)
+
     if not game:
         raise HTTPException(status_code=404, detail="Juego no encontrado")
+
     return game

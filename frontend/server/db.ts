@@ -248,6 +248,13 @@ sqlite.exec(`
     ON sessions(expiresAt);
 `);
 
+// Migración: añade columna screenshots si no existe (tablas creadas antes de este cambio)
+const gameColumns = sqlite.prepare(`PRAGMA table_info(games)`).all() as { name: string }[];
+if (!gameColumns.some(col => col.name === 'screenshots')) {
+  sqlite.exec(`ALTER TABLE games ADD COLUMN screenshots TEXT NOT NULL DEFAULT '[]'`);
+  console.log('📦 SQLite: columna "screenshots" añadida a la tabla games');
+}
+
 function parseJson<T>(
   value: string | null | undefined,
   fallback: T
@@ -278,7 +285,8 @@ function hydrateGame(row: any): Game {
     platforms: parseJson<string[]>(row.platforms, []),
     releaseDate: row.releaseDate ?? '',
     rating: Number(row.rating ?? 0),
-    popularity: Number(row.popularity ?? 0)
+    popularity: Number(row.popularity ?? 0),
+    screenshots: parseJson<string[]>(row.screenshots, [])
   };
 }
 
@@ -733,12 +741,6 @@ class GameDatabase {
   }
 
   createGame(game: Game): Game {
-    const existing = this.getGame(game.igdbId);
-
-    if (existing) {
-      return existing;
-    }
-
     return this.saveGame(game);
   }
 
@@ -755,9 +757,10 @@ class GameDatabase {
           platforms,
           releaseDate,
           rating,
-          popularity
+          popularity,
+          screenshots
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(igdbId)
         DO UPDATE SET
           name = excluded.name,
@@ -768,7 +771,8 @@ class GameDatabase {
           platforms = excluded.platforms,
           releaseDate = excluded.releaseDate,
           rating = excluded.rating,
-          popularity = excluded.popularity
+          popularity = excluded.popularity,
+          screenshots = excluded.screenshots
       `)
       .run(
         game.igdbId,
@@ -780,7 +784,8 @@ class GameDatabase {
         serializeJson(game.platforms),
         game.releaseDate ?? '',
         game.rating ?? 0,
-        game.popularity ?? 0
+        game.popularity ?? 0,
+        serializeJson(game.screenshots)
       );
 
     return game;
