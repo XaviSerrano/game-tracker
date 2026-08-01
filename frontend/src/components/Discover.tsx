@@ -184,9 +184,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         <ParticleBackdrop className="opacity-60" count={14} />
         <div className="flex items-center justify-between">
           <div className="space-y-3">
-            <span className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-blue-400">
-              React Bits Inspired
-            </span>
             <h2 className="text-2xl font-bold font-display text-white tracking-tight">
               Descubrir <ShimmerText>Videojuegos</ShimmerText>
             </h2>
