@@ -104,7 +104,7 @@ function calculateDiscoverRelevanceScore(game: RankedIgdbGame, averageRating: nu
       + ((minimumVotes / (game.ratingCount + minimumVotes)) * averageRating)
     : averageRating * 0.7;
 
-  const popularityBoost = Math.log10(game.popularity + 1) * 10;
+  const popularityBoost = Math.log10((game.popularity || game.ratingCount || 1) + 1) * 10;
   const voteConfidenceBoost = Math.log10(game.ratingCount + 1) * 5;
 
   let recencyBoost = 0;
@@ -127,24 +127,115 @@ function calculateDiscoverRelevanceScore(game: RankedIgdbGame, averageRating: nu
 }
 
 function rankGamesForDiscover(items: any[], limit: number): Game[] {
-  const rankedGames = items.map(mapRankedIgdbGame);
-  const ratedGames = rankedGames.filter((game) => game.rating > 0);
+  const rankedGames = items
+    .map(mapRankedIgdbGame)
+    .filter((game) => {
+      const hasMeaningfulRating = game.rating >= 65;
+      const hasEnoughVotes = game.ratingCount >= 25;
+      return hasMeaningfulRating && hasEnoughVotes;
+    });
+
+  const sourceGames = rankedGames.length > 0 ? rankedGames : items.map(mapRankedIgdbGame);
+  const ratedGames = sourceGames.filter((game) => game.rating > 0);
   const averageRating = ratedGames.length > 0
     ? ratedGames.reduce((sum, game) => sum + game.rating, 0) / ratedGames.length
     : 70;
 
-  return rankedGames
+  return sourceGames
     .sort((a, b) => {
       const scoreDifference = calculateDiscoverRelevanceScore(b, averageRating) - calculateDiscoverRelevanceScore(a, averageRating);
       if (scoreDifference !== 0) return scoreDifference;
 
-      const popularityDifference = b.popularity - a.popularity;
+      const popularityDifference = (b.popularity || b.ratingCount || 0) - (a.popularity || a.ratingCount || 0);
       if (popularityDifference !== 0) return popularityDifference;
 
       return b.ratingCount - a.ratingCount;
     })
     .slice(0, limit)
     .map((entry) => entry.game);
+}
+
+function getLocalPopularFallback(limit: number): Game[] {
+  const localGames = db.getGames()
+    .filter((game) => Boolean(game?.name) && Boolean(game?.cover))
+    .sort((a, b) => {
+      const popularityDelta = (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0);
+      if (popularityDelta !== 0) return popularityDelta;
+      return (b.rating || 0) - (a.rating || 0);
+    })
+    .slice(0, limit);
+
+  if (localGames.length > 0) {
+    return localGames;
+  }
+
+  return [
+    {
+      igdbId: 119133,
+      name: 'Elden Ring',
+      slug: 'elden-ring',
+      cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co5fnm.jpg',
+      summary: 'Juego popular de acción y rol con gran reconocimiento.',
+      genres: ['RPG', 'Action'],
+      platforms: ['PC', 'PlayStation 5', 'Xbox Series X/S'],
+      releaseDate: '2022-02-25',
+      rating: 95,
+      popularity: 2224,
+      screenshots: []
+    },
+    {
+      igdbId: 25076,
+      name: 'Red Dead Redemption 2',
+      slug: 'red-dead-redemption-2',
+      cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg',
+      summary: 'Aventura western con enorme popularidad y valoración alta.',
+      genres: ['Action', 'Adventure'],
+      platforms: ['PC', 'PlayStation 4', 'Xbox One'],
+      releaseDate: '2018-10-26',
+      rating: 94,
+      popularity: 3756,
+      screenshots: []
+    },
+    {
+      igdbId: 7346,
+      name: 'The Legend of Zelda: Breath of the Wild',
+      slug: 'the-legend-of-zelda-breath-of-the-wild',
+      cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r5d.jpg',
+      summary: 'Título muy reconocido por crítica y comunidad.',
+      genres: ['Adventure', 'Action'],
+      platforms: ['Nintendo Switch', 'Wii U'],
+      releaseDate: '2017-03-03',
+      rating: 95,
+      popularity: 2952,
+      screenshots: []
+    },
+    {
+      igdbId: 119171,
+      name: "Baldur's Gate III",
+      slug: 'baldurs-gate-3',
+      cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1ikn.jpg',
+      summary: 'RPG épico muy valorado por la comunidad.',
+      genres: ['RPG', 'Strategy'],
+      platforms: ['PC', 'PlayStation 5', 'Xbox Series X/S'],
+      releaseDate: '2023-08-03',
+      rating: 95,
+      popularity: 1556,
+      screenshots: []
+    },
+    {
+      igdbId: 19560,
+      name: 'The Witcher 3: Wild Hunt',
+      slug: 'the-witcher-3-wild-hunt',
+      cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r6u.jpg',
+      summary: 'Uno de los RPG más populares y queridos del panorama moderno.',
+      genres: ['RPG', 'Action'],
+      platforms: ['PC', 'PlayStation 4', 'Xbox One'],
+      releaseDate: '2015-05-19',
+      rating: 93,
+      popularity: 4200,
+      screenshots: []
+    }
+  ].slice(0, limit);
 }
 
 async function getTwitchToken(): Promise<string> {
@@ -196,7 +287,7 @@ export class IgdbService {
         body: `search "${query}";
                fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
                limit ${limit};
-               where cover != null;`
+               where category = 0 & cover != null;`
       });
 
       if (!response.ok) {
@@ -221,15 +312,25 @@ export class IgdbService {
     const cached = cacheGet<Game[]>(cacheKey);
     if (cached) return cached;
 
+    const localFallback = getLocalPopularFallback(limit);
+    if (localFallback.length > 0) {
+      cacheSet(cacheKey, localFallback);
+      return localFallback;
+    }
+
     const token = await getTwitchToken();
     const { clientId } = getIgdbCredentials();
     const candidateQueries = [
       `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
-       where total_rating != null & total_rating_count > 25 & cover != null;
+       where category = 0 & total_rating != null & total_rating_count > 25 & total_rating >= 65 & cover != null;
        sort total_rating_count desc;
        limit ${Math.max(limit * 2, 120)};`,
       `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
-       where cover != null;
+       where category = 0 & total_rating != null & total_rating_count > 25 & cover != null;
+       sort total_rating desc;
+       limit ${Math.max(limit * 2, 120)};`,
+      `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
+       where category = 0 & total_rating != null & total_rating_count > 25 & cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`
     ];
@@ -287,8 +388,8 @@ export class IgdbService {
           },
           body: `search "${term}";
                  fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count;
-                 where cover != null;
-                 sort first_release_date desc;
+                 where category = 0 & total_rating != null & total_rating_count > 25 & cover != null;
+                 sort total_rating_count desc;
                limit ${Math.max(limit, 50)};`
         });
 
@@ -342,11 +443,11 @@ export class IgdbService {
     const slugDlcPattern = /(dlc|expansion|season-pass|soundtrack|bundle|pack)/i;
     const candidateQueries = [
       `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
-       where first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & total_rating != null & cover != null;
+       where category = 0 & first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`,
       `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
-       where first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & total_rating != null & total_rating > 0 & cover != null;
+       where category = 0 & first_release_date != null & first_release_date >= ${recentWindowUnix} & first_release_date <= ${nowUnix} & total_rating != null & total_rating > 0 & cover != null;
        sort first_release_date desc;
        limit ${Math.max(limit * 2, 120)};`
     ];
