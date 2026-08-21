@@ -21,6 +21,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [sortBy, setSortBy] = useState('popularity'); // 'popularity' | 'rating' | 'newest' | 'name'
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [hasMoreGames, setHasMoreGames] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
@@ -31,12 +34,20 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const GENRES = ["Action", "Adventure", "RPG", "Indie", "Metroidvania", "Platformer", "Roguelike", "Horror", "Survival", "Cozy", "Strategy", "Puzzle"];
   const PLATFORMS = ["PC", "PlayStation 5", "Nintendo Switch", "Xbox Series X/S", "PlayStation 4", "Xbox One", "Mac"];
 
-  const searchGames = async (searchVal: string, genreVal: string, platformVal: string, sortVal: string) => {
-    setLoading(true);
+  const searchGames = async (searchVal: string, genreVal: string, platformVal: string, sortVal: string, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setVisibleCount(20);
+    }
     setApiError(null);
+
     try {
       const params = new URLSearchParams();
       params.set('sort', sortVal);
+      params.set('limit', append ? '60' : '80');
+      params.set('offset', String(append ? games.length : 0));
       if (searchVal.trim()) params.set('search', searchVal.trim());
       if (genreVal) params.set('genre', genreVal);
       if (platformVal) params.set('platform', platformVal);
@@ -49,13 +60,27 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         throw new Error(message);
       }
 
-      setGames(Array.isArray(data) ? data : []);
+      const nextGames = Array.isArray(data) ? data : [];
+      setGames((prev) => {
+        if (!append) return nextGames;
+        const merged = new Map<number, Game>();
+        prev.forEach((game) => merged.set(game.igdbId, game));
+        nextGames.forEach((game) => merged.set(game.igdbId, game));
+        return Array.from(merged.values());
+      });
+      setHasMoreGames(nextGames.length >= 20 || (append && games.length + nextGames.length > visibleCount));
     } catch (err) {
       console.error("Discover Error:", err);
-      setGames([]);
+      if (!append) {
+        setGames([]);
+      }
       setApiError(err instanceof Error ? err.message : 'Error inesperado al consultar la API.');
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -93,7 +118,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         searchUsers(query);
       } else {
         setUsers([]);
-        searchGames(query, selectedGenre, selectedPlatform, sortBy);
+        searchGames(query, selectedGenre, selectedPlatform, sortBy, false);
       }
     }, 300);
 
@@ -136,8 +161,18 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     if (isUserSearch) {
       searchUsers(query);
     } else {
-      searchGames(query, selectedGenre, selectedPlatform, sortBy);
+      searchGames(query, selectedGenre, selectedPlatform, sortBy, false);
     }
+  };
+
+  const handleLoadMore = () => {
+    if (isUserSearch || loadingMore) return;
+
+    setVisibleCount((prev) => {
+      const next = Math.min(prev + 20, games.length);
+      setHasMoreGames(next < games.length);
+      return next;
+    });
   };
 
   const handleQuickWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -347,7 +382,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           <p className="text-red-300 text-sm font-semibold">Error cargando juegos</p>
           <p className="text-slate-400 text-xs max-w-sm mx-auto">{apiError}</p>
           <button
-            onClick={() => searchGames(query, selectedGenre, selectedPlatform, sortBy)}
+            onClick={() => searchGames(query, selectedGenre, selectedPlatform, sortBy, false)}
             className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl hover:text-white transition cursor-pointer flex items-center gap-1.5 mx-auto"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Reintentar
@@ -368,49 +403,64 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {games.map(game => (
-            <TiltCard key={game.igdbId} className="rounded-xl">
-              <div
-                onClick={() => onSelectGame(game.igdbId)}
-                className="group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-200 cursor-pointer block"
-              >
-                <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 group-hover:shadow-lg group-hover:scale-[1.02] transition duration-200">
-                  <img
-                    src={game.cover}
-                    alt={game.name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
-                  />
-                  {game.rating && (
-                    <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold text-yellow-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      {game.rating}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={(e) => handleQuickWishlist(game.igdbId, e)}
-                    disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
-                    className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
-                    aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
-                  >
-                    <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
-                  </button>
-                </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {games.slice(0, visibleCount).map(game => (
+              <TiltCard key={game.igdbId} className="rounded-xl">
+                <div
+                  onClick={() => onSelectGame(game.igdbId)}
+                  className="group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-200 cursor-pointer block"
+                >
+                  <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 group-hover:shadow-lg group-hover:scale-[1.02] transition duration-200">
+                    <img
+                      src={game.cover}
+                      alt={game.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    {game.rating && (
+                      <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold text-yellow-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        {game.rating}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickWishlist(game.igdbId, e)}
+                      disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
+                      className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
+                      aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
+                    >
+                      <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
+                    </button>
+                  </div>
 
-                <div className="mt-3.5 flex-1 min-w-0">
-                  <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
-                    {game.name}
-                  </h3>
-                  <p className="text-[10px] text-slate-500 mt-1 truncate">
-                    {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
-                  </p>
+                  <div className="mt-3.5 flex-1 min-w-0">
+                    <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
+                      {game.name}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 mt-1 truncate">
+                      {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </TiltCard>
-          ))}
-        </div>
+              </TiltCard>
+            ))}
+          </div>
+
+          {hasMoreGames && !isUserSearch && (
+            <div className="flex justify-center pt-1">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-600/10 text-blue-300 text-xs font-semibold hover:bg-blue-600/15 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loadingMore ? 'Cargando...' : 'Ver más'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

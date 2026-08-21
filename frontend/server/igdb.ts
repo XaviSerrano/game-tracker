@@ -269,7 +269,7 @@ export class IgdbService {
       return this.getPopularGames(limit);
     }
 
-    const cacheKey = `search:${trimmedQuery}`;
+    const cacheKey = `search:${trimmedQuery}:${limit}`;
     const cached = cacheGet<Game[]>(cacheKey);
     if (cached) return cached;
 

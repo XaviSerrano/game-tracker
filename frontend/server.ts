@@ -398,13 +398,18 @@ app.get('/api/games', async (req, res) => {
     const genre = (req.query.genre as string) || '';
     const platform = (req.query.platform as string) || '';
     const sort = (req.query.sort as string) || 'popularity'; // rating | popularity | name | newest
+    const requestedLimit = Number.parseInt((req.query.limit as string) || '20', 10);
+    const requestedOffset = Number.parseInt((req.query.offset as string) || '0', 10);
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 60) : 20;
+    const offset = Number.isFinite(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0;
     const hasSearch = search.trim().length > 0;
 
+    const fetchLimit = Math.max(limit + offset + 20, hasSearch ? 50 : 80);
     let games = hasSearch
-      ? await IgdbService.searchGames(search, 50)
+      ? await IgdbService.searchGames(search, fetchLimit)
       : (sort === 'newest'
-        ? await IgdbService.getRecentGames(80)
-        : await IgdbService.getPopularGames(80));
+        ? await IgdbService.getRecentGames(fetchLimit)
+        : await IgdbService.getPopularGames(fetchLimit));
 
     if (genre) {
       games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
@@ -432,7 +437,8 @@ app.get('/api/games', async (req, res) => {
       });
     }
 
-    res.json(games);
+    const page = games.slice(offset, offset + limit);
+    res.json(page);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
