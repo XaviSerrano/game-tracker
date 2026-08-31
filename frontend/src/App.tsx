@@ -317,18 +317,20 @@ export default function App() {
       </header>
 
       {/* 3. CORE VIEWPORT CONTAINER */}
-      <main className="flex-1 p-4 md:p-8 md:pl-72 min-w-0 max-w-7xl mx-auto w-full">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab + (selectedGameId || '') + (selectedUserId || '')}
-            initial={{ opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.18 }}
-          >
-            {renderActiveView()}
-          </motion.div>
-        </AnimatePresence>
+      <main className="flex-1 min-w-0 ml-0 md:ml-72">
+        <div className="w-full max-w-6xl mx-auto px-3 py-4 md:px-5 md:py-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + (selectedGameId || '') + (selectedUserId || '')}
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{ duration: 0.18 }}
+            >
+              {renderActiveView()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
 
       {/* 4. MOBILE BOTTOM NAV RAIL */}
