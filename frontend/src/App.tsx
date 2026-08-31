@@ -317,7 +317,7 @@ export default function App() {
       </header>
 
       {/* 3. CORE VIEWPORT CONTAINER */}
-      <main className="flex-1 p-4 md:p-8 md:pl-72 min-w-0 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-4 md:py-8 md:pr-6 md:pl-72 min-w-0 w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab + (selectedGameId || '') + (selectedUserId || '')}
@@ -354,4 +354,3 @@ export default function App() {
     </div>
   );
 }
-
