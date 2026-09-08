@@ -654,6 +654,20 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
               ))}
             </div>
 
+            {game.averagePlaytimeHours && game.averagePlaytimeHours > 0 && (
+              <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-left">
+                <Clock className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300">
+                    Duración media estimada
+                  </p>
+                  <p className="text-xs font-semibold text-slate-200">
+                    {game.averagePlaytimeHours} {game.averagePlaytimeHours === 1 ? 'hora' : 'horas'}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {game.platforms.length > 0 && (
               <div className="space-y-2 pt-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Plataformas</p>
@@ -1240,4 +1254,3 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     </div>
   );
 };
-

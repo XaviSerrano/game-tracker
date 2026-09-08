@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import crypto from 'crypto';
 import express from 'express';
 import nodemailer from 'nodemailer';
@@ -8,19 +8,159 @@ import { db } from './server/db.ts';
 import { IgdbService } from './server/igdb.ts';
 import { Activity, User, UserGame, CustomList, Review } from './src/types.ts';
 
+dotenv.config({ path: path.resolve(process.cwd(), '../backend/.env') });
+dotenv.config();
+
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000');
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const MAX_ACTIVE_SESSIONS_PER_USER = 5;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 const MIN_PASSWORD_LENGTH = 8;
+const SESSION_COOKIE_NAME = 'gt_session';
 
 app.use(express.json());
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  next();
+});
 
 // --- AUTENTICACIÓN MIDDLEWARE ---
 interface AuthenticatedRequest extends express.Request {
   currUser?: User;
   authToken?: string;
 }
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const authRateLimits = new Map<string, RateLimitEntry>();
+
+const getRequestIp = (req: express.Request) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  if (Array.isArray(forwardedFor) && forwardedFor.length > 0 && forwardedFor[0].trim()) {
+    return forwardedFor[0].split(',')[0].trim();
+  }
+
+  return req.ip || req.socket.remoteAddress || 'unknown';
+};
+
+const normalizeEmail = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().toLowerCase();
+};
+
+const recordSecurityEvent = (
+  req: express.Request,
+  eventType: string,
+  details: string,
+  userId?: string | null
+) => {
+  db.addSecurityEvent({
+    eventType,
+    userId: userId ?? null,
+    ipAddress: getRequestIp(req),
+    userAgent: req.get('user-agent') || null,
+    details
+  });
+};
+
+const setSessionCookie = (res: express.Response, token: string) => {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=${token}`,
+    'HttpOnly',
+    'Path=/',
+    `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`,
+    'SameSite=Strict'
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', parts.join('; '));
+};
+
+const clearSessionCookie = (res: express.Response) => {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=`,
+    'HttpOnly',
+    'Path=/',
+    'Max-Age=0',
+    'SameSite=Strict'
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', parts.join('; '));
+};
+
+const getCookie = (req: express.Request, name: string) => {
+  const cookies = req.headers.cookie?.split(';') || [];
+  const cookie = cookies.find(value => value.trim().startsWith(`${name}=`));
+  return cookie ? cookie.trim().slice(name.length + 1) : null;
+};
+
+const createRateLimiter = (
+  scope: string,
+  maxAttempts: number,
+  windowMs: number,
+  keyResolver: (req: express.Request) => string
+) => {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = `${scope}:${keyResolver(req)}`;
+    const now = Date.now();
+    const current = authRateLimits.get(key);
+
+    if (authRateLimits.size > 1000) {
+      for (const [limitKey, entry] of authRateLimits.entries()) {
+        if (entry.resetAt <= now) {
+          authRateLimits.delete(limitKey);
+        }
+      }
+    }
+
+    if (current && current.resetAt > now) {
+      if (current.count >= maxAttempts) {
+        res.setHeader('Retry-After', Math.ceil((current.resetAt - now) / 1000).toString());
+        recordSecurityEvent(req, 'AUTH_RATE_LIMITED', scope);
+        return res.status(429).json({ error: 'Demasiados intentos. Vuelve a probar más tarde.' });
+      }
+
+      current.count += 1;
+      next();
+      return;
+    }
+
+    authRateLimits.set(key, {
+      count: 1,
+      resetAt: now + windowMs
+    });
+
+    next();
+  };
+};
 
 const hashPassword = (password: string, salt = crypto.randomBytes(16).toString('hex')) => ({
   passwordHash: crypto.scryptSync(password, salt, 64).toString('hex'),
@@ -36,6 +176,7 @@ const verifyPassword = (password: string, passwordHash?: string, passwordSalt?: 
 const createSessionToken = (userId: string) => {
   const token = crypto.randomBytes(32).toString('hex');
   db.createSession(userId, token, new Date(Date.now() + SESSION_TTL_MS).toISOString());
+  db.revokeOldestSessionsForUser(userId, MAX_ACTIVE_SESSIONS_PER_USER);
   return token;
 };
 
@@ -70,6 +211,30 @@ const createAuthMailer = () => {
 };
 
 const authMailer = createAuthMailer();
+const loginRateLimit = createRateLimiter(
+  'auth_login',
+  8,
+  15 * 60 * 1000,
+  (req) => `${getRequestIp(req)}:${normalizeEmail((req.body as { email?: unknown } | undefined)?.email)}`
+);
+const registerRateLimit = createRateLimiter(
+  'auth_register',
+  5,
+  60 * 60 * 1000,
+  (req) => getRequestIp(req)
+);
+const forgotPasswordRateLimit = createRateLimiter(
+  'auth_forgot_password',
+  3,
+  60 * 60 * 1000,
+  (req) => `${getRequestIp(req)}:${normalizeEmail((req.body as { email?: unknown } | undefined)?.email)}`
+);
+const resetPasswordRateLimit = createRateLimiter(
+  'auth_reset_password',
+  5,
+  60 * 60 * 1000,
+  (req) => getRequestIp(req)
+);
 
 const buildResetUrl = (req: express.Request, token: string) => {
   const host = req.get('host');
@@ -98,11 +263,12 @@ const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken
 
 const authenticate = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  const token = getCookie(req, SESSION_COOKIE_NAME) || bearerToken;
+  if (!token) {
     return res.status(401).json({ error: 'Falta token de autorización' });
   }
 
-  const token = authHeader.split(' ')[1];
   const user = db.getUserBySessionToken(token);
   if (!user) {
     return res.status(401).json({ error: 'Sesión inválida o expirada.' });
@@ -115,7 +281,7 @@ const authenticate = (req: AuthenticatedRequest, res: express.Response, next: ex
 
 // --- ENDPOINTS DE AUTENTICACIÓN ---
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', registerRateLimit, (req, res) => {
   const { username, email, password, bio, avatar } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
@@ -159,10 +325,12 @@ app.post('/api/auth/register', (req, res) => {
   });
 
   const token = createSessionToken(id);
-  res.status(201).json({ user: newUser, token });
+  setSessionCookie(res, token);
+  recordSecurityEvent(req, 'REGISTRATION_SUCCESS', 'account_created', id);
+  res.status(201).json({ user: newUser });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', loginRateLimit, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'El email y la contraseña son obligatorios.' });
@@ -170,15 +338,18 @@ app.post('/api/auth/login', (req, res) => {
 
   const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
   if (!authUser || !verifyPassword(password, authUser.passwordHash, authUser.passwordSalt)) {
+    recordSecurityEvent(req, 'LOGIN_FAILED', 'invalid_credentials');
     return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
   }
 
   const user = db.getUser(authUser.id)!;
   const token = createSessionToken(authUser.id);
-  res.json({ user, token });
+  setSessionCookie(res, token);
+  recordSecurityEvent(req, 'LOGIN_SUCCESS', 'session_created', authUser.id);
+  res.json({ user });
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', forgotPasswordRateLimit, async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'El email es obligatorio.' });
@@ -202,9 +373,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     );
 
     const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, db.getUser(authUser.id)!, rawToken);
+    recordSecurityEvent(req, 'PASSWORD_RESET_REQUESTED', 'email_sent', authUser.id);
     res.json({
       ...genericResponse,
-      ...(usingDebugMailer ? { debugResetUrl: resetUrl } : {})
+      ...(usingDebugMailer && process.env.NODE_ENV !== 'production' ? { debugResetUrl: resetUrl } : {})
     });
   } catch (error) {
     console.error('Error sending password reset email:', error);
@@ -212,7 +384,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-app.post('/api/auth/reset-password', (req, res) => {
+app.post('/api/auth/reset-password', resetPasswordRateLimit, (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) {
     return res.status(400).json({ error: 'El token y la nueva contraseña son obligatorios.' });
@@ -224,6 +396,7 @@ app.post('/api/auth/reset-password', (req, res) => {
 
   const authUser = db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
   if (!authUser) {
+    recordSecurityEvent(req, 'PASSWORD_RESET_FAILED', 'invalid_or_expired_token');
     return res.status(400).json({ error: 'El enlace de recuperación es inválido o ha caducado.' });
   }
 
@@ -232,11 +405,12 @@ app.post('/api/auth/reset-password', (req, res) => {
   db.revokeSessionsForUser(authUser.id);
   const sessionToken = createSessionToken(authUser.id);
   const user = db.getUser(authUser.id)!;
+  setSessionCookie(res, sessionToken);
+  recordSecurityEvent(req, 'PASSWORD_RESET_COMPLETED', 'password_updated', authUser.id);
 
   res.json({
     message: 'Contraseña actualizada correctamente.',
-    user,
-    token: sessionToken
+    user
   });
 });
 
@@ -244,6 +418,10 @@ app.post('/api/auth/logout', authenticate, (req: AuthenticatedRequest, res) => {
   if (req.authToken) {
     db.revokeSession(req.authToken);
   }
+  if (req.currUser) {
+    recordSecurityEvent(req, 'LOGOUT', 'session_revoked', req.currUser.id);
+  }
+  clearSessionCookie(res);
   res.status(204).end();
 });
 

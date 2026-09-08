@@ -27,6 +27,16 @@ interface AuthSession {
   createdAt: string;
 }
 
+interface SecurityEvent {
+  id: string;
+  userId: string | null;
+  eventType: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  details: string | null;
+  createdAt: string;
+}
+
 interface UserStats {
   totalHours: number;
   completedCount: number;
@@ -108,7 +118,8 @@ sqlite.exec(`
     platforms TEXT NOT NULL DEFAULT '[]',
     releaseDate TEXT NOT NULL DEFAULT '',
     rating REAL DEFAULT 0,
-    popularity REAL DEFAULT 0
+    popularity REAL DEFAULT 0,
+    averagePlaytimeHours REAL
   );
 
   CREATE TABLE IF NOT EXISTS userGames (
@@ -229,6 +240,20 @@ sqlite.exec(`
       ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS securityEvents (
+    id TEXT PRIMARY KEY,
+    userId TEXT,
+    eventType TEXT NOT NULL,
+    ipAddress TEXT,
+    userAgent TEXT,
+    details TEXT,
+    createdAt TEXT NOT NULL,
+
+    FOREIGN KEY (userId)
+      REFERENCES users(id)
+      ON DELETE SET NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_userGames_userId
     ON userGames(userId);
 
@@ -246,6 +271,9 @@ sqlite.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_sessions_expiresAt
     ON sessions(expiresAt);
+
+  CREATE INDEX IF NOT EXISTS idx_securityEvents_createdAt
+    ON securityEvents(createdAt);
 `);
 
 // Migración: añade columna screenshots si no existe (tablas creadas antes de este cambio)
@@ -253,6 +281,10 @@ const gameColumns = sqlite.prepare(`PRAGMA table_info(games)`).all() as { name: 
 if (!gameColumns.some(col => col.name === 'screenshots')) {
   sqlite.exec(`ALTER TABLE games ADD COLUMN screenshots TEXT NOT NULL DEFAULT '[]'`);
   console.log('📦 SQLite: columna "screenshots" añadida a la tabla games');
+}
+if (!gameColumns.some(col => col.name === 'averagePlaytimeHours')) {
+  sqlite.exec(`ALTER TABLE games ADD COLUMN averagePlaytimeHours REAL`);
+  console.log('📦 SQLite: columna "averagePlaytimeHours" añadida a la tabla games');
 }
 
 function parseJson<T>(
@@ -286,6 +318,7 @@ function hydrateGame(row: any): Game {
     releaseDate: row.releaseDate ?? '',
     rating: Number(row.rating ?? 0),
     popularity: Number(row.popularity ?? 0),
+    averagePlaytimeHours: row.averagePlaytimeHours == null ? undefined : Number(row.averagePlaytimeHours),
     screenshots: parseJson<string[]>(row.screenshots, [])
   };
 }
@@ -712,6 +745,66 @@ class GameDatabase {
       .run(userId);
   }
 
+  revokeOldestSessionsForUser(userId: string, maxSessions: number): void {
+    this.db
+      .prepare(`
+        DELETE FROM sessions
+        WHERE token IN (
+          SELECT token
+          FROM sessions
+          WHERE userId = ?
+          ORDER BY datetime(createdAt) DESC
+          LIMIT -1 OFFSET ?
+        )
+      `)
+      .run(userId, maxSessions);
+  }
+
+  addSecurityEvent(event: {
+    id?: string;
+    userId?: string | null;
+    eventType: string;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+    details?: string | null;
+    createdAt?: string;
+  }): void {
+    this.db
+      .prepare(`
+        INSERT INTO securityEvents (
+          id,
+          userId,
+          eventType,
+          ipAddress,
+          userAgent,
+          details,
+          createdAt
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+      .run(
+        event.id ?? `sec_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        event.userId ?? null,
+        event.eventType,
+        event.ipAddress ?? null,
+        event.userAgent ?? null,
+        event.details ?? null,
+        event.createdAt ?? new Date().toISOString()
+      );
+
+    this.db
+      .prepare(`
+        DELETE FROM securityEvents
+        WHERE id NOT IN (
+          SELECT id
+          FROM securityEvents
+          ORDER BY datetime(createdAt) DESC
+          LIMIT 500
+        )
+      `)
+      .run();
+  }
+
   // ==================================================
   // GAMES
   // ==================================================
@@ -758,9 +851,10 @@ class GameDatabase {
           releaseDate,
           rating,
           popularity,
+          averagePlaytimeHours,
           screenshots
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(igdbId)
         DO UPDATE SET
           name = excluded.name,
@@ -772,6 +866,7 @@ class GameDatabase {
           releaseDate = excluded.releaseDate,
           rating = excluded.rating,
           popularity = excluded.popularity,
+          averagePlaytimeHours = excluded.averagePlaytimeHours,
           screenshots = excluded.screenshots
       `)
       .run(
@@ -785,6 +880,7 @@ class GameDatabase {
         game.releaseDate ?? '',
         game.rating ?? 0,
         game.popularity ?? 0,
+        game.averagePlaytimeHours ?? null,
         serializeJson(game.screenshots)
       );
 

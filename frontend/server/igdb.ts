@@ -72,8 +72,33 @@ function mapIgdbGame(item: any): Game {
     popularity: typeof item.popularity === 'number'
       ? Math.round(item.popularity)
       : (typeof item.total_rating_count === 'number' ? Math.round(item.total_rating_count) : undefined),
+    averagePlaytimeHours: typeof item.time_to_beat?.normally === 'number' && item.time_to_beat.normally > 0
+      ? Math.round((item.time_to_beat.normally / 3600) * 10) / 10
+      : undefined,
       screenshots: screenshotUrl(item)
   };
+}
+
+async function getAveragePlaytimeHours(gameId: number, token: string, clientId: string): Promise<number | undefined> {
+  const response = await fetch('https://api.igdb.com/v4/game_time_to_beats', {
+    method: 'POST',
+    headers: {
+      'Client-ID': clientId,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'text/plain'
+    },
+    body: `fields normally; where game_id = ${gameId};`
+  });
+
+  if (!response.ok) {
+    return undefined;
+  }
+
+  const data = await response.json();
+  const normally = data?.[0]?.normally;
+  return typeof normally === 'number' && normally > 0
+    ? Math.round((normally / 3600) * 10) / 10
+    : undefined;
 }
 
 function screenshotUrl(item: any): string[] {
@@ -273,10 +298,9 @@ export class IgdbService {
     const cached = cacheGet<Game[]>(cacheKey);
     if (cached) return cached;
 
-    const token = await getTwitchToken();
-    const { clientId } = getIgdbCredentials();
-
     try {
+      const token = await getTwitchToken();
+      const { clientId } = getIgdbCredentials();
       const response = await fetch('https://api.igdb.com/v4/games', {
         method: 'POST',
         headers: {
@@ -285,7 +309,7 @@ export class IgdbService {
           'Content-Type': 'text/plain'
         },
         body: `search "${query}";
-               fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url;;
+               fields id, name, slug, summary, cover.url, genres.name, platforms.name,                                              first_release_date, total_rating, total_rating_count, screenshots.url;;
                limit ${limit};
                where category = 0 & cover != null;`
       });
@@ -545,14 +569,14 @@ export class IgdbService {
     // Check if it already exists in our db
     const local = db.getGame(id);
 
-    if (local && local.screenshots.length > 0) {
+    // Refresh older cached games once so newly added metadata is populated.
+    if (local && local.screenshots.length > 0 && local.averagePlaytimeHours !== undefined) {
       return local;
     }
 
-    const token = await getTwitchToken();
-    const { clientId } = getIgdbCredentials();
-
     try {
+      const token = await getTwitchToken();
+      const { clientId } = getIgdbCredentials();
       const response = await fetch('https://api.igdb.com/v4/games', {
         method: 'POST',
         headers: {
@@ -563,27 +587,24 @@ export class IgdbService {
         body: `fields id, name, slug, summary, cover.url, genres.name, platforms.name, first_release_date, total_rating, total_rating_count, screenshots.url; where id = ${id};`
       });
 
-      if (!response.ok) throw new Error('IGDB Details call failed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`IGDB Details call failed (${response.status}): ${errorText}`);
+      }
       const apiData = await response.json();
       if (!apiData || apiData.length === 0) return null;
 
       const mapped: Game = mapIgdbGame(apiData[0]);
+      mapped.averagePlaytimeHours = await getAveragePlaytimeHours(id, token, clientId);
 
       db.createGame(mapped);
       cacheSet(`game:${id}`, mapped);
       return mapped;
     } catch (err) {
       console.error(`IGDB getGameDetails for ${id} failed:`, err);
-      return null;
+      // Keep serving cached metadata when IGDB is unavailable or unconfigured.
+      return local;
     }
   }
 }
-
-
-
-
-
-
-
-
 
