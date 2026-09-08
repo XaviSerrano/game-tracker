@@ -70,6 +70,7 @@ interface GameRow {
   releaseDate: string | null;
   rating: number | null;
   popularity: number | null;
+  averagePlaytimeHours?: number;
   screenshots?: string[]
 }
 
