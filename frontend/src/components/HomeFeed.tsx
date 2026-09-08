@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Game, Activity, User, UserGame } from '../types.ts';
-import { Heart, Stars, Users, Globe, ExternalLink } from 'lucide-react';
+import { Heart, Stars, Users, Globe, ExternalLink, Search } from 'lucide-react';
 import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
@@ -12,6 +12,7 @@ interface HomeFeedProps {
   onSelectUser: (userId: string) => void;
   users: User[];
   token: string;
+  onDiscover: () => void;
 }
 
 type FeedActivity = Activity & {
@@ -19,7 +20,7 @@ type FeedActivity = Activity & {
   targetUser?: User | null;
 };
 
-export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, onSelectUser, users, token }) => {
+export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, onSelectUser, users, token, onDiscover }) => {
   const [feedScope, setFeedScope] = useState<'all' | 'following'>('all');
   const [activities, setActivities] = useState<FeedActivity[]>([]);
   const [recs, setRecs] = useState<{ game: Game; score: number }[]>([]);
@@ -146,7 +147,15 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
               Echa un vistazo a la actividad reciente de tus compañeros y explora tu motor de recomendación personalizado.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={onDiscover}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" aria-hidden="true" />
+              Explorar juegos
+            </button>
             <button
               onClick={() => setFeedScope('all')}
               className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 border ${feedScope === 'all' ? 'bg-blue-600 text-white border-blue-500Shadow' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'}`}

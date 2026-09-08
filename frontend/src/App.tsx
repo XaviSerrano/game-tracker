@@ -226,6 +226,7 @@ export default function App() {
             onSelectUser={handleSelectUser}
             users={allUsers}
             token={token}
+            onDiscover={() => handleNavigation('discover')}
           />
         );
       case 'discover':
