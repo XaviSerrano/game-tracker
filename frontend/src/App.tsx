@@ -25,6 +25,7 @@ import { Library } from './components/Library.tsx';
 import { CustomLists } from './components/CustomLists.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { StatsDashboard } from './components/StatsDashboard.tsx';
+import { NotFoundPage } from './components/NotFoundPage.tsx';
 
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
 
@@ -38,6 +39,9 @@ export default function App() {
   // Por defecto abierto en desktop y cerrado en móvil.
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
+  const [pathname, setPathname] = useState(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/'
   );
 
   // Sub-navigation targets
@@ -83,7 +87,37 @@ export default function App() {
 
   useEffect(() => {
     verifySession();
+    const handlePopState = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const navigateTo = (nextPath: string) => {
+    window.history.pushState({}, '', nextPath);
+    setPathname(nextPath);
+  };
+
+  const gamePathMatch = pathname.match(/^\/game\/([^/]+)\/?$/);
+  const gamePathId = gamePathMatch ? Number(decodeURIComponent(gamePathMatch[1])) : null;
+  const isGamePath = gamePathMatch !== null;
+  const isKnownGamePath = isGamePath && Number.isInteger(gamePathId) && gamePathId > 0;
+  const showGameNotFound = isGamePath && !isKnownGamePath;
+
+  if (pathname !== '/' && !isGamePath || showGameNotFound) {
+    return (
+      <NotFoundPage
+        isGameNotFound={showGameNotFound}
+        onGoHome={() => {
+          navigateTo('/');
+          setActiveTab('feed');
+        }}
+        onSearchGames={() => {
+          navigateTo('/');
+          setActiveTab('discover');
+        }}
+      />
+    );
+  }
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
@@ -157,6 +191,18 @@ export default function App() {
       );
     }
 
+    if (isKnownGamePath) {
+      return (
+        <GameDetails
+          gameId={gamePathId}
+          currentUser={currentUser}
+          token={token}
+          onBack={() => navigateTo('/')}
+          onSelectUser={handleSelectUser}
+        />
+      );
+    }
+
     if (selectedUserId !== null) {
       return (
         <UserProfile
@@ -178,6 +224,7 @@ export default function App() {
             onSelectUser={handleSelectUser}
             users={allUsers}
             token={token}
+            onDiscover={() => handleNavigation('discover')}
           />
         );
       case 'discover':
