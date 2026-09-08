@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { User, Review, Game, CustomList } from '../types.ts';
-import { Trophy, Swords, PenSquare, Users, Star, X } from 'lucide-react';
+import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
 
 interface UserProfileProps {
-userId: string;
-currentUser: User;
-onUpdateCurrentUser: (user: User) => void;
-token: string;
-onSelectGame: (gameId: number) => void;
+  userId: string;
+  currentUser: User;
+  onUpdateCurrentUser: (user: User) => void;
+  token: string;
+  onSelectGame: (gameId: number) => void;
+  onSelectUser?: (userId: string) => void;
 }
 
 type PublicList = CustomList & {
@@ -15,33 +16,40 @@ games: Game[];
 };
 
 export const UserProfile: React.FC<UserProfileProps> = ({
-userId,
-currentUser,
-onUpdateCurrentUser,
-token,
-onSelectGame,
+  userId,
+  currentUser,
+  onUpdateCurrentUser,
+  token,
+  onSelectGame,
+  onSelectUser,
 }) => {
-const [profile, setProfile] = useState<
-| (User & {
-followersCount: number;
-followingCount: number;
-})
-| null
+  const [profile, setProfile] = useState<
+    | (User & {
+        followersCount: number;
+        followingCount: number;
+      })
+    | null
+  >(null);
 
-> (null);
+  const [reviews, setReviews] = useState<(Review & { game: Game })[]>([]);
+  const [lists, setLists] = useState<PublicList[]>([]);
+  const [selectedList, setSelectedList] = useState<PublicList | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-const [reviews, setReviews] = useState<(Review & { game: Game })[]>([]);
-const [lists, setLists] = useState<PublicList[]>([]);
-const [selectedList, setSelectedList] = useState<PublicList | null>(null);
-const [isFollowing, setIsFollowing] = useState(false);
-const [loading, setLoading] = useState(true);
+  // Social Connections Modal state
+  const [socialModalTab, setSocialModalTab] = useState<'followers' | 'following' | null>(null);
+  const [socialUsers, setSocialUsers] = useState<User[]>([]);
+  const [myFollowingSet, setMyFollowingSet] = useState<Set<string>>(new Set());
+  const [loadingSocial, setLoadingSocial] = useState(false);
+  const [socialSearch, setSocialSearch] = useState('');
 
-// Edit profile states
-const [isEditing, setIsEditing] = useState(false);
-const [editUsername, setEditUsername] = useState('');
-const [editBio, setEditBio] = useState('');
-const [editAvatar, setEditAvatar] = useState('');
-const [editMessage, setEditMessage] = useState('');
+  // Edit profile states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [editMessage, setEditMessage] = useState('');
 
 const isOwnProfile = userId === currentUser.id;
 
@@ -155,6 +163,96 @@ Authorization: `Bearer ${token}`,
 }
 
 };
+
+const openSocialModal = async (tab: 'followers' | 'following') => {
+  setSocialModalTab(tab);
+  setLoadingSocial(true);
+  setSocialSearch('');
+
+  try {
+    const [usersRes, myFollowingRes] = await Promise.all([
+      fetch(`/api/social/${tab}/${userId}`),
+      fetch(`/api/social/following/${currentUser.id}`)
+    ]);
+
+    if (usersRes.ok) {
+      const uData: User[] = await usersRes.json();
+      setSocialUsers(Array.isArray(uData) ? uData : []);
+    }
+
+    if (myFollowingRes.ok) {
+      const myF: User[] = await myFollowingRes.json();
+      setMyFollowingSet(new Set(myF.map((u) => u.id)));
+    }
+  } catch (err) {
+    console.error('Error cargando conexiones sociales:', err);
+  } finally {
+    setLoadingSocial(false);
+  }
+};
+
+const handleToggleFollowInModal = async (targetUser: User) => {
+  if (targetUser.id === currentUser.id) return;
+
+  try {
+    const res = await fetch(`/api/social/follow/${targetUser.id}`, {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const isNowFollowing = data.following;
+
+      setMyFollowingSet((prev) => {
+        const next = new Set(prev);
+        if (isNowFollowing) {
+          next.add(targetUser.id);
+        } else {
+          next.delete(targetUser.id);
+        }
+        return next;
+      });
+
+      if (profile) {
+        if (isOwnProfile && socialModalTab === 'following') {
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  followingCount: isNowFollowing
+                    ? prev.followingCount + 1
+                    : Math.max(0, prev.followingCount - 1)
+                }
+              : null
+          );
+        } else if (targetUser.id === userId) {
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  followersCount: isNowFollowing
+                    ? prev.followersCount + 1
+                    : Math.max(0, prev.followersCount - 1)
+                }
+              : null
+          );
+          setIsFollowing(isNowFollowing);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error actualizando seguimiento en modal:', err);
+  }
+};
+
+const filteredSocialUsers = socialUsers.filter(
+  (u) =>
+    u.username.toLowerCase().includes(socialSearch.toLowerCase()) ||
+    (u.bio || '').toLowerCase().includes(socialSearch.toLowerCase())
+);
 
 const handleUpdateProfile = async (
 e: React.FormEvent
@@ -291,6 +389,162 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
     </div>
   )}
 
+  {/* Social Connections Modal */}
+  {socialModalTab && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-fade-in">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-[#0f121d] flex flex-col shadow-2xl">
+        {/* Modal Header */}
+        <div className="p-4 md:p-5 border-b border-slate-850 flex items-center justify-between bg-[#0b0e17]">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-400" />
+            <div>
+              <h2 className="text-sm font-bold text-white leading-none">
+                Conexiones de @{profile.username}
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {socialModalTab === 'followers' ? 'Jugadores que le siguen' : 'Jugadores a los que sigue'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSocialModalTab(null)}
+            className="rounded-lg border border-slate-800 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-slate-850 bg-[#0d101a]">
+          <button
+            type="button"
+            onClick={() => openSocialModal('followers')}
+            className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
+              socialModalTab === 'followers'
+                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                : 'text-slate-400 border-transparent hover:text-slate-200'
+            }`}
+          >
+            Seguidores ({profile.followersCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => openSocialModal('following')}
+            className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
+              socialModalTab === 'following'
+                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                : 'text-slate-400 border-transparent hover:text-slate-200'
+            }`}
+          >
+            Siguiendo ({profile.followingCount})
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="p-3 border-b border-slate-850 bg-[#0b0e17]/50">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar por usuario o biografía..."
+              value={socialSearch}
+              onChange={(e) => setSocialSearch(e.target.value)}
+              className="w-full bg-[#07090e] border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition"
+            />
+          </div>
+        </div>
+
+        {/* List Container */}
+        <div className="p-3 md:p-4 overflow-y-auto space-y-2 max-h-[55vh] min-h-[220px]">
+          {loadingSocial ? (
+            <div className="py-12 text-center text-xs text-slate-500 space-y-2">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p>Cargando lista de jugadores...</p>
+            </div>
+          ) : filteredSocialUsers.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 space-y-2">
+              <UserX className="w-8 h-8 mx-auto text-slate-600 opacity-60" />
+              <p className="text-xs font-medium text-slate-400">
+                {socialSearch
+                  ? 'No se encontraron jugadores para esa búsqueda.'
+                  : socialModalTab === 'followers'
+                  ? 'Aún no tiene seguidores.'
+                  : 'Aún no sigue a ningún jugador.'}
+              </p>
+            </div>
+          ) : (
+            filteredSocialUsers.map((u) => {
+              const isMe = u.id === currentUser.id;
+              const isFollowedByMe = myFollowingSet.has(u.id);
+
+              return (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-slate-850 bg-[#0a0c14] hover:border-slate-800 transition group"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSocialModalTab(null);
+                      onSelectUser?.(u.id);
+                    }}
+                    className="flex items-center gap-3 min-w-0 text-left cursor-pointer flex-1"
+                  >
+                    <img
+                      src={u.avatar}
+                      alt={u.username}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-full border border-slate-800 bg-[#07090e] object-cover flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
+                        @{u.username}
+                      </p>
+                      <p className="text-[11px] text-slate-400 truncate leading-snug">
+                        {u.bio || '¡Sin biografía todavía!'}
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="flex-shrink-0">
+                    {isMe ? (
+                      <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full">
+                        Tú
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFollowInModal(u)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition flex items-center gap-1 border ${
+                          isFollowedByMe
+                            ? 'bg-[#07090e] text-slate-300 border-slate-800 hover:border-red-500/30 hover:text-red-400'
+                            : 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+                        }`}
+                      >
+                        {isFollowedByMe ? (
+                          <>
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Siguiendo</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Seguir</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )}
+
   {/* Profile main card */}
   <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl relative overflow-hidden">
 
@@ -321,19 +575,31 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
         {/* Follow stats */}
         <div className="flex gap-4 text-xs font-semibold text-slate-400">
-          <div className="text-center sm:text-right">
-            <span className="text-white font-bold block text-sm">
+          <button
+            type="button"
+            onClick={() => openSocialModal('followers')}
+            className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
+            title="Ver seguidores"
+          >
+            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
               {profile.followersCount}
             </span>
-            seguidores
-          </div>
+            <span className="group-hover:text-slate-200 transition">
+              {profile.followersCount === 1 ? 'seguidor' : 'seguidores'}
+            </span>
+          </button>
 
-          <div className="text-center sm:text-right">
-            <span className="text-white font-bold block text-sm">
+          <button
+            type="button"
+            onClick={() => openSocialModal('following')}
+            className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
+            title="Ver usuarios seguidos"
+          >
+            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
               {profile.followingCount}
             </span>
-            seguidos
-          </div>
+            <span className="group-hover:text-slate-200 transition">seguidos</span>
+          </button>
         </div>
 
         {isOwnProfile ? (

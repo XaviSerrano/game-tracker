@@ -192,6 +192,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [reviews, setReviews] = useState<(Review & { author: User })[]>([]);
   const [myLists, setMyLists] = useState<CustomList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [listsWithGame, setListsWithGame] = useState<Set<string>>(new Set());
   const [listMembership, setListMembership] = useState<Record<string, boolean>>({});
   const [updatingListId, setUpdatingListId] = useState<string | null>(null);
@@ -222,10 +223,16 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
 
   const fetchGameData = async () => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       // 1. Fetch game details
       const gameRes = await fetch(`/api/games/${gameId}`);
-      if (!gameRes.ok) throw new Error('Failed to load game');
+      if (!gameRes.ok) {
+        if (gameRes.status === 404) {
+          setErrorMessage('Este juego no existe o ya no está disponible.');
+        }
+        throw new Error(`Failed to load game (${gameRes.status})`);
+      }
       const gameData = await gameRes.json();
       setGame(gameData);
 
@@ -600,9 +607,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   if (!game) {
     return (
       <div className="text-center py-12 space-y-4 selection:bg-blue-600 selection:text-white">
-        <p className="text-slate-400">No pudimos recopilar los datos de este videojuego.</p>
+        <p className="text-lg font-semibold text-white">
+          {errorMessage || 'No pudimos recopilar los datos de este videojuego.'}
+        </p>
+        <p className="text-sm text-slate-500">Comprueba la dirección o vuelve a descubrir otros juegos.</p>
         <button onClick={onBack} className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white">
-          Volver atrás
+          Volver al inicio
         </button>
       </div>
     );
