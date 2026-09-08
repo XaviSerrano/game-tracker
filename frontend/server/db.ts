@@ -119,7 +119,8 @@ sqlite.exec(`
     releaseDate TEXT NOT NULL DEFAULT '',
     rating REAL DEFAULT 0,
     popularity REAL DEFAULT 0,
-    averagePlaytimeHours REAL
+    averagePlaytimeHours REAL,
+    timeToBeat TEXT NOT NULL DEFAULT '{}'
   );
 
   CREATE TABLE IF NOT EXISTS userGames (
@@ -286,6 +287,10 @@ if (!gameColumns.some(col => col.name === 'averagePlaytimeHours')) {
   sqlite.exec(`ALTER TABLE games ADD COLUMN averagePlaytimeHours REAL`);
   console.log('📦 SQLite: columna "averagePlaytimeHours" añadida a la tabla games');
 }
+if (!gameColumns.some(col => col.name === 'timeToBeat')) {
+  sqlite.exec(`ALTER TABLE games ADD COLUMN timeToBeat TEXT NOT NULL DEFAULT '{}'`);
+  console.log('📦 SQLite: columna "timeToBeat" añadida a la tabla games');
+}
 
 function parseJson<T>(
   value: string | null | undefined,
@@ -319,6 +324,7 @@ function hydrateGame(row: any): Game {
     rating: Number(row.rating ?? 0),
     popularity: Number(row.popularity ?? 0),
     averagePlaytimeHours: row.averagePlaytimeHours == null ? undefined : Number(row.averagePlaytimeHours),
+    timeToBeat: parseJson<Game['timeToBeat']>(row.timeToBeat, undefined),
     screenshots: parseJson<string[]>(row.screenshots, [])
   };
 }
@@ -852,9 +858,10 @@ class GameDatabase {
           rating,
           popularity,
           averagePlaytimeHours,
+          timeToBeat,
           screenshots
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(igdbId)
         DO UPDATE SET
           name = excluded.name,
@@ -867,6 +874,7 @@ class GameDatabase {
           rating = excluded.rating,
           popularity = excluded.popularity,
           averagePlaytimeHours = excluded.averagePlaytimeHours,
+          timeToBeat = excluded.timeToBeat,
           screenshots = excluded.screenshots
       `)
       .run(
@@ -881,6 +889,7 @@ class GameDatabase {
         game.rating ?? 0,
         game.popularity ?? 0,
         game.averagePlaytimeHours ?? null,
+        serializeJson(game.timeToBeat),
         serializeJson(game.screenshots)
       );
 

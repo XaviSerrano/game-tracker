@@ -72,14 +72,17 @@ function mapIgdbGame(item: any): Game {
     popularity: typeof item.popularity === 'number'
       ? Math.round(item.popularity)
       : (typeof item.total_rating_count === 'number' ? Math.round(item.total_rating_count) : undefined),
-    averagePlaytimeHours: typeof item.time_to_beat?.normally === 'number' && item.time_to_beat.normally > 0
-      ? Math.round((item.time_to_beat.normally / 3600) * 10) / 10
-      : undefined,
-      screenshots: screenshotUrl(item)
+    screenshots: screenshotUrl(item)
   };
 }
 
-async function getAveragePlaytimeHours(gameId: number, token: string, clientId: string): Promise<number | undefined> {
+function secondsToHours(seconds: unknown): number | undefined {
+  return typeof seconds === 'number' && seconds > 0
+    ? Math.round((seconds / 3600) * 10) / 10
+    : undefined;
+}
+
+async function getGameTimeToBeat(gameId: number, token: string, clientId: string): Promise<Game['timeToBeat']> {
   const response = await fetch('https://api.igdb.com/v4/game_time_to_beats', {
     method: 'POST',
     headers: {
@@ -87,7 +90,7 @@ async function getAveragePlaytimeHours(gameId: number, token: string, clientId: 
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'text/plain'
     },
-    body: `fields normally; where game_id = ${gameId};`
+    body: `fields hastily, normally, completely; where game_id = ${gameId};`
   });
 
   if (!response.ok) {
@@ -95,9 +98,17 @@ async function getAveragePlaytimeHours(gameId: number, token: string, clientId: 
   }
 
   const data = await response.json();
-  const normally = data?.[0]?.normally;
-  return typeof normally === 'number' && normally > 0
-    ? Math.round((normally / 3600) * 10) / 10
+  const entry = data?.[0];
+  if (!entry) return undefined;
+
+  const timeToBeat: Game['timeToBeat'] = {
+    hastily: secondsToHours(entry.hastily),
+    normally: secondsToHours(entry.normally),
+    completely: secondsToHours(entry.completely)
+  };
+
+  return Object.values(timeToBeat).some(value => typeof value === 'number')
+    ? timeToBeat
     : undefined;
 }
 
@@ -570,7 +581,7 @@ export class IgdbService {
     const local = db.getGame(id);
 
     // Refresh older cached games once so newly added metadata is populated.
-    if (local && local.screenshots.length > 0 && local.averagePlaytimeHours !== undefined) {
+    if (local && local.screenshots.length > 0 && local.timeToBeat !== undefined) {
       return local;
     }
 
@@ -595,7 +606,8 @@ export class IgdbService {
       if (!apiData || apiData.length === 0) return null;
 
       const mapped: Game = mapIgdbGame(apiData[0]);
-      mapped.averagePlaytimeHours = await getAveragePlaytimeHours(id, token, clientId);
+      mapped.timeToBeat = await getGameTimeToBeat(id, token, clientId);
+      mapped.averagePlaytimeHours = mapped.timeToBeat?.normally;
 
       db.createGame(mapped);
       cacheSet(`game:${id}`, mapped);
@@ -607,4 +619,3 @@ export class IgdbService {
     }
   }
 }
-

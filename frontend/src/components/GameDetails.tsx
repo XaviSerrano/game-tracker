@@ -654,16 +654,28 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
               ))}
             </div>
 
-            {game.averagePlaytimeHours && game.averagePlaytimeHours > 0 && (
-              <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-left">
-                <Clock className="w-4 h-4 text-emerald-400" />
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300">
-                    Duración media estimada
-                  </p>
-                  <p className="text-xs font-semibold text-slate-200">
-                    {game.averagePlaytimeHours} {game.averagePlaytimeHours === 1 ? 'hora' : 'horas'}
-                  </p>
+            {game.timeToBeat && Object.values(game.timeToBeat).some(value => typeof value === 'number') && (
+              <div className="space-y-2 pt-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Duración estimada</p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                  {game.timeToBeat.hastily && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
+                      <Clock className="w-3.5 h-3.5 text-blue-400" />
+                      Historia: <span className="text-white">{game.timeToBeat.hastily} h</span>
+                    </span>
+                  )}
+                  {game.timeToBeat.normally && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
+                      <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                      Normal: <span className="text-white">{game.timeToBeat.normally} h</span>
+                    </span>
+                  )}
+                  {game.timeToBeat.completely && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
+                      <Clock className="w-3.5 h-3.5 text-violet-400" />
+                      Completista: <span className="text-white">{game.timeToBeat.completely} h</span>
+                    </span>
+                  )}
                 </div>
               </div>
             )}
