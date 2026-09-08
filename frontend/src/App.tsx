@@ -365,7 +365,7 @@ export default function App() {
 
       {/* 3. CORE VIEWPORT CONTAINER */}
       <main className={`flex-1 min-w-0 transition-[margin] duration-200 ${sidebarOpen ? 'md:ml-72' : 'md:ml-0'}`}>
-        <div className="w-full max-w-6xl mx-auto px-3 py-4 md:px-5 md:py-6">
+        <div className="w-full px-3 py-4 md:py-8 md:pr-6 md:pl-5">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab + (selectedGameId || '') + (selectedUserId || '')}
