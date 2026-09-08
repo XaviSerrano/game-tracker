@@ -17,7 +17,9 @@ import {
   X,
   Maximize2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Heart,
+  BookmarkPlus
 } from 'lucide-react';
 
 interface GameDetailsProps {
@@ -744,32 +746,41 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                 <CheckSquare className="w-4 h-4 text-blue-400" />
                 Tú diario de Juego (Track)
               </h3>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
                   onClick={handleAddToWishlist}
                   disabled={savingWishlist || (userGame?.status === 'WISHLIST' && status === 'WISHLIST')}
-                  className="p-1 px-2.5 text-[10px] text-indigo-300 border border-indigo-500/25 hover:bg-indigo-500/10 transition cursor-pointer rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={userGame?.status === 'WISHLIST' && status === 'WISHLIST' ? 'Ya está en tu Wishlist' : 'Añadir a Wishlist'}
+                  className={`p-2 rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
+                    userGame?.status === 'WISHLIST'
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 shadow-sm shadow-rose-500/10'
+                      : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10'
+                  }`}
                 >
-                  {savingWishlist ? 'Guardando...' : 'Añadir a wishlist'}
+                  <Heart className={`w-4 h-4 ${userGame?.status === 'WISHLIST' ? 'fill-rose-400 text-rose-400' : ''}`} />
                 </button>
+
                 <button
                   type="button"
                   onClick={async () => {
                     setListModalOpen(true);
                     await loadListMembership();
                   }}
-                  className="p-1 px-2.5 text-[10px] text-blue-300 border border-blue-500/25 hover:bg-blue-500/10 transition cursor-pointer rounded-lg flex items-center gap-1"
+                  title="Añadir a lista personalizada"
+                  className="p-2 rounded-xl border border-slate-800 bg-[#07090e] text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-all cursor-pointer flex items-center justify-center"
                 >
-                  <ListPlus className="w-3 h-3" /> Añadir a lista personalizada
+                  <BookmarkPlus className="w-4 h-4" />
                 </button>
+
                 {userGame && (
                   <button
                     type="button"
                     onClick={handleDeleteTracking}
-                    className="p-1 px-2.5 text-[10px] text-red-400 border border-red-500/20 hover:bg-red-500/10 transition cursor-pointer rounded-lg"
+                    title="Eliminar tracking de tu diario"
+                    className="p-2 rounded-xl border border-slate-800 bg-[#07090e] text-slate-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-all cursor-pointer flex items-center justify-center"
                   >
-                    Eliminar tracking
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 )}
               </div>
