@@ -655,26 +655,32 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
             </div>
 
             {game.timeToBeat && Object.values(game.timeToBeat).some(value => typeof value === 'number') && (
-              <div className="space-y-2 pt-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Duración estimada</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-2">
+              <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Estimación orientativa de IGDB</p>
+                  </div>
+                  <Clock className="h-5 w-5 text-cyan-300/80" />
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {game.timeToBeat.hastily && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
-                      <Clock className="w-3.5 h-3.5 text-blue-400" />
-                      Historia: <span className="text-white">{game.timeToBeat.hastily} h</span>
-                    </span>
+                    <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.07] px-3 py-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Historia</p>
+                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.hastily}<span className="ml-1 text-xs font-semibold text-blue-200/70">h</span></p>
+                    </div>
                   )}
                   {game.timeToBeat.normally && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
-                      <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                      Normal: <span className="text-white">{game.timeToBeat.normally} h</span>
-                    </span>
+                    <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Normal</p>
+                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.normally}<span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span></p>
+                    </div>
                   )}
                   {game.timeToBeat.completely && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-slate-300">
-                      <Clock className="w-3.5 h-3.5 text-violet-400" />
-                      Completista: <span className="text-white">{game.timeToBeat.completely} h</span>
-                    </span>
+                    <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.09] px-3 py-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Completista</p>
+                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.completely}<span className="ml-1 text-xs font-semibold text-violet-200/70">h</span></p>
+                    </div>
                   )}
                 </div>
               </div>
