@@ -3,7 +3,7 @@ import { ArrowLeft, Compass, Gamepad2, KeyRound, LogIn, Mail, UserPlus } from 'l
 import { User } from '../types.ts';
 
 interface OnboardingProps {
-  onLogin: (user: User, token: string) => void;
+  onLogin: (user: User) => void;
   preseededUsers: User[];
 }
 
@@ -75,7 +75,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
       if (!res.ok) {
         throw new Error(data.error || 'Fallo de inicio de sesión');
       }
-      onLogin(data.user, data.token);
+      onLogin(data.user);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -109,7 +109,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
       if (!res.ok) {
         throw new Error(data.error || 'Error al registrarse');
       }
-      onLogin(data.user, data.token);
+      onLogin(data.user);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -183,7 +183,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
       const url = new URL(window.location.href);
       url.searchParams.delete('resetToken');
       window.history.replaceState({}, '', url.toString());
-      onLogin(data.user, data.token);
+      onLogin(data.user);
     } catch (err: any) {
       setError(err.message);
     } finally {

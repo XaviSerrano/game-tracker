@@ -52,7 +52,7 @@ export const SpotlightPanel: React.FC<SpotlightPanelProps> = ({
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[1px] rounded-[inherit] border border-white/4"
+        className="pointer-events-none absolute inset-[1px] rounded-[inherit]"
       />
       <div className="relative z-10">{children}</div>
     </div>
