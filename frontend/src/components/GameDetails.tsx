@@ -21,6 +21,7 @@ import {
   Heart,
   BookmarkPlus
 } from 'lucide-react';
+import { Breadcrumbs } from './Breadcrumbs.tsx';
 
 interface GameDetailsProps {
   gameId: number;
@@ -622,6 +623,19 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
 
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
+      <Breadcrumbs
+        items={[
+          { label: 'Inicio', href: '/' },
+          { label: 'Juegos', href: '/discover' },
+          ...(game.genres[0]
+            ? [{ label: game.genres[0], href: `/discover?genre=${encodeURIComponent(game.genres[0])}` }]
+            : []),
+          ...(game.platforms[0]
+            ? [{ label: game.platforms[0], href: `/discover?platform=${encodeURIComponent(game.platforms[0])}` }]
+            : []),
+          { label: game.name }
+        ]}
+      />
       {/* Back navigaton top link */}
       <button
         onClick={onBack}
