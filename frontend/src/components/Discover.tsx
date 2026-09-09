@@ -17,8 +17,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('genre') || '' : ''
+  );
+  const [selectedPlatform, setSelectedPlatform] = useState(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('platform') || '' : ''
+  );
   const [sortBy, setSortBy] = useState('popularity'); // 'popularity' | 'rating' | 'newest' | 'name'
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -465,4 +469,3 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     </div>
   );
 };
-

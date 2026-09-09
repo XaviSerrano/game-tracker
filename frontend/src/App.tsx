@@ -28,6 +28,14 @@ import { StatsDashboard } from './components/StatsDashboard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
+const SECTION_PATHS: Record<MainTab, string> = {
+  feed: '/',
+  discover: '/discover',
+  library: '/library',
+  lists: '/lists',
+  stats: '/stats',
+  profile: '/profile'
+};
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -101,9 +109,10 @@ export default function App() {
   const gamePathId = gamePathMatch ? Number(decodeURIComponent(gamePathMatch[1])) : null;
   const isGamePath = gamePathMatch !== null;
   const isKnownGamePath = isGamePath && Number.isInteger(gamePathId) && gamePathId > 0;
+  const routeTab = (Object.entries(SECTION_PATHS).find(([, path]) => path === pathname)?.[0] || null) as MainTab | null;
   const showGameNotFound = isGamePath && !isKnownGamePath;
 
-  if (pathname !== '/' && !isGamePath || showGameNotFound) {
+  if (pathname !== '/' && !isGamePath && !routeTab || showGameNotFound) {
     return (
       <NotFoundPage
         isGameNotFound={showGameNotFound}
@@ -149,11 +158,13 @@ export default function App() {
     setSelectedGameId(null);
     setSelectedUserId(null);
     setSidebarOpen(false);
+    navigateTo(SECTION_PATHS[tab]);
   };
 
   // Subnavigation shortcuts
   const handleSelectGame = (gameId: number) => {
-    setSelectedGameId(gameId);
+    navigateTo(`/game/${gameId}`);
+    setSelectedGameId(null);
     setSelectedUserId(null);
     setSidebarOpen(false);
   };
@@ -215,7 +226,7 @@ export default function App() {
       );
     }
 
-    switch (activeTab) {
+    switch (routeTab || activeTab) {
       case 'feed':
         return (
           <HomeFeed
@@ -344,12 +355,16 @@ export default function App() {
                 {/* Navigation Links */}
                 <nav className="space-y-1">
                   {navItems.map(item => {
-                    const active = activeTab === item.id && selectedGameId === null && selectedUserId === null;
+                    const active = (routeTab || activeTab) === item.id && selectedGameId === null && selectedUserId === null;
                     const Icon = item.icon;
                     return (
-                      <button
+                      <a
                         key={item.id}
-                        onClick={() => handleNavigation(item.id)}
+                        href={SECTION_PATHS[item.id]}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleNavigation(item.id);
+                        }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${active ? 'bg-blue-600 text-white border-blue-500Shadow' : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'}`}
                       >
                         <div className="flex items-center gap-3">
@@ -357,7 +372,7 @@ export default function App() {
                           <span>{item.label}</span>
                         </div>
                         {active && <ChevronRight className="w-3.5 h-3.5" />}
-                      </button>
+                      </a>
                     );
                   })}
                 </nav>
@@ -415,7 +430,7 @@ export default function App() {
         <div className="w-full max-w-6xl mx-auto px-3 py-4 md:px-5 md:py-6">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab + (selectedGameId || '') + (selectedUserId || '')}
+              key={(routeTab || activeTab) + (selectedGameId || '') + (selectedUserId || '')}
               initial={{ opacity: 0, y: 3 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -3 }}
@@ -430,12 +445,16 @@ export default function App() {
       {/* 5. MOBILE BOTTOM NAV RAIL */}
       <nav className="md:hidden flex items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 h-16 px-2 py-1 z-20">
         {navItems.map(item => {
-          const active = activeTab === item.id && selectedGameId === null && selectedUserId === null;
+        const active = (routeTab || activeTab) === item.id && selectedGameId === null && selectedUserId === null;
           const Icon = item.icon;
           return (
-            <button
+            <a
               key={item.id}
-              onClick={() => handleNavigation(item.id)}
+              href={SECTION_PATHS[item.id]}
+              onClick={(event) => {
+                event.preventDefault();
+                handleNavigation(item.id);
+              }}
               className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer text-center relative ${active ? 'text-blue-500' : 'text-slate-500 hover:text-slate-350'}`}
             >
               <Icon className="w-4.5 h-4.5" />
@@ -443,7 +462,7 @@ export default function App() {
               {active && (
                 <span className="absolute bottom-[-4px] w-4 h-0.5 bg-blue-500 rounded-full"></span>
               )}
-            </button>
+            </a>
           );
         })}
       </nav>
