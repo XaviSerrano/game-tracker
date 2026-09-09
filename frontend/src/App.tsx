@@ -149,14 +149,18 @@ export default function App() {
     setActiveTab(tab);
     setSelectedGameId(null);
     setSelectedUserId(null);
-    setSidebarOpen(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   };
 
   // Subnavigation shortcuts
   const handleSelectGame = (gameId: number) => {
     setSelectedGameId(gameId);
     setSelectedUserId(null);
-    setSidebarOpen(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   };
 
   const handleSelectUser = (uId: string) => {
