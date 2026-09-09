@@ -657,12 +657,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
 
             <div className="flex flex-wrap justify-center md:justify-start gap-1.5 pt-1">
               {game.genres.map(genre => (
-                <span
+                <a
                   key={genre}
+                  href={`/discover?genre=${encodeURIComponent(genre)}`}
                   className="px-2.5 py-1 bg-slate-900 border border-slate-800 text-[10px] uppercase font-mono rounded-full text-slate-400"
                 >
                   {genre}
-                </span>
+                </a>
               ))}
             </div>
 
@@ -705,8 +706,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                   {game.platforms.map(platform => {
                     const style = getPlatformStyle(platform);
                     return (
-                      <span
+                      <a
                         key={platform}
+                        href={`/discover?platform=${encodeURIComponent(platform)}`}
                         className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${style.badgeClass}`}
                         title={platform}
                       >
@@ -714,7 +716,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                         <span className="text-left leading-none">
                           <span className="block">{style.label}</span>
                         </span>
-                      </span>
+                      </a>
                     );
                   })}
                 </div>

@@ -1037,7 +1037,8 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      const isKnownAppPath = req.path === '/' || /^\/game\/\d+\/?$/.test(req.path);
+      const isKnownAppPath = req.path === '/' || /^\/game\/\d+\/?$/.test(req.path) ||
+        /^\/(discover|library|lists|stats|profile)\/?$/.test(req.path);
       res.status(isKnownAppPath ? 200 : 404).sendFile(path.join(distPath, 'index.html'));
     });
   }

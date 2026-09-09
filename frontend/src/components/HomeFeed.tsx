@@ -254,8 +254,14 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
 
                       {/* Details view for game completions or reviews */}
                       {act.gameId && (
-                        <div className="mt-3 flex gap-3 p-2 rounded-lg bg-[#07090e]/60 border border-slate-800/50 hover:bg-[#07090e]/90 cursor-pointer transition"
-                             onClick={() => act.gameId && onSelectGame(act.gameId)}>
+                        <a
+                          href={`/game/${act.gameId}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            onSelectGame(act.gameId!);
+                          }}
+                          className="mt-3 flex gap-3 p-2 rounded-lg bg-[#07090e]/60 border border-slate-800/50 hover:bg-[#07090e]/90 cursor-pointer transition"
+                        >
                           <img
                             src={relatedGame?.cover || 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg'}
                             alt={relatedGame?.name || `Juego ${act.gameId}`}
@@ -276,7 +282,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
                             </div>
                             <ExternalLink className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                           </div>
-                        </div>
+                        </a>
                       )}
                     </div>
                   </div>
@@ -322,9 +328,13 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
               ) : (
                 <div className="space-y-3">
                   {recs.map(({ game, score }) => (
-                    <button
+                    <a
                       key={game.igdbId}
-                      onClick={() => onSelectGame(game.igdbId)}
+                      href={`/game/${game.igdbId}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onSelectGame(game.igdbId);
+                      }}
                       className="w-full text-left flex gap-3 p-2 bg-[#07090e]/40 hover:bg-[#07090e] border border-slate-800/40 rounded-xl transition group cursor-pointer"
                     >
                       <img
@@ -352,7 +362,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({ currentUser, onSelectGame, o
                           </span>
                         </div>
                       </div>
-                    </button>
+                    </a>
                   ))}
                 </div>
               )}
