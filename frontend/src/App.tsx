@@ -55,6 +55,7 @@ export default function App() {
   // Sub-navigation targets
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // The session is kept in an httpOnly cookie and verified server-side.
   const verifySession = async () => {
@@ -191,7 +192,37 @@ export default function App() {
   }
 
   if (!currentUser || !token) {
-    return <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} />;
+    return (
+      <div className="min-h-screen bg-[#07090e] text-slate-200 font-sans">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-850 bg-[#0f121d]/95 px-4 py-3 backdrop-blur md:px-8">
+          <div className="flex items-center gap-2.5">
+            <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
+            <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
+          </div>
+          <button onClick={() => setAuthModalOpen(true)} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
+            Iniciar sesión / Registrarse
+          </button>
+        </header>
+        <main className="mx-auto max-w-6xl px-3 py-5 md:px-5 md:py-7">
+          <div className="mb-5 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-4 py-3 text-center text-xs text-slate-300">
+            Explora GameTracker libremente. Te pediremos iniciar sesión cuando quieras guardar, seguir o crear contenido.
+          </div>
+          <Discover
+            onSelectGame={() => setAuthModalOpen(true)}
+            onSelectUser={() => setAuthModalOpen(true)}
+            onAuthRequired={() => setAuthModalOpen(true)}
+          />
+        </main>
+        {authModalOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm">
+            <button onClick={() => setAuthModalOpen(false)} className="fixed right-5 top-5 z-[60] rounded-full border border-slate-700 bg-[#0f121d] px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
+              Cerrar
+            </button>
+            <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} />
+          </div>
+        )}
+      </div>
+    );
   }
 
   const renderActiveView = () => {

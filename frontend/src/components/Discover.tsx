@@ -9,10 +9,11 @@ import { TiltCard } from './TiltCard.tsx';
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
   onSelectUser: (userId: string) => void;
-  token: string;
+  token?: string;
+  onAuthRequired?: () => void;
 }
 
-export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token }) => {
+export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired }) => {
   const [games, setGames] = useState<Game[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -136,6 +137,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
   useEffect(() => {
     const fetchWishlist = async () => {
+      if (!token) return;
       try {
         const res = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -181,6 +183,10 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
   const handleQuickWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    if (!token) {
+      onAuthRequired?.();
+      return;
+    }
     if (wishlistIds.has(gameId) || savingWishlistGameId === gameId) return;
 
     setSavingWishlistGameId(gameId);
