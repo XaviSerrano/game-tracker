@@ -12,7 +12,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_PATH
-        value: /var/data/gametracker.db
+        # Render Free has no persistent disk. /tmp exists at runtime, but its
+        # contents are discarded after a restart, sleep, or deploy.
+        value: /tmp/gametracker.db
       - key: IGDB_CLIENT_ID
         sync: false
       - key: IGDB_CLIENT_SECRET
@@ -29,7 +31,3 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
-    disk:
-      name: gametracker-data
-      mountPath: /var/data
-      sizeGB: 1
