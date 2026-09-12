@@ -1,6 +1,5 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import type {
   User,
@@ -79,13 +78,12 @@ interface ActivityRow {
   createdAt: string;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dbPath = path.resolve(
-  __dirname,
-  '../../data/gametracker.db'
-);
+// `import.meta.url` disappears when esbuild creates the CommonJS bundle used
+// by Render. Resolve from the process working directory instead, and allow a
+// persistent disk path to be supplied in production.
+const dbPath = process.env.DATABASE_PATH
+  ? path.resolve(process.env.DATABASE_PATH)
+  : path.resolve(process.cwd(), '../data/gametracker.db');
 
 console.log(`📦 SQLite: ${dbPath}`);
 

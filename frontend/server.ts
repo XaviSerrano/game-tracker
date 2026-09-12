@@ -237,6 +237,11 @@ const resetPasswordRateLimit = createRateLimiter(
 );
 
 const buildResetUrl = (req: express.Request, token: string) => {
+  const publicAppUrl = process.env.PUBLIC_APP_URL?.replace(/\/$/, '');
+  if (publicAppUrl) {
+    return `${publicAppUrl}/?resetToken=${encodeURIComponent(token)}`;
+  }
+
   const host = req.get('host');
   return `${req.protocol}://${host}/?resetToken=${encodeURIComponent(token)}`;
 };
