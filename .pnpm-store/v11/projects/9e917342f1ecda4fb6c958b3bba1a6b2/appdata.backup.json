@@ -1,0 +1,3223 @@
+{
+  "users": [
+    {
+      "id": "user_alex",
+      "username": "alex_gamer",
+      "email": "alex@gametracker.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=alex",
+      "bio": "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.",
+      "createdAt": "2025-01-10T12:00:00Z",
+      "passwordResetTokenHash": null,
+      "passwordResetExpiresAt": null,
+      "passwordHash": "12f7ef1de489922367429549da047cc3f4e1e90c59132e6a28cada62c6ceb9b1a258a7c919e9e8e46d3359ae060b8cef849375b835e4b019271b8edfaca293dc",
+      "passwordSalt": "a882456c9dfa3f3c6453343ea0305716"
+    },
+    {
+      "id": "user_sam",
+      "username": "vance_retro",
+      "email": "sam@gametracker.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=sam",
+      "bio": "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.",
+      "createdAt": "2025-02-15T15:30:00Z",
+      "passwordResetTokenHash": null,
+      "passwordResetExpiresAt": null,
+      "passwordHash": "50b8083c10626b4e532bfad6431bf0a02c8ff73f89d168006955c764edfa05fd8d2fe5e2291f733cda31c78a2bc013d6a97ac0710ba94c3b3c1f0a06874ae866",
+      "passwordSalt": "78ecad323269210c07ec9149f778edb3"
+    },
+    {
+      "id": "user_lucia",
+      "username": "lucia_indie",
+      "email": "lucia@gametracker.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=lucia",
+      "bio": "Indie games advocate. Pixel art, cozy farm simulators, and rogue-lites make my day.",
+      "createdAt": "2025-03-01T09:45:00Z",
+      "passwordResetTokenHash": null,
+      "passwordResetExpiresAt": null,
+      "passwordHash": "38631116b29b858b4d2395b829b14f83d92eb8616fe2c93a1363c09dccadf3efdbb9c80fd0cfc367118a9f5ed254dd40006daf2d2d62fcb38e41022c5bb2e8fc",
+      "passwordSalt": "4e1700491e3a711157761ab456149277"
+    },
+    {
+      "id": "user_marcos",
+      "username": "marcos_rpg",
+      "email": "marcos@gametracker.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=marcos",
+      "bio": "JRPG player & completionist. Elden Ring was brilliant, but Chrono Trigger is art.",
+      "createdAt": "2025-03-12T18:20:00Z",
+      "passwordResetTokenHash": null,
+      "passwordResetExpiresAt": null,
+      "passwordHash": "e30824a1bbbd5f5815b8ce6118514ca1d704db95292741120be8730b897fe74b72272439ef0fe0ff01887b452316041af5fca5786fd39e95ce88c9a97de8ca36",
+      "passwordSalt": "0d96c197c275c43026661177c8c16f95"
+    },
+    {
+      "id": "user_1782026956093",
+      "username": "Ivax7",
+      "email": "xserrano2001@gmail.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=coco",
+      "bio": "Gamer que quiere ponerse al día con sus juegos pendientes (demasiados) =(",
+      "createdAt": "2026-06-21T07:29:16.093Z",
+      "passwordResetTokenHash": null,
+      "passwordResetExpiresAt": null,
+      "passwordHash": "90e23931a4e24fd6de22cdacaf31438e78f35cc4de3cd38e3d866398df47d0d56519a7aebba20762ab915f45c949959fa54869e521ad9379b4857842c88499f9",
+      "passwordSalt": "a4ffa6b366ea25b026d62e9d20cba3f3"
+    },
+    {
+      "id": "user_1783965192593",
+      "username": "Ivax77",
+      "email": "itsivax7@gmail.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=mittens",
+      "bio": "�Hola! Soy nuevo en GameTracker.",
+      "createdAt": "2026-07-13T17:53:12.593Z",
+      "passwordHash": "97c08f196b45153755220bb308a2a06bc0c0ff6ca0d95589ce9dc725248e3fb180161799c3ccdc3560ca3e213709e1e2ae63180e5aa12059a598969151e31b3d",
+      "passwordSalt": "55198d36f68474b48b724a848a7d5047",
+      "passwordResetTokenHash": "7154ff8f318266eb743c5f521be4ef2d104daa2683ae1cd4a1c9932bb5387694",
+      "passwordResetExpiresAt": "2026-07-13T19:08:13.543Z"
+    },
+    {
+      "id": "user_1783966158453",
+      "username": "SanjiGames",
+      "email": "sanjigames9@gmail.com",
+      "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=merlin",
+      "bio": "�Hola! Soy nuevo en GameTracker.",
+      "createdAt": "2026-07-13T18:09:18.453Z",
+      "passwordHash": "3a13cc5c205bd804b8e4c11ee34e78b1c6dc502e3a0e9daef093724602011644655ced4c463de7e3eb68d216ef60295b7ab4baf090776f2994442b6b9351c76a",
+      "passwordSalt": "4879ba7e2d919b92047b01b87c68d4a8",
+      "passwordResetTokenHash": "ea63c6b79a49e747ef5b7f64cc50d08df833a33978c348f54016b9ff44e23ff0",
+      "passwordResetExpiresAt": "2026-07-13T19:41:10.255Z"
+    }
+  ],
+  "games": [
+    {
+      "igdbId": 119171,
+      "name": "Baldur's Gate III",
+      "slug": "baldurs-gate-iii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co670h.jpg",
+      "summary": "An ancient evil has returned to Baldur's Gate, intent on devouring it from the inside out. The fate of Faerun lies in your hands. Alone, you may resist. But together, you can overcome.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Strategy",
+        "Turn-based strategy (TBS)"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "Xbox Series X|S",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Mac"
+      ],
+      "releaseDate": "2023-08-03",
+      "rating": 95,
+      "popularity": 1544
+    },
+    {
+      "igdbId": 119133,
+      "name": "Elden Ring",
+      "slug": "elden-ring",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
+      "summary": "Elden Ring is an action RPG developed by FromSoftware and published by Bandai Namco Entertainment, released in February 2022. Directed by Hidetaka Miyazaki, with world-building contributions from novelist George R. R. Martin, the game features an expansive open world called the Lands Between. Players assume the role of a customisable character known as the Tarnished, who must explore this world, battle formidable enemies, and seek to restore the Elden Ring to become the Elden Lord.\n\nThe game builds on the challenging gameplay mechanics familiar from the Dark Souls series but introduces a more open-ended structure with vast exploration, dynamic weather, and a day-night cycle. It offers deep lore, complex characters, and an interconnected world filled with secrets, dungeons, and powerful bosses.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "Nintendo Switch 2",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One"
+      ],
+      "releaseDate": "2022-02-25",
+      "rating": 95,
+      "popularity": 2216
+    },
+    {
+      "igdbId": 25076,
+      "name": "Red Dead Redemption 2",
+      "slug": "red-dead-redemption-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1q1f.jpg",
+      "summary": "Red Dead Redemption 2 is the epic tale of outlaw Arthur Morgan and the infamous Van der Linde gang, on the run across America at the dawn of the modern age.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One"
+      ],
+      "releaseDate": "2018-10-26",
+      "rating": 94,
+      "popularity": 3738
+    },
+    {
+      "igdbId": 1942,
+      "name": "The Witcher 3: Wild Hunt",
+      "slug": "the-witcher-3-wild-hunt",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaarl.jpg",
+      "summary": "The Witcher 3: Wild Hunt is an open-world action role-playing game developed by CD Projekt Red.\n\nSet in a dark fantasy world, the game follows Geralt of Rivia, a monster hunter searching for his adopted daughter, Ciri, while navigating political conflicts and supernatural threats. Gameplay features exploration, combat, character progression, and branching narratives shaped by player choices. Widely acclaimed for its writing, world-building, and depth, it is considered one of the most influential RPGs of its generation.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2015-05-19",
+      "rating": 93,
+      "popularity": 5390
+    },
+    {
+      "igdbId": 19560,
+      "name": "God of War",
+      "slug": "god-of-war--1",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobkt6.jpg",
+      "summary": "God of War is the sequel to God of War III as well as a continuation of the canon God of War chronology. Unlike previous installments, this game focuses on Norse mythology and follows an older and more seasoned Kratos and his son Atreus in the years since the third game. It is in this harsh, unforgiving world that he must fight to survive… and teach his son to do the same.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2018-04-20",
+      "rating": 94,
+      "popularity": 3502
+    },
+    {
+      "igdbId": 7346,
+      "name": "The Legend of Zelda: Breath of the Wild",
+      "slug": "the-legend-of-zelda-breath-of-the-wild",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg",
+      "summary": "The Legend of Zelda: Breath of the Wild is the first 3D open-world game in the Zelda series. Link can travel anywhere and be equipped with weapons and armor found throughout the world to grant him various bonuses. Unlike many games in the series, Breath of the Wild does not impose a specific order in which quests or dungeons must be completed. While the game still has environmental obstacles such as weather effects, inhospitable lands, or powerful enemies, many of them can be overcome using the right method. A lot of critics ranked Breath of the Wild as one of the best video games of all time.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Wii U",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2017-03-03",
+      "rating": 95,
+      "popularity": 2943
+    },
+    {
+      "igdbId": 72,
+      "name": "Portal 2",
+      "slug": "portal-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rs4.jpg",
+      "summary": "Sequel to the acclaimed Portal (2007), Portal 2 pits the protagonist of the original game, Chell, and her new robot friend, Wheatley, against more puzzles conceived by GLaDOS, an A.I. with the sole purpose of testing the Portal Gun's mechanics and taking revenge on Chell for the events of Portal. As a result of several interactions and revelations, Chell once again pushes to escape Aperture Science Labs.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2011-04-18",
+      "rating": 92,
+      "popularity": 4416
+    },
+    {
+      "igdbId": 112875,
+      "name": "God of War Ragnarök",
+      "slug": "god-of-war-ragnarok",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coba3d.jpg",
+      "summary": "God of War: Ragnarök is the ninth installment in the God of War series and the sequel to 2018's God of War. Continuing with the Norse mythology theme, the game is set in ancient Norway and features series protagonists Kratos, the former Greek God of War, and his young son Atreus. The game kicked off the events of Ragnarök, where Kratos and Atreus must journey to each of the Nine Realms in search of answers as they prepare for the prophesied battle that will end the world.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2022-11-09",
+      "rating": 93,
+      "popularity": 1108
+    },
+    {
+      "igdbId": 732,
+      "name": "Grand Theft Auto: San Andreas",
+      "slug": "grand-theft-auto-san-andreas",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lb9.jpg",
+      "summary": "Returning after his mother's murder to the semi-fictional city of Los Santos (based on Los Angeles), Carl Johnson, a former gang banger, must take back the streets for his family and friends by gaining respect and once again gaining control over the streets. However, a story filled with crime, lies and corruption will lead him to trudge the entire state of San Andreas (based on California and Nevada) to rebuild his life.",
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox",
+        "PlayStation 3",
+        "PlayStation 4",
+        "Windows Phone",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "Xbox 360",
+        "PlayStation 2"
+      ],
+      "releaseDate": "2004-10-26",
+      "rating": 92,
+      "popularity": 3988
+    },
+    {
+      "igdbId": 1020,
+      "name": "Grand Theft Auto V",
+      "slug": "grand-theft-auto-v",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg",
+      "summary": "Grand Theft Auto V is a vast open world game set in Los Santos, a sprawling sun-soaked metropolis struggling to stay afloat in an era of economic uncertainty and cheap reality TV. The game blends storytelling and gameplay in new ways as players repeatedly jump in and out of the lives of the game’s three lead characters, playing all sides of the game’s interwoven story.",
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 3",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox 360",
+        "Xbox One"
+      ],
+      "releaseDate": "2013-09-17",
+      "rating": 89,
+      "popularity": 5855
+    },
+    {
+      "igdbId": 1009,
+      "name": "The Last of Us",
+      "slug": "the-last-of-us",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r7f.jpg",
+      "summary": "The Last of Us is a third-person action-adventure game featuring a mix of exploration, stealth and combat. Players face both infected creatures and hostile human enemies while progressing through varied environments. The game includes a narrative-driven single-player campaign and a competitive online multiplayer mode called Factions. Trophy support is included, and additional downloadable content was made available separately.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3"
+      ],
+      "releaseDate": "2013-06-14",
+      "rating": 92,
+      "popularity": 3512
+    },
+    {
+      "igdbId": 1070,
+      "name": "Super Mario World",
+      "slug": "super-mario-world",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8lo8.jpg",
+      "summary": "A 2D platformer and first entry on the SNES in the Super Mario franchise, Super Mario World follows Mario as he attempts to defeat Bowser's underlings and rescue Princess Peach from his clutches. The game features a save system, a less linear world map, an expanded movement arsenal and numerous new items for Mario, alongside new approaches to level design and art direction.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Arcade",
+        "Super Nintendo Entertainment System",
+        "Wii",
+        "Wii U",
+        "New Nintendo 3DS",
+        "Super Famicom"
+      ],
+      "releaseDate": "1990-11-21",
+      "rating": 96,
+      "popularity": 2004
+    },
+    {
+      "igdbId": 26192,
+      "name": "The Last of Us Part II",
+      "slug": "the-last-of-us-part-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ziw.jpg",
+      "summary": "The Last of Us Part II is an action-adventure game set five years after the events of The Last of Us. The player traverses post-apocalyptic environments such as buildings and forests to advance the story. They can use firearms, improvised weapons, and stealth to defend against hostile humans and cannibalistic creatures infected by a mutated strain of the Cordyceps fungus. The game intermittently switches control between Ellie and Abby, and also briefly Joel in the opening sequence. The nimble nature of the player character introduces platforming elements, allowing the player to jump and climb to traverse environments and gain advantages during combat.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2020-06-19",
+      "rating": 93,
+      "popularity": 1738
+    },
+    {
+      "igdbId": 6036,
+      "name": "The Last of Us Remastered",
+      "slug": "the-last-of-us-remastered",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5zks.jpg",
+      "summary": "The Last of Us Remastered is an updated release of the PS3 game The Last of Us. It is identical to the PS3 version but runs at a 1080p resolution and incorporates character models with a higher resolution. There are also improved shadows and lighting, upgraded textures, 60 frames per second and other types of improvements. In addition to the base game, two map packs and the expansion The Last of Us: Left Behind are included.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4"
+      ],
+      "releaseDate": "2014-07-26",
+      "rating": 95,
+      "popularity": 1693
+    },
+    {
+      "igdbId": 74,
+      "name": "Mass Effect 2",
+      "slug": "mass-effect-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20ac.jpg",
+      "summary": "Are you prepared to lose everything to save the galaxy? You'll need to be, Commander Shephard. It's time to bring together your greatest allies and recruit the galaxy's fighting elite to continue the resistance against the invading Reapers. So steel yourself, because this is an astronomical mission where sacrifices must be made. You'll face tougher choices and new, deadlier enemies. Arm yourself and prepare for an unforgettable intergalactic adventure.\n\nGame Features:\n\nShift the fight in your favour. Equip yourself with powerful new weapons almost instantly thanks to a new inventory system. Plus, an improved health regeneration system means you'll spend less time hunting for restorative items.\n\nMake every decision matter. Divisive crew members are just the tip of the iceberg, Commander, because you'll also be tasked with issues of intergalactic diplomacy. And time's a wastin' so don't be afraid to use new prompt-based actions that let you interrupt conversations, even if they could alter the fate of your crew...and the galaxy.\n\nForge new alliances, carefully. You'll fight alongside some of your most trustworthy crew members, but you'll also get the opportunity to recruit new talent. Just choose your new partners with care because the fate of the galaxy rests on your shoulders, Commander.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2010-01-26",
+      "rating": 93,
+      "popularity": 2740
+    },
+    {
+      "igdbId": 7331,
+      "name": "Uncharted 4: A Thief's End",
+      "slug": "uncharted-4-a-thief-s-end",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r7h.jpg",
+      "summary": "Several years after his last adventure, retired fortune hunter, Nathan Drake, is forced back into the world of thieves. With the stakes much more personal, Drake embarks on a globe-trotting journey in pursuit of a historical conspiracy behind a fabled pirate treasure. His greatest adventure will test his physical limits, his resolve, and ultimately what he's willing to sacrifice to save the ones he loves.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4"
+      ],
+      "releaseDate": "2016-05-10",
+      "rating": 92,
+      "popularity": 2617
+    },
+    {
+      "igdbId": 1026,
+      "name": "The Legend of Zelda: A Link to the Past",
+      "slug": "the-legend-of-zelda-a-link-to-the-past",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3vzn.jpg",
+      "summary": "Venture back to Hyrule and an age of magic and heroes. The predecessors of Link and Zelda face monsters on the march when a menacing magician takes over the kingdom. Only you can prevent his evil plot from shattering the land of Hyrule.\n\nIn your quest, you'll venture into twisting mazes, dungeons, palaces and shadowy forests. Test your mettle with mighty swords and magical weapons. Or heft a boulder and hurl it at your enemies. If the going gets tough, dive into a river - you can swim to escape! Learn powerful spells, locate magical artifacts and solve the mysteries of the evil magician and the hidden realm of Hyrule.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Satellaview",
+        "Super Nintendo Entertainment System",
+        "Wii",
+        "Wii U",
+        "New Nintendo 3DS",
+        "Super Famicom"
+      ],
+      "releaseDate": "1991-11-21",
+      "rating": 96,
+      "popularity": 1702
+    },
+    {
+      "igdbId": 113112,
+      "name": "Hades",
+      "slug": "hades--1",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9kr.jpg",
+      "summary": "A rogue-lite hack and slash dungeon crawler in which Zagreus, son of Hades the Greek god of the dead, attempts to escape his home and his oppressive father by fighting the souls of the dead through the various layers of the ever-shifting underworld, while getting to know and forging relationships with its inhabitants.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "PlayStation 5",
+        "Mac",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2020-09-17",
+      "rating": 92,
+      "popularity": 1717
+    },
+    {
+      "igdbId": 26758,
+      "name": "Super Mario Odyssey",
+      "slug": "super-mario-odyssey",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1mxf.jpg",
+      "summary": "Explore incredible places far from the Mushroom Kingdom as you join Mario and his new ally Cappy on a massive, globe-trotting 3D adventure. Use amazing new abilities, like the power to capture and control objects, animals, and enemies to collect Power Moons so you can power up the Odyssey airship and save Princess Peach from Bowser’s wedding plans!",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo Switch 2",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2017-10-27",
+      "rating": 93,
+      "popularity": 1853
+    },
+    {
+      "igdbId": 14593,
+      "name": "Hollow Knight",
+      "slug": "hollow-knight",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobfzp.jpg",
+      "summary": "A 2D metroidvania with an emphasis on close combat and exploration in which the player enters the once-prosperous now-bleak insect kingdom of Hallownest, travels through its various districts, meets friendly inhabitants, fights hostile ones and uncovers the kingdom's history while improving their combat abilities and movement arsenal by fighting bosses and accessing out-of-the-way areas.",
+      "genres": [
+        "Platform",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "Linux",
+        "Nintendo Switch 2",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Mac",
+        "Wii U",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2017-02-24",
+      "rating": 92,
+      "popularity": 2180
+    },
+    {
+      "igdbId": 733,
+      "name": "Grand Theft Auto: Vice City",
+      "slug": "grand-theft-auto-vice-city",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbb.jpg",
+      "summary": "In the year 1986, Tommy Vercetti is heavily indebted to his mafia superiors after a drug deal gone awry, but his dreams of taking over Vice City (based on Miami) push him down a different path. Featuring a wide variety of vehicles and weapons, radio stations playing hit songs from the era and an intense atmosphere, GTA: Vice City is an open-world sandbox satire of '80's Miami.",
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Adventure",
+        "Arcade"
+      ],
+      "platforms": [
+        "Xbox",
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "PlayStation 2"
+      ],
+      "releaseDate": "2002-10-27",
+      "rating": 91,
+      "popularity": 3104
+    },
+    {
+      "igdbId": 19565,
+      "name": "Marvel's Spider-Man",
+      "slug": "marvels-spider-man",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r77.jpg",
+      "summary": "Starring the world’s most iconic Super Hero, Spider-Man features the acrobatic abilities, improvisation and web-slinging that the wall-crawler is famous for, while also introducing elements never-before-seen in a Spider-Man game. From traversing with parkour and utilizing the environment, to new combat and blockbuster set pieces, it’s Spider-Man unlike any you’ve played before.",
+      "genres": [
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4"
+      ],
+      "releaseDate": "2018-09-07",
+      "rating": 88,
+      "popularity": 2119
+    },
+    {
+      "igdbId": 20,
+      "name": "BioShock",
+      "slug": "bioshock",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mli.jpg",
+      "summary": "BioShock is a horror-themed first-person shooter set in a steampunk underwater dystopia. The player is urged to turn everything into a weapon: biologically modifying their own body with Plasmids, hacking devices and systems, upgrading their weapons, crafting new ammo variants, and experimenting with different battle techniques are all possible. The game is described by the developers as a spiritual successor to their previous PC title System Shock 2. BioShock received high praise in critical reviews for its atmospheric audio and visual quality, absorbing and original plot and its unique gaming experience.",
+      "genres": [
+        "Shooter",
+        "Puzzle",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2007-08-21",
+      "rating": 90,
+      "popularity": 3175
+    },
+    {
+      "igdbId": 565,
+      "name": "Uncharted 2: Among Thieves",
+      "slug": "uncharted-2-among-thieves",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnb.jpg",
+      "summary": "In the sequel to Drake's Fortune, Nathan Drake comes across a map that showcases the location of Marco Polo's missing ships. It takes him on a journey to find the infamous Cintamani Stone, and uncover the truth behind it.",
+      "genres": [
+        "Shooter",
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3"
+      ],
+      "releaseDate": "2009-10-13",
+      "rating": 92,
+      "popularity": 2208
+    },
+    {
+      "igdbId": 12517,
+      "name": "Undertale",
+      "slug": "undertale",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob1t2.jpg",
+      "summary": "A small child falls into the Underground, where monsters have long been banished by humans and are hunting every human that they find. The player controls the child as they try to make it back to the Surface through hostile environments, all the while engaging with a turn-based combat system with puzzle-solving and bullet hell elements, as well as other unconventional game mechanics.",
+      "genres": [
+        "Puzzle",
+        "Role-playing (RPG)",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "PlayStation Vita",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2015-09-15",
+      "rating": 91,
+      "popularity": 1885
+    },
+    {
+      "igdbId": 7334,
+      "name": "Bloodborne",
+      "slug": "bloodborne",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob99l.jpg",
+      "summary": "An action RPG in which the player embodies a Hunter who, after being transfused with the mysterious blood local to the city of Yharnam, sets off into a \"night of the Hunt\", an extended night in which Hunters may phase in and out of dream and reality in order to thin the outbreak of abominable beasts that plague the land and, for the more resilient and insightful Hunters, uncover the answers to the Hunt's many mysteries.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4"
+      ],
+      "releaseDate": "2015-03-24",
+      "rating": 91,
+      "popularity": 1843
+    },
+    {
+      "igdbId": 434,
+      "name": "Red Dead Redemption",
+      "slug": "red-dead-redemption",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lcv.jpg",
+      "summary": "A modern-day Western epic, Red Dead Redemption takes John Marston, a relic from the fast-closing time of the gunslinger, through an open world filled with wildlife, mini-games, and shootouts. Marston sets out to hunt down his old gang mates for the government, who have taken away his family. Along his journey, he meets many characters emblematic of the Wild West, heroism, and the new civilization.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2010-05-18",
+      "rating": 91,
+      "popularity": 2501
+    },
+    {
+      "igdbId": 1029,
+      "name": "The Legend of Zelda: Ocarina of Time",
+      "slug": "the-legend-of-zelda-ocarina-of-time",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3nnx.jpg",
+      "summary": "The Legend of Zelda: Ocarina of Time is the fifth main installment of The Legend of Zelda series and the first to be released for the Nintendo 64. It was one of the most highly anticipated games of its age, and is listed among the greatest video games ever created by numerous websites and magazines. The gameplay of Ocarina of Time was revolutionary for its time, it has arguably made more of an impact on later games in the series than any of its predecessors even though they had the same cores of exploration, dungeons, puzzles and item usage. Among the gameplay mechanics, one of the most noteworthy is the time-traveling system. The game begins with the player controlling the child Link, but later on an adult Link becomes a playable character as well and each of them has certain unique abilities. Ocarina of Time also introduces the use of music to solve puzzles: as new songs are learned, they can be used to solve puzzles, gain access to new areas and warp to different locations. Dungeon exploration is somewhat more puzzle-oriented than in earlier games but they are not too complex.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Wii",
+        "Nintendo 64",
+        "64DD",
+        "Wii U"
+      ],
+      "releaseDate": "1998-11-21",
+      "rating": 92,
+      "popularity": 2127
+    },
+    {
+      "igdbId": 19686,
+      "name": "Resident Evil 2",
+      "slug": "resident-evil-2--1",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ir3.jpg",
+      "summary": "Resident Evil 2 is a remake of 1998's Resident Evil 2. The game was not developed with the intent of improving the original, but rather a reimagining of the original story with redesigned maps, characters and story elements. Gameplay mechanics are more similar to Resident Evil 7: Biohazard though with the use of an over-the-shoulder camera.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "PlayStation 5",
+        "Mac",
+        "Xbox One"
+      ],
+      "releaseDate": "2019-01-25",
+      "rating": 90,
+      "popularity": 1411
+    },
+    {
+      "igdbId": 127,
+      "name": "Assassin's Creed II",
+      "slug": "assassin-s-creed-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rcf.jpg",
+      "summary": "Discover an intriguing and epic story of power, revenge and conspiracy set during a pivotal moment in history: the Italian Renaissance.\nExperience the freedom and immersion of an all new open world and mission structure with settings such as the rooftops and canals of beautiful Venice. Your options in combat, assassination and escape are vast, with many new weapons, settings and gameplay elements.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2009-11-17",
+      "rating": 88,
+      "popularity": 3170
+    },
+    {
+      "igdbId": 1103,
+      "name": "Super Metroid",
+      "slug": "super-metroid",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5osy.jpg",
+      "summary": "The Space Pirates, merciless agents of the evil Mother Brain, have stolen the last Metroid from a research station, and once again Mother Brain threatens the safety of the galaxy! Samus Aran must don her awesome array of high-tech weaponry to retrieve the deadly Metroid hidden deep within the cave-riddled planet Zebes. Super Metroid features excellent graphics, with a huge variety of enemies and worlds to explore. The side-view action will be familiar to many players, only now there are new weapons and items, including the Grappling Beam, which allows Samus to swing across large chasms, and the X-Ray Scope, which reveals secret passages.",
+      "genres": [
+        "Shooter",
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Super Nintendo Entertainment System",
+        "Wii",
+        "Wii U",
+        "New Nintendo 3DS",
+        "Super Famicom"
+      ],
+      "releaseDate": "1994-03-19",
+      "rating": 96,
+      "popularity": 1062
+    },
+    {
+      "igdbId": 538,
+      "name": "BioShock Infinite",
+      "slug": "bioshock-infinite",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2n12.jpg",
+      "summary": "BioShock Infinite is the third game in the BioShock series. It is not a direct sequel/prequel to any of the previous BioShock games but takes place in an entirely different setting, although it shares similar features, gameplay and concepts with the previous games. BioShock Infinite features a range of environments that force the player to adapt, with different weapons and strategies for each situation. Interior spaces feature close combat with enemies, but unlike previous games set in Rapture, the setting of Infinite contains open spaces with emphasis on sniping and ranged combat against as many as fifteen enemies at once.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2013-03-25",
+      "rating": 89,
+      "popularity": 2662
+    },
+    {
+      "igdbId": 501,
+      "name": "Batman: Arkham City",
+      "slug": "batman-arkham-city",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1voh.jpg",
+      "summary": "Batman: Arkham City builds upon the intense, atmospheric foundation of Batman: Arkham Asylum, sending players soaring into Arkham City, the new maximum security \"home\" for all of Gotham City's thugs, gangsters and insane criminal masterminds.\n\nSet inside the heavily fortified walls of a sprawling district in the heart of Gotham City, this highly anticipated sequel introduces a brand-new story that draws together a new all-star cast of classic characters and murderous villains from the Batman universe, as well as a vast range of new and enhanced gameplay features to deliver the ultimate experience as the Dark Knight.",
+      "genres": [
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "OnLive Game System",
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2011-10-18",
+      "rating": 89,
+      "popularity": 2660
+    },
+    {
+      "igdbId": 76882,
+      "name": "Sekiro: Shadows Die Twice",
+      "slug": "sekiro-shadows-die-twice",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a23.jpg",
+      "summary": "Carve your own clever path to vengeance as you come face-to-face with larger than life foes in FromSoftware's dark and twisted adventure set in feudal Japan. Unleash an arsenal of deadly prosthetic tools and ninja abilities, while blending stealth, vertical traversal, and visceral combat. Survive a relentless and bloody confrontation on a quest to restore your honor and save the one you're sworn to protect.",
+      "genres": [
+        "Adventure"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One"
+      ],
+      "releaseDate": "2019-03-22",
+      "rating": 90,
+      "popularity": 1361
+    },
+    {
+      "igdbId": 26472,
+      "name": "Disco Elysium",
+      "slug": "disco-elysium",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sfj.jpg",
+      "summary": "Disco Elysium is a role-playing game developed and published by ZA/UM. It is set in the fictional city of Revachol, where players assume the role of an amnesic detective investigating a murder. The game emphasizes dialogue and skill-based choices, with character attributes represented by internal voices that influence decisions and interactions. Its narrative explores themes of politics, philosophy, and personal identity, and it is known for its unconventional gameplay and deep storytelling.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "2019-10-15",
+      "rating": 91,
+      "popularity": 1155
+    },
+    {
+      "igdbId": 11156,
+      "name": "Horizon Zero Dawn",
+      "slug": "horizon-zero-dawn",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2una.jpg",
+      "summary": "Welcome to a vibrant world rich with the beauty of nature – but inhabited by awe-inspiring, highly advanced machines. As a young machine hunter named Aloy, you must unravel the mysteries of this world and find your own destiny.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2017-02-28",
+      "rating": 88,
+      "popularity": 2418
+    },
+    {
+      "igdbId": 1077,
+      "name": "Super Mario Galaxy",
+      "slug": "super-mario-galaxy",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co21ro.jpg",
+      "summary": "A 3D platformer and first Wii entry in the Super Mario franchise, Super Mario Galaxy sees Mario jump across planets and galaxies with varying items, enemies, geographies and gravity mechanics in order to reach his enemy Bowser, who has attacked the Mushroom Kingdom and hijacked Princess Peach's castle with her inside.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Wii",
+        "Wii U"
+      ],
+      "releaseDate": "2007-11-01",
+      "rating": 94,
+      "popularity": 1269
+    },
+    {
+      "igdbId": 9927,
+      "name": "Persona 5",
+      "slug": "persona-5",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r76.jpg",
+      "summary": "Persona 5, a turn-based JRPG with visual novel elements, follows a high school student with a criminal record for a crime he didn't commit. Soon he meets several characters who share similar fates to him, and discovers a metaphysical realm which allows him and his friends to channel their pent-up frustrations into becoming a group of vigilantes reveling in aesthetics and rebellion while fighting corruption.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation 4"
+      ],
+      "releaseDate": "2016-09-15",
+      "rating": 93,
+      "popularity": 1108
+    },
+    {
+      "igdbId": 75235,
+      "name": "Ghost of Tsushima",
+      "slug": "ghost-of-tsushima",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2crj.jpg",
+      "summary": "Uncover the hidden wonders of Tsushima in this open-world action adventure. Forge a new path and wage an unconventional war for the freedom of Tsushima. Challenge opponents with your katana, master the bow to eliminate distant threats, develop stealth tactics to ambush enemies in order to win over the mongols.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2020-07-17",
+      "rating": 90,
+      "popularity": 1086
+    },
+    {
+      "igdbId": 1627,
+      "name": "Super Smash Bros. Melee",
+      "slug": "super-smash-bros-melee",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co21yv.jpg",
+      "summary": "A crossover platform fighting game featuring characters from Nintendo franchises including Mario, The Legend of Zelda, Star Fox, Pokémon, and Fire Emblem. Unlike traditional fighters, the goal is to knock opponents off the stage rather than deplete a health bar. Damage accumulates as a percentage, increasing the distance a character is launched when hit. Players use simple one-button inputs combined with joystick directions to execute moves. The game supports up to four players simultaneously and includes various single-player modes alongside its multiplayer focus. Its fast-paced, aggressive gameplay fostered a long-running competitive esports scene that persisted well beyond the game's original lifespan.",
+      "genres": [
+        "Fighting",
+        "Platform"
+      ],
+      "platforms": [
+        "Nintendo GameCube"
+      ],
+      "releaseDate": "2001-11-21",
+      "rating": 94,
+      "popularity": 1088
+    },
+    {
+      "igdbId": 116,
+      "name": "Star Wars: Knights of the Old Republic",
+      "slug": "star-wars-knights-of-the-old-republic",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmz.jpg",
+      "summary": "Choose Your Path! Set 4,000 years before the Galactic Empire, you are the last hope for the Jedi Order and the Republic - can you master the ways of the Force to become their savior? Or will you fall to the dark side and achieve ultimate power? Hero, villain, peacekeeper, or chaos-bringer... you and your party will determine the fate of the galaxy!\n\nStar Wars: Knights of the Old Republic is a role-playing video game. Players will be able to create their own characters and be able to choose what gender, appearance, class, skills, attributes, and feats they have throughout the game - no two characters will be the same!",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2003-07-15",
+      "rating": 92,
+      "popularity": 1466
+    },
+    {
+      "igdbId": 1802,
+      "name": "Chrono Trigger",
+      "slug": "chrono-trigger",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3plw.jpg",
+      "summary": "In this turn-based Japanese RPG, young Crono must travel through time through a misfunctioning teleporter to rescue his misfortunate companion and take part in an intricate web of past and present perils. The adventure that ensues soon unveils an evil force set to destroy the world, triggering Crono's race against time to change the course of history and bring about a brighter future.",
+      "genres": [
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "Satellaview",
+        "Super Nintendo Entertainment System",
+        "Wii",
+        "Super Famicom"
+      ],
+      "releaseDate": "1995-03-11",
+      "rating": 92,
+      "popularity": 1376
+    },
+    {
+      "igdbId": 135243,
+      "name": "It Takes Two",
+      "slug": "it-takes-two",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob22v.jpg",
+      "summary": "It Takes Two is a cooperative action-adventure game designed exclusively for two players, playable in local split-screen or online. Players control Cody and May, a married couple transformed into dolls, as they travel through fantastical environments based on their home and relationship. Gameplay combines platforming, puzzle-solving, and action sequences, with each level introducing new mechanics and giving the two characters different abilities that must be used together to progress. The game frequently changes its core mechanics from chapter to chapter, incorporating sections involving shooting, racing, flight, and other genres.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2021-03-25",
+      "rating": 89,
+      "popularity": 1109
+    },
+    {
+      "igdbId": 7342,
+      "name": "Inside",
+      "slug": "inside",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fca.jpg",
+      "summary": "Inside is a puzzle-platformer developed by Playdead, presented in a 2.5D side-scrolling format with a dark, predominantly monochromatic visual style. The player controls an unnamed boy navigating a dystopian environment, solving environmental puzzles, avoiding hostile guards and creatures, and using a mind-control device to manipulate bodies in order to progress. The game features no dialogue or HUD, relying on visual and audio cues to guide the player through its increasingly surreal and dangerous settings.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2016-06-29",
+      "rating": 89,
+      "popularity": 1652
+    },
+    {
+      "igdbId": 132,
+      "name": "Warcraft III: Reign of Chaos",
+      "slug": "warcraft-iii-reign-of-chaos",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xuq.jpg",
+      "summary": "Warcraft III: Reign of Chaos is a real-time strategy game set in the high fantasy world of Azeroth. Players control one of four factions, the Human Alliance, Orcish Horde, Night Elves, or Undead Scourge, each with unique units, structures, and hero characters that gain experience and abilities through combat. The single-player campaign follows a sequential narrative across four faction-specific chapters. Multiplayer is supported through Battle.net with ranked matchmaking. The game includes a World Editor that allows players to create custom maps and scenarios, which gave rise to influential community creations including the mod Defense of the Ancients.",
+      "genres": [
+        "Real Time Strategy (RTS)",
+        "Strategy"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "2002-07-03",
+      "rating": 91,
+      "popularity": 1645
+    },
+    {
+      "igdbId": 500,
+      "name": "Batman: Arkham Asylum",
+      "slug": "batman-arkham-asylum",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1voj.jpg",
+      "summary": "Batman: Arkham Asylum is an action-adventure game developed by Rocksteady Studios and published by Warner Bros. Interactive Entertainment. Released in 2009, it follows Batman as he battles the Joker, who seizes control of Arkham Asylum and frees its inmates. The game features stealth, combat, and detective elements, with players using Batman's gadgets and skills to subdue enemies and solve puzzles.\n\nSet in a dark, immersive version of Gotham, the story explores Batman’s psychological battle with his foes, including Harley Quinn, Bane, and Scarecrow. The game received critical acclaim for its gameplay, atmosphere, and storytelling, becoming a defining title in superhero video games.",
+      "genres": [
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "Ouya",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2009-08-25",
+      "rating": 87,
+      "popularity": 2571
+    },
+    {
+      "igdbId": 17000,
+      "name": "Stardew Valley",
+      "slug": "stardew-valley",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa93h.jpg",
+      "summary": "Stardew Valley is an open-ended country-life RPG! You’ve inherited your grandfather’s old farm plot in Stardew Valley. Armed with hand-me-down tools and a few coins, you set out to begin your new life. Can you learn to live off the land and turn these overgrown fields into a thriving home? It won’t be easy. Ever since Joja Corporation came to town, the old ways of life have all but disappeared. The community center, once the town’s most vibrant hub of activity, now lies in shambles. But the valley seems full of opportunity. With a little dedication, you might just be the one to restore Stardew Valley to greatness!",
+      "genres": [
+        "Role-playing (RPG)",
+        "Simulator",
+        "Strategy",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "Linux",
+        "Nintendo Switch 2",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "Wii U",
+        "PlayStation Vita",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2016-02-26",
+      "rating": 88,
+      "popularity": 1790
+    },
+    {
+      "igdbId": 1074,
+      "name": "Super Mario 64",
+      "slug": "super-mario-64",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co721v.jpg",
+      "summary": "Mario is super in a whole new way! Combining the finest 3-D graphics ever developed for a video game and an explosive soundtrack, Super Mario 64 becomes a new standard for video games. It's packed with bruising battles, daunting obstacle courses, and underwater adventures. Retrieve the Power Stars from their hidden locations and confront your arch-nemesis— Bowser, King of the Koopas!\n\n• Run freely in a grassy meadow, tip-toe through a gloomy dungeon, climb to the top of a mountain, or take a swim in the moat!\n• Leap headfirst into a watery painting and soon you'll be searching for the surface in an underwater realm!\n• On-the-fly, 3-D rendered gameplay delivers the action of ruthless enemy attacks from every angle!\n• Find the Caps that give Mario super powers and ponder the mysteries of the pyramid; you can even race Koopas for fabulous prizes!\n• With the Nintendo 64 Controller and its analog\nControl Stick, Mario can crawl, kick down obstacles, swim, do reverse flips, and even stick the landing on his backwards somersault!\n• Saved game information is stored for up to four players in memory.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Wii",
+        "Nintendo 64",
+        "Wii U"
+      ],
+      "releaseDate": "1996-06-23",
+      "rating": 89,
+      "popularity": 2050
+    },
+    {
+      "igdbId": 73,
+      "name": "Mass Effect",
+      "slug": "mass-effect",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1x7o.jpg",
+      "summary": "Mass Effect is an action role-playing game set in the year 2183. The player takes the role of Commander Shepard, a customizable character who serves as Executive Officer aboard the SSV Normandy. After a routine mission goes wrong, Shepard assembles a squad and pursues a threat that escalates into a galaxy-wide conflict. The game features real-time squad-based combat where players choose companions and tactics suited to different enemy types, from biotic-wielding opponents to heavily armored machines.\n\nThe game spans a large science fiction universe, with explorable locations ranging from the Citadel space station to alien homeworlds and remote outposts. Player decisions affect mission outcomes, crew relationships, and the overarching narrative across the trilogy.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2007-11-20",
+      "rating": 87,
+      "popularity": 2514
+    },
+    {
+      "igdbId": 472,
+      "name": "The Elder Scrolls V: Skyrim",
+      "slug": "the-elder-scrolls-v-skyrim",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobt0i.jpg",
+      "summary": "Skyrim reimagines and revolutionizes the open-world fantasy epic, bringing to life a complete virtual world open for you to explore any way you choose. Play any type of character you can imagine, and do whatever you want; the legendary freedom of choice, storytelling, and adventure of The Elder Scrolls is realized like never before.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2011-11-10",
+      "rating": 84,
+      "popularity": 4283
+    },
+    {
+      "igdbId": 26226,
+      "name": "Celeste",
+      "slug": "celeste",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9dh.jpg",
+      "summary": "Help Madeline survive her inner demons on her journey to the top of Celeste Mountain, in this super-tight platformer from the creators of TowerFall. Brave hundreds of hand-crafted challenges, uncover devious secrets, and piece together the mystery of the mountain.",
+      "genres": [
+        "Platform",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "PlayStation 4",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2018-01-25",
+      "rating": 89,
+      "popularity": 1444
+    },
+    {
+      "igdbId": 1068,
+      "name": "Super Mario Bros. 3",
+      "slug": "super-mario-bros-3",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ozx.jpg",
+      "summary": "Super Mario Bros. 3, the third entry in the Super Mario Bros. series and Super Mario franchise, sees Mario or Luigi navigate a nonlinear world map containing platforming levels and optional minigames and challenges. The game features more diverse movement options and new items alongside more complex level designs and boss battles.",
+      "genres": [
+        "Platform"
+      ],
+      "platforms": [
+        "Arcade",
+        "Nintendo 3DS",
+        "Wii",
+        "Family Computer",
+        "Wii U",
+        "Nintendo Entertainment System"
+      ],
+      "releaseDate": "1988-10-23",
+      "rating": 89,
+      "popularity": 1713
+    },
+    {
+      "igdbId": 233,
+      "name": "Half-Life 2",
+      "slug": "half-life-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1nmw.jpg",
+      "summary": "1998. HALF-LIFE sends a shock through the game industry with its combination of pounding action and continuous, immersive storytelling.\n\nNOW. By taking the suspense, challenge and visceral charge of the original, and adding startling new realism and responsiveness, Half-Life 2 opens the door to a world where the player's presence affects everything around them, from the physical environment to the behaviors even the emotions of both friends and enemies.",
+      "genres": [
+        "Shooter"
+      ],
+      "platforms": [
+        "Xbox",
+        "PlayStation 3",
+        "Linux",
+        "Android",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2004-11-16",
+      "rating": 85,
+      "popularity": 3396
+    },
+    {
+      "igdbId": 730,
+      "name": "Grand Theft Auto III",
+      "slug": "grand-theft-auto-iii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lb8.jpg",
+      "summary": "Featuring a fully 3-D living city, a combination of narrative driven and non-linear gameplay and a completely open environment, Grand Theft Auto III represents a huge leap forward in interactive entertainment. For the first time, players are put at the heart of their very own gangster movie, and let loose in a fully-realised 3 dimensional city, in which anything can happen and probably will.\n\nWith a cast of hundreds, 50 plus vehicles, ranging from sports cars to ice cream trucks and from boats to buses, 3 hours of music, including opera, reggae, house, drum and bass, pop and disco, a huge array of street ready weapons and some of the seediest characters in video game history, Grand Theft Auto 3 is a sprawling epic which will show you that sometimes, crime can pay and sometimes it can pay you back. Available now for PlayStation2, Xbox, PC and Macintosh.",
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Simulator",
+        "Adventure"
+      ],
+      "platforms": [
+        "Xbox",
+        "PlayStation 4",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "PlayStation 2"
+      ],
+      "releaseDate": "2001-10-22",
+      "rating": 90,
+      "popularity": 1596
+    },
+    {
+      "igdbId": 1985,
+      "name": "Metal Gear Solid V: The Phantom Pain",
+      "slug": "metal-gear-solid-v-the-phantom-pain",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v85.jpg",
+      "summary": "Metal Gear Solid V: The Phantom Pain is the sequel to Metal Gear Solid V: Ground Zeroes and a prequel to the original Metal Gear. The game has a complex story with long cut-scene sequences, but there are fewer and they are shorter compared to earlier Metal Gear Solid titles. Most of the gameplay mechanics introduced in Ground Zeroes are carried over: it is still an action game and stealth oriented but replaces the linear corridor design from most earlier titles with large open world environments that offer the player unrestricted freedom for the approach. The world has now a real-time day and night cycle and various weather effects that influence enemy behaviour, visibility and sound. Sabotaging or destroying certain structures can also influence other parts of the map.",
+      "genres": [
+        "Shooter",
+        "Tactical",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox 360",
+        "Xbox One"
+      ],
+      "releaseDate": "2015-09-01",
+      "rating": 90,
+      "popularity": 1175
+    },
+    {
+      "igdbId": 5503,
+      "name": "Batman: Arkham Knight",
+      "slug": "batman-arkham-knight",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coagib.jpg",
+      "summary": "Batman: Arkham Knight is an action-adventure game developed by Rocksteady Studios, released in 2015. It is the final installment in the Arkham series. Players control Batman as he faces Scarecrow, who unites Gotham's criminals to destroy the Dark Knight. The mysterious Arkham Knight, a new adversary, aids Scarecrow in his plan.\n\nThe game features open-world exploration, stealth, combat, and puzzle-solving. A key addition is the Batmobile, used for traversal and combat. The story explores Batman’s psychological struggles and the collapse of his alliances as Gotham spirals into chaos.",
+      "genres": [
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2015-06-23",
+      "rating": 88,
+      "popularity": 1502
+    },
+    {
+      "igdbId": 11133,
+      "name": "Dark Souls III",
+      "slug": "dark-souls-iii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9ed.jpg",
+      "summary": "Dark Souls III is an action role-playing game developed by FromSoftware and published by Bandai Namco Entertainment. Released in March 2016, it is the fourth entry in the Souls series and the final instalment in the Dark Souls trilogy. Set in the decaying kingdom of Lothric, players take on the role of the \"Ashen One,\" an undead warrior tasked with rekindling the First Flame to prevent the world from falling into darkness.\n\nThe game features challenging combat, intricate level design, and a deep, lore-rich narrative.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One"
+      ],
+      "releaseDate": "2016-03-24",
+      "rating": 87,
+      "popularity": 1942
+    },
+    {
+      "igdbId": 71,
+      "name": "Portal",
+      "slug": "portal",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coay61.jpg",
+      "summary": "Waking up in a seemingly empty laboratory, the player is made to complete various physics-based puzzle challenges through numerous test chambers in order to test out the new Aperture Science Handheld Portal Device, without an explanation as to how, why or by whom.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "Linux",
+        "Android",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2007-10-10",
+      "rating": 83,
+      "popularity": 3965
+    },
+    {
+      "igdbId": 11208,
+      "name": "NieR: Automata",
+      "slug": "nier-automata",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5pcj.jpg",
+      "summary": "NieR: Automata tells the story of androids 2B, 9S and A2 and their battle to reclaim the machine-driven dystopia overrun by powerful machines.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One"
+      ],
+      "releaseDate": "2017-02-23",
+      "rating": 88,
+      "popularity": 1552
+    },
+    {
+      "igdbId": 126,
+      "name": "Diablo II",
+      "slug": "diablo-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3gfq.jpg",
+      "summary": "Like its predecessor, Diablo II is an action role-playing game with dark fantasy and horror themes. The player controls a new hero attempting to stop the destruction unleashed by Diablo's return. The game's 4 acts feature a variety of locations and settings to explore and battle in, as well as an increased cast of characters to play as and interact with. Diablo II had become one of the most popular online games of all time. Major factors that contributed to Diablo II's success include what fans found to be addictive hack-and-slash gameplay and free access to Battle.net.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Hack and slash/Beat 'em up"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "2000-06-29",
+      "rating": 89,
+      "popularity": 1570
+    },
+    {
+      "igdbId": 2155,
+      "name": "Dark Souls",
+      "slug": "dark-souls",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1x78.jpg",
+      "summary": "Dark Souls is an action role-playing game developed by FromSoftware and published by Bandai Namco Entertainment. Released in September 2011 as a spiritual sequel to Demon's Souls, it is set in a dark, medieval fantasy world. It is renowned for its challenging gameplay, intricate level design, and deep lore. Players control a customizable character known as the Chosen Undead, embarking on a perilous journey to uncover the secrets of the cursed land of Lordran.\n\nDark Souls is known for its punishing difficulty, requiring players to carefully manage combat, stamina, and resources while navigating hostile environments filled with dangerous enemies and formidable bosses. The game features a unique multiplayer component, allowing players to leave messages for others, summon allies for cooperative play, or invade other players' worlds for PvP combat.\n\nThe original release of Dark Souls received critical acclaim for its atmospheric world, innovative mechanics, and rewarding gameplay, solidifying its place as a seminal title in the action RPG genre.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2011-09-22",
+      "rating": 89,
+      "popularity": 1693
+    },
+    {
+      "igdbId": 75,
+      "name": "Mass Effect 3",
+      "slug": "mass-effect-3",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1x7q.jpg",
+      "summary": "Mass Effect 3 is an action role-playing game in which Commander Shepard leads a final campaign against the Reapers, a machine race that has invaded Earth and is conquering civilizations across the galaxy. Players recruit squad members from various species and classes, forge alliances, and make choices that determine which characters survive. Combat features squad-based tactics with combinable biotic and tech powers, blind fire, and enhanced melee attacks.\n\nThe game includes a cooperative multiplayer mode where up to four players fight waves of enemies to liberate conflict zones. Progress in multiplayer contributes to war preparedness in the single-player campaign. New and returning squad members join Shepard's team, including soldier James Vega and EDI, an AI in a physical body.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Strategy",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2012-03-06",
+      "rating": 88,
+      "popularity": 1847
+    },
+    {
+      "igdbId": 7351,
+      "name": "Doom",
+      "slug": "doom--2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1nc7.jpg",
+      "summary": "Developed by id software, the studio that pioneered the first-person shooter genre and created multiplayer Deathmatch, Doom returns as a brutally fun and challenging modern-day shooter experience. Relentless demons, impossibly destructive guns, and fast, fluid movement provide the foundation for intense, first-person combat – whether you’re obliterating demon hordes through the depths of Hell in the single-player campaign, or competing against your friends in numerous multiplayer modes. Expand your gameplay experience using Doom SnapMap game editor to easily create, play, and share your content with the world.",
+      "genres": [
+        "Shooter"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One"
+      ],
+      "releaseDate": "2016-05-12",
+      "rating": 86,
+      "popularity": 1921
+    },
+    {
+      "igdbId": 76,
+      "name": "Dragon Age: Origins",
+      "slug": "dragon-age-origins",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvs.jpg",
+      "summary": "Dragon Age: Origins is a third-person role-playing game described as a spiritual successor to Baldur's Gate and Neverwinter Nights franchises. Players create their own character by customizing gender and appearance as well as choosing a race and class. Combat is in real time with the ability to pause at any moment: tactical options include an editor which allows the player to give the AI detailed instructions on how to behave in every possible situation. Although the main storyline is the same for every character created, the game features six unique prologues, two for each race. Dragon Age: Origins received critical acclaim upon release, with praise mostly directed at its story, setting, characters, music and combat system.",
+      "genres": [
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2009-11-03",
+      "rating": 88,
+      "popularity": 1711
+    },
+    {
+      "igdbId": 418,
+      "name": "Final Fantasy X",
+      "slug": "final-fantasy-x",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tr1.jpg",
+      "summary": "Final Fantasy X is the tenth main installment in the FF series and the first title released on sixth-generation consoles. It was also the first game to feature fully three-dimensional areas rather than including pre-rendered backdrops, and the first to include voice acting. Final Fantasy X tells the story of a star blitzball player, Tidus, who journeys with a young and beautiful summoner named Yuna on her quest to save the world of Spira from an endless cycle of destruction wrought by the colossal menace Sin.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2001-07-19",
+      "rating": 91,
+      "popularity": 1086
+    },
+    {
+      "igdbId": 529,
+      "name": "Far Cry 3",
+      "slug": "far-cry-3",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vpd.jpg",
+      "summary": "Explore an island playground as stunningly beautiful as it is diverse – from mountain ranges to swampy grasslands and white sandy beaches. Fight your way through the island’s towns, temples, river ports and more.\n\nEncounter a diverse and realistic cast of characters, including one of Far Cry’s most notorious villains: Vaas Montenegro. Dive into this deep and enriching story where morals are questionable and hope is all but abandoned.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2012-11-28",
+      "rating": 86,
+      "popularity": 2209
+    },
+    {
+      "igdbId": 7344,
+      "name": "Ori and the Blind Forest",
+      "slug": "ori-and-the-blind-forest",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y41.jpg",
+      "summary": "The forest of Nibel is dying. After a powerful storm sets a series of devastating events in motion, an unlikely hero must journey to find his courage and confront a dark nemesis to save his home. Ori and the Blind Forest tells the tale of a young orphan destined for heroics, through a visually stunning action-platformer crafted by Moon Studios for Xbox One and PC. Featuring hand-painted artwork, meticulously animated character performance, and a fully orchestrated score, Ori and the Blind Forest explores a deeply emotional story about love and sacrifice, and the hope that exists in us all.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2015-03-11",
+      "rating": 87,
+      "popularity": 1511
+    },
+    {
+      "igdbId": 481,
+      "name": "Silent Hill 2",
+      "slug": "silent-hill-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2vyg.jpg",
+      "summary": "The second entry in the Silent Hill franchise, Silent Hill 2 is a narrative-focused third-person psychological survival horror game with emphasis on combat, exploration and puzzle-solving elements which follows James Sunderland, a man who receives a letter, seemingly sent by his three-years-deceased wife Mary, in which he is beckoned to the fog-ridden town of Silent Hill at the same time as numerous other people troubled by their past.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2001-09-24",
+      "rating": 91,
+      "popularity": 1188
+    },
+    {
+      "igdbId": 512,
+      "name": "Uncharted 3: Drake's Deception",
+      "slug": "uncharted-3-drake-s-deception",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tp8.jpg",
+      "summary": "A search for the fabled \"Atlantis of the Sands\" propels fortune hunter Nathan Drake on a trek into the heart of the Arabian Desert. When the terrible secrets of this lost city are unearthed, Drake's quest descends into a desperate bid for survival that strains the limits of his endurance and forces him to confront his deepest fears.",
+      "genres": [
+        "Shooter",
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3"
+      ],
+      "releaseDate": "2011-11-01",
+      "rating": 89,
+      "popularity": 1458
+    },
+    {
+      "igdbId": 231,
+      "name": "Half-Life",
+      "slug": "half-life",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coc2ea.jpg",
+      "summary": "Half-Life is a 1998 first-person shooter (FPS) game developed by Valve Corporation and published by Sierra Studios for Windows. It was Valve's debut product and the first game in the Half-Life series. The player assumes the role of Gordon Freeman, a theoretical physicist who must escape from the Black Mesa Research Facility after it is overrun by aliens following a disastrous scientific experiment. Its gameplay consists of diverse combat, exploration and puzzles.",
+      "genres": [
+        "Shooter",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "1998-11-19",
+      "rating": 84,
+      "popularity": 2879
+    },
+    {
+      "igdbId": 427,
+      "name": "Final Fantasy VII",
+      "slug": "final-fantasy-vii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2kx2.jpg",
+      "summary": "The Western release of Final Fantasy VII (released as Final Fantasy VII International in Japan) included additional elements and alterations, such as streamlining of the menu and Materia system, reducing the health of enemies, new visual cues to help with navigation across the world map, and additional cutscenes relating to Cloud's past.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation",
+        "PlayStation Portable"
+      ],
+      "releaseDate": "1997-09-07",
+      "rating": 88,
+      "popularity": 1625
+    },
+    {
+      "igdbId": 1352,
+      "name": "Journey",
+      "slug": "journey",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cob9lk.jpg",
+      "summary": "A third-person adventure game in which the player, controlling a robed figure, makes a pilgrimage through a desert landscape to a rugged mountain with a beacon of light in the distance while uncovering the history of their people, rescuing and cooperating with friendly creatures, avoiding predatory ones and communicating with other travelers.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "iOS"
+      ],
+      "releaseDate": "2012-03-13",
+      "rating": 90,
+      "popularity": 1173
+    },
+    {
+      "igdbId": 379,
+      "name": "Metal Gear Solid 3: Snake Eater",
+      "slug": "metal-gear-solid-3-snake-eater",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5ei5.jpg",
+      "summary": "Metal Gear Solid 3: Snake Eater is the prequel to the entire Metal Gear series. Most of the series' defining gameplay elements have been carried over and as before, Snake must use stealth and wits rather than brute force to infiltrate enemy zones and eliminate his major adversaries. Unlike the previous games, this installment takes place in a large outdoor jungle. Snake is able to use camouflage, climb trees, hide in tall grass or wear clothes that make him less noticeable.",
+      "genres": [
+        "Shooter",
+        "Tactical",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2004-11-17",
+      "rating": 89,
+      "popularity": 1258
+    },
+    {
+      "igdbId": 2207,
+      "name": "Shadow of the Colossus",
+      "slug": "shadow-of-the-colossus",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ozz.jpg",
+      "summary": "An open-world action/adventure game in which a young wanderer, along with a stolen magical sword and his steed companion, trespasses a cursed land, makes a deal with an ancient being to bring a sacrificial victim back to life, and sets off to fulfill his end of the bargain, which involves tracking down and infiltrating the abodes of sixteen colossi and sacrificing them to achieve his goal.",
+      "genres": [
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2005-10-18",
+      "rating": 89,
+      "popularity": 1308
+    },
+    {
+      "igdbId": 16,
+      "name": "Fallout: New Vegas",
+      "slug": "fallout-new-vegas",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1u60.jpg",
+      "summary": "In this first-person Western RPG, the player takes on the role of Courier 6, barely surviving after being robbed of their cargo, shot and put into a shallow grave by a New Vegas mob boss. The Courier sets out to track down their robbers and retrieve their cargo, and winds up getting tangled in the complex ideological and socioeconomic web of the many factions and settlements of post-nuclear Nevada.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2010-10-19",
+      "rating": 85,
+      "popularity": 2393
+    },
+    {
+      "igdbId": 90101,
+      "name": "Super Smash Bros. Ultimate",
+      "slug": "super-smash-bros-ultimate",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2255.jpg",
+      "summary": "Super Smash Bros. Ultimate is a crossover fighting game for the Nintendo Switch and the fifth main entry in the series. It features every playable fighter from previous installments alongside new additions such as Inkling and Ridley. The game includes faster combat, new items, and expanded defensive mechanics. Modes include local and online multiplayer, a single-player adventure mode called World of Light, and various casual and competitive rulesets.",
+      "genres": [
+        "Fighting",
+        "Platform"
+      ],
+      "platforms": [
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2018-12-07",
+      "rating": 87,
+      "popularity": 949
+    },
+    {
+      "igdbId": 623,
+      "name": "Call of Duty 4: Modern Warfare",
+      "slug": "call-of-duty-4-modern-warfare",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wko.jpg",
+      "summary": "Call of Duty 4: Modern Warfare differs from previous installments of the Call of Duty series. Previous Call of Duty games have a distinct three country-specific campaign style, while Call of Duty 4 has a more film-like plot with interlaced story lines from the perspectives of Sgt. Paul Jackson of the Marines 1st Force Recon and Sgt. 'Soap' MacTavish of the British 22nd SAS Regiment.",
+      "genres": [
+        "Shooter",
+        "Simulator"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2007-11-05",
+      "rating": 86,
+      "popularity": 1830
+    },
+    {
+      "igdbId": 15,
+      "name": "Fallout 3",
+      "slug": "fallout-3",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ycw.jpg",
+      "summary": "Fallout 3 from the creators of the award-winning Oblivion, featuring one of the most realized game worlds ever created. Create any kind of character you want and explore the open wastes of post-apocalyptic Washington D.C. Every minute is a fight for survival as you encounter Super Mutants, Ghouls, Raiders and other dangers of the Wasteland. Prepare for the future.\n\nThe third game in the Fallout series, Fallout 3 is a singleplayer action role-playing game (RPG) set in a post-apocalyptic Washington DC. Combining the horrific insanity of the Cold War era theory of mutually assured destruction gone terribly wrong, with the kitschy naivety of American 1950s nuclear propaganda, Fallout 3 will satisfy both players familiar with the popular first two games in its series as well as those coming to the franchise for the first time.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2008-10-28",
+      "rating": 86,
+      "popularity": 1766
+    },
+    {
+      "igdbId": 731,
+      "name": "Grand Theft Auto IV",
+      "slug": "grand-theft-auto-iv",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbv.jpg",
+      "summary": "Grand Theft Auto IV is an action-adventure video game developed by Rockstar North and published by Rockstar Games. It is the eleventh title in the Grand Theft Auto series, and the first main entry since 2004's Grand Theft Auto: San Andreas.\n\nThe game is played from a third-person perspective and its world is navigated on-foot or by vehicle. Throughout the single-player mode, players play as Niko Bellic. An online multiplayer mode is included with the game, allowing up to 32 players to engage in both co-operative and competitive gameplay in a recreation of the single-player setting.\n\nTwo expansion packs were later released for the game, The Lost and Damned and The Ballad of Gay Tony, which both feature new plots that are interconnected with the main Grand Theft Auto IV storyline, and follow new protagonists.",
+      "genres": [
+        "Shooter",
+        "Racing",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2008-04-29",
+      "rating": 86,
+      "popularity": 1875
+    },
+    {
+      "igdbId": 121,
+      "name": "Minecraft: Java Edition",
+      "slug": "minecraft-java-edition",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa77e.jpg",
+      "summary": "Minecraft focuses on allowing the player to explore, interact with, and modify a dynamically generated map made of one-cubic-meter-sized blocks. In addition to blocks, the environment features plants, mobs, and items. Some activities in the game include mining for ore, fighting hostile mobs, and crafting new blocks and tools by gathering various resources found in the game. The game's open-ended model allows players to create structures, creations, and artwork on various multiplayer servers or their single-player maps. Other features include redstone circuits for logic computations and remote actions, minecarts and tracks, and a mysterious underworld called the Nether. A designated but completely optional goal of the game is to travel to a dimension called the End, and defeat the ender dragon.",
+      "genres": [
+        "Simulator",
+        "Adventure"
+      ],
+      "platforms": [
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "2011-11-18",
+      "rating": 85,
+      "popularity": 2056
+    },
+    {
+      "igdbId": 1454,
+      "name": "Suikoden II",
+      "slug": "suikoden-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y6a.jpg",
+      "summary": "Suikoden II is a role-playing game developed and published by Konami for the PlayStation. Set in a world of warring nations, the game follows a silent protagonist caught between the Kingdom of Highland and the City-States of Jowston. Gameplay combines turn-based party combat, one-on-one duels, and grid-based strategic army battles. Players can recruit over 100 characters, many of whom join the party or contribute to a home base that expands throughout the game. Save data from the original Suikoden can be imported to carry over certain characters and story details.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Strategy",
+        "Turn-based strategy (TBS)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "PlayStation Vita",
+        "PlayStation",
+        "PlayStation Portable"
+      ],
+      "releaseDate": "1998-12-17",
+      "rating": 96,
+      "popularity": 112
+    },
+    {
+      "igdbId": 26999,
+      "name": "Fantasy War Tactics R",
+      "slug": "fantasy-war-tactics-r",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/bjlo4v3ngi8dcnvfatp9.jpg",
+      "summary": "Fantasy War Tactics is a turn-based strategic role-playing game (SRPG), bringing back nostalgic memories from good old story driven turn-based games such as Tactics Ogre, Final Fantasy Tactics, Super Robot Wars etc.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Strategy",
+        "Tactical"
+      ],
+      "platforms": [
+        "Android",
+        "iOS"
+      ],
+      "releaseDate": "Unknown"
+    },
+    {
+      "igdbId": 1253,
+      "name": "The Lost Vikings 2",
+      "slug": "the-lost-vikings-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1u32.jpg",
+      "summary": "Will the Vikings find their way home across time and space? Will Erik lead his brothers to safety without bonking himself back into thinking he's an iguana? Will Olaf be reunited with his wife and daughters? Will Baleog ever to get a date with Freya, that Valkyrie babe on the \"Resume Game\" screen? Stay tuned...",
+      "genres": [
+        "Platform",
+        "Puzzle"
+      ],
+      "platforms": [
+        "Super Nintendo Entertainment System"
+      ],
+      "releaseDate": "1997-02-27",
+      "rating": 79,
+      "popularity": 27
+    },
+    {
+      "igdbId": 47304,
+      "name": "American Chopper",
+      "slug": "american-chopper",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobouw.jpg",
+      "summary": "Be hired into the shop of the hit TV series American Chopper. Here's your chance to ride the bikes built by the Teutuls. Choose from the POW/MIA Bike, Jet Bike, Black Widow Bike, and others. You're also sent on missions to create your very own, original themed chopper that rivals those built by Paul Sr. and Paul Jr. Experience first-hand all of the hard work, drama, and thrill of creating one of the most beautiful bikes on the road today.",
+      "genres": [
+        "Racing"
+      ],
+      "platforms": [
+        "Xbox",
+        "PC (Microsoft Windows)",
+        "PlayStation 2"
+      ],
+      "releaseDate": "2004-12-22",
+      "rating": 99,
+      "popularity": 49
+    },
+    {
+      "igdbId": 305152,
+      "name": "Clair Obscur: Expedition 33",
+      "slug": "clair-obscur-expedition-33",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9gam.jpg",
+      "summary": "Lead the members of Expedition 33 on their quest to destroy the Paintress so that she can never paint death again. Explore a world of wonders inspired by Belle Époque France and battle unique enemies in this turn-based RPG with real-time mechanics.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PC (Microsoft Windows)",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2025-04-24",
+      "rating": 89,
+      "popularity": 881
+    },
+    {
+      "igdbId": 119388,
+      "name": "The Legend of Zelda: Tears of the Kingdom",
+      "slug": "the-legend-of-zelda-tears-of-the-kingdom",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg",
+      "summary": "An epic adventure across the land and skies of Hyrule awaits in The Legend of Zelda: Tears of the Kingdom for Nintendo Switch. The adventure is yours to create in a world fueled by your imagination.\n\nIn this sequel to The Legend of Zelda: Breath of the Wild, you'll decide your own path through the sprawling landscapes of Hyrule and the mysterious islands floating in the vast skies above. Can you harness the power of Link's new abilities to fight back against the malevolent forces that threaten the kingdom?",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2023-05-12",
+      "rating": 94,
+      "popularity": 893
+    },
+    {
+      "igdbId": 426,
+      "name": "Final Fantasy III",
+      "slug": "final-fantasy-iii--7",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaq5k.jpg",
+      "summary": "Final Fantasy VI is the sixth main installment in the Final Fantasy series, developed and published by Square. It was the final title in the series to feature two-dimensional graphics, and the first story that did not revolve around crystals.\n\nThe game gives players up to fourteen playable characters, the largest cast in the series, and features the Active Time Battle pseudo-turn based menu command system. A party can consist of up to four characters, though some events require the player to assemble three different parties of up to four and switch between them.\n\nEach character has a unique command ability, such as Terra's Trance, Locke's Steal, Edgar's Tools or Sabin's Blitz, and can also learn Magic spells from earning AP from battles with magicite equipped. Each character's rare Desperation Attack will randomly activate after using the Attack command when at critical health.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Super Nintendo Entertainment System",
+        "Wii",
+        "Wii U",
+        "New Nintendo 3DS",
+        "Super Famicom"
+      ],
+      "releaseDate": "1994-04-02",
+      "rating": 95,
+      "popularity": 759
+    },
+    {
+      "igdbId": 1105,
+      "name": "Metroid Prime",
+      "slug": "metroid-prime",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3w4w.jpg",
+      "summary": "A 3D exploration-focused metroidvania with first-person shooting mechanics and the first 3D entry in the Metroid series, Metroid Prime follows Samus Aran after the events of Metroid (1986) as she boards a Space Pirate frigate, then chases her escaping archrival Ridley into the intricately structured Tallon IV, a planet full of deadly wildlife and former home to the advanced and ancient Chozo race.",
+      "genres": [
+        "Shooter",
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo GameCube"
+      ],
+      "releaseDate": "2002-11-17",
+      "rating": 93,
+      "popularity": 881
+    },
+    {
+      "igdbId": 1078,
+      "name": "Super Mario Galaxy 2",
+      "slug": "super-mario-galaxy-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co21tl.jpg",
+      "summary": "Super Mario Galaxy 2 is the sequel to Super Mario Galaxy and the fourth 3D platformer entry in the Mario franchise. The sequel retains many elements from its predecessor, such as the adventure being in outer space, the element of gravity, and recurring objects such as Launch Stars and Sling Stars. Returning items include the Bee Mushroom and the Fire Flower. However, the game introduces new elements as well, such as the utilization of Yoshi, new power-ups like the Cloud Flower, and the use of a guide within the game for beginner players.",
+      "genres": [
+        "Platform",
+        "Adventure"
+      ],
+      "platforms": [
+        "Wii",
+        "Wii U"
+      ],
+      "releaseDate": "2010-05-23",
+      "rating": 93,
+      "popularity": 941
+    },
+    {
+      "igdbId": 204350,
+      "name": "The Last of Us Part I",
+      "slug": "the-last-of-us-part-i",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa1gq.jpg",
+      "summary": "Experience the emotional storytelling and unforgettable characters of Joel and Ellie in The Last of Us, winner of over 200 Game of the Year awards and now rebuilt for PlayStation 5.\n\nEnjoy a total overhaul of the original experience, faithfully reproduced but incorporating modernized gameplay, improved controls and expanded accessibility options. Plus, feel immersed with improved effects and enhanced exploration and combat.\n\nIt also includes the Left Behind story DLC.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "PlayStation 5"
+      ],
+      "releaseDate": "2022-09-02",
+      "rating": 85,
+      "popularity": 794
+    },
+    {
+      "igdbId": 1073,
+      "name": "Super Mario World 2: Yoshi's Island",
+      "slug": "super-mario-world-2-yoshi-s-island",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2kn9.jpg",
+      "summary": "Super Mario World 2: Yoshi's Island is a platform video game acting as a prequel to 1990's Super Mario World. The game casts players as Yoshi as he escorts Baby Mario through 48 levels in order to reunite him with his brother Luigi, who had been kidnapped by Baby Bowser's minions. As a Super Mario series platformer, Yoshi runs and jumps to reach the end of the level while solving puzzles and collecting items. In a style new to the series, the game has a hand-drawn aesthetic and is the first to have Yoshi as its main character. The game introduces his signature abilities to flutter jump, produce eggs from swallowed enemies, and transform into vehicles.",
+      "genres": [
+        "Platform"
+      ],
+      "platforms": [
+        "Satellaview",
+        "Super Nintendo Entertainment System",
+        "Super Famicom"
+      ],
+      "releaseDate": "1995-08-05",
+      "rating": 94,
+      "popularity": 715
+    },
+    {
+      "igdbId": 1128,
+      "name": "Castlevania: Symphony of the Night",
+      "slug": "castlevania-symphony-of-the-night",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co53m8.jpg",
+      "summary": "Having been awoken from his eternal slumber by the reappearance of Castlevania, Alucard must once again face the evil minions of darkness. Use your vampiric powers, along with weapons, potions, and other magical relics to change the tide of battle.\n\nA mixture of platform and role-playing action with many hidden areas and secrets. Can you discover them all?",
+      "genres": [
+        "Platform",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation",
+        "PlayStation Portable",
+        "Xbox 360"
+      ],
+      "releaseDate": "1997-03-20",
+      "rating": 92,
+      "popularity": 835
+    },
+    {
+      "igdbId": 11737,
+      "name": "Outer Wilds",
+      "slug": "outer-wilds",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co65ac.jpg",
+      "summary": "Outer Wilds is a critically-acclaimed and award-winning open world mystery about a solar system trapped in an endless time loop. The newest member of the space program in a small village on the planet Timber Hearth, the player navigates a space shuttle and travels across their solar system to get to the bottom of its mysteries by exploring the cosmos and gathering the knowledge hidden within each of the system's planets, left behind by another civilization in the distant past.",
+      "genres": [
+        "Puzzle",
+        "Simulator",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2019-05-28",
+      "rating": 87,
+      "popularity": 855
+    },
+    {
+      "igdbId": 110248,
+      "name": "Stray",
+      "slug": "stray",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4tt2.jpg",
+      "summary": "Stray is a third-person cat adventure game set amidst the detailed neon-lit alleys of a decaying cybercity and the murky environments of its seedy underbelly. Roam surroundings high and low, defend against unforeseen threats and solve the mysteries of this unwelcoming place inhabited by nothing but unassuming droids and dangerous creatures.\n\nSee the world through the eyes of a stray and interact with the environment in playful ways. Be stealthy, nimble, silly, and sometimes as annoying as possible with the strange inhabitants of this foreign world.",
+      "genres": [
+        "Platform",
+        "Adventure",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "Nintendo Switch 2",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Mac",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2022-07-19",
+      "rating": 83,
+      "popularity": 717
+    },
+    {
+      "igdbId": 45181,
+      "name": "Mass Effect Trilogy",
+      "slug": "mass-effect-trilogy",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4a7a.jpg",
+      "summary": "Experience all three award winning Mass Effect titles at an amazing value with the Mass Effect Trilogy.\n\nAs Commander Shepard, rise to become the galaxy’s most elite soldier and lead an all-out war to stop an ancient and ruthless enemy: the Reapers. With over 75 hours of content and more than 300 awards, one of gaming’s most acclaimed franchises is available for the first time in a premium foiled box set.\n\nHeart-pounding action meets gripping interactive storytelling where you decide how your unique story unfolds. Assemble and lead your team aboard the SSV Normandy, the most advanced ship in the galaxy, and travel to distant and unexplored star systems. On your journey, meet a cast of intriguing characters each with their own story to tell. Wield devastating weapons and customize them with upgrades to create new and devastating attacks. All the thrilling action and your decisions culminate into a heroic battle against the greatest threat ever known.\n\nThe fate of the galaxy lies in your hands—how will you chose to fight for it?",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2012-11-06",
+      "rating": 92,
+      "popularity": 683
+    },
+    {
+      "igdbId": 376,
+      "name": "Metal Gear Solid 2: Sons of Liberty",
+      "slug": "metal-gear-solid-2-sons-of-liberty",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5e1c.jpg",
+      "summary": "Metal Gear Solid 2: Sons of Liberty is the sequel to the espionage action game Metal Gear Solid. Much of the gameplay remains the same, as the game's protagonist has to sneak past guards, outsmart them using various gadgets and defeat the tricky boss enemies. The game expanded its predecessor's cover mechanic, with Solid Snake or Raiden able to take cover behind walls or objects and pop out to shoot at enemies, while the improved enemy AI allowed enemies to also take cover from the player. Metal Gear Solid 2 is considered to be one of the greatest video games of all time, as well as a leading example of artistic expression in video games.",
+      "genres": [
+        "Shooter",
+        "Tactical",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2001-11-13",
+      "rating": 89,
+      "popularity": 1013
+    },
+    {
+      "igdbId": 230,
+      "name": "StarCraft",
+      "slug": "starcraft",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9n6m.jpg",
+      "summary": "StarCraft is a real-time strategy game set in a distant sector of the Milky Way galaxy in the 26th century. Players command one of three species across separate campaigns: the Terrans, resourceful human colonists cut off from Earth; the Zerg, an insectoid swarm that assimilates other species; and the Protoss, a technologically advanced race with powerful psionic abilities. Each species features distinct units, structures, and strategic options. The game includes a story-driven single-player campaign for each faction and competitive multiplayer via Battle.net.",
+      "genres": [
+        "Real Time Strategy (RTS)",
+        "Strategy"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "1998-03-31",
+      "rating": 88,
+      "popularity": 1238
+    },
+    {
+      "igdbId": 551,
+      "name": "God of War II",
+      "slug": "god-of-war-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3dik.jpg",
+      "summary": "God of War II, an action-adventure hack-and-slash video game, was developed by Santa Monica Studio and published by Sony Computer Entertainment (SCE). Initially launched for the PlayStation 2, it serves as the second installment in the God of War series, the sixth in chronological order, and a sequel to 2005's God of War. The game is rooted in Greek mythology and unfolds in ancient Greece, revolving around the theme of vengeance. The protagonist, Kratos, is the new God of War, having defeated the former, Ares. However, Kratos is betrayed by Zeus, the King of the Olympian gods, who not only strips him of his godhood but also kills him. Dragged slowly to the Underworld, Kratos is rescued by the Titan Gaia, who guides him to seek out the Sisters of Fate. These entities have the power to enable time travel, allowing Kratos to prevent his betrayal, and ultimately seek revenge on Zeus.",
+      "genres": [
+        "Platform",
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2007-03-13",
+      "rating": 89,
+      "popularity": 1041
+    },
+    {
+      "igdbId": 499,
+      "name": "God of War III",
+      "slug": "god-of-war-iii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3koi.jpg",
+      "summary": "Set in the realm of brutal Greek mythology, God of War III is a single-player game that allows players to take on the climatic role of the ex-Spartan warrior, Kratos, as he scales through the intimidating heights of Mt. Olympus and the dark depths of Hell to seek revenge on those who have betrayed him. Armed with double-chained blades, and an array of new weapons and magic for this iteration of the trilogy, Kratos must take on mythology's darkest creatures while solving intricate puzzles throughout his merciless quest to destroy Olympus. Utilizing a new game engine built from the ground up and state-of-the-art visual technologies, the development team behind God of War III has made standard-setting strides in giving players the realistic feel of actually being on the battlegrounds. With texture resolutions quadrupling since God of War II on PlayStation 2 computer entertainment system, God of War III, in its debut on the PS3 system, will feature fluid, life-like characters, as well as dynamic lighting effects, a robust weapon system, and world-changing scenarios that will truly bring unmistakable realism to Kratos' fateful quest. Players will have a chance to join battles on a grand scale that is four times larger than its predecessor.",
+      "genres": [
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3"
+      ],
+      "releaseDate": "2010-03-16",
+      "rating": 91,
+      "popularity": 798
+    },
+    {
+      "igdbId": 533,
+      "name": "Dishonored",
+      "slug": "dishonored",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/coabgu.jpg",
+      "summary": "Dishonored is an immersive first-person action game that casts you as a supernatural assassin driven by revenge. With Dishonored’s flexible combat system, creatively eliminate your targets as you combine the supernatural abilities, weapons and unusual gadgets at your disposal. Pursue your enemies under the cover of darkness or ruthlessly attack them head on with weapons drawn. The outcome of each mission plays out based on the choices you make.",
+      "genres": [
+        "Puzzle",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2012-10-09",
+      "rating": 85,
+      "popularity": 1902
+    },
+    {
+      "igdbId": 1164,
+      "name": "Tomb Raider",
+      "slug": "tomb-raider--2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rbu.jpg",
+      "summary": "Tomb Raider explores the intense and gritty origin story of Lara Croft and her ascent from a young woman to a hardened survivor. Armed only with raw instincts and the ability to push beyond the limits of human endurance, Lara must fight to unravel the dark history of a forgotten island to escape its relentless hold.",
+      "genres": [
+        "Shooter",
+        "Platform",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "Linux",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2013-03-04",
+      "rating": 83,
+      "popularity": 2360
+    },
+    {
+      "igdbId": 239,
+      "name": "StarCraft II: Wings of Liberty",
+      "slug": "starcraft-ii-wings-of-liberty",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnn.jpg",
+      "summary": "StarCraft II: Wings of Liberty is a science fiction real-time strategy game and the sequel to the original StarCraft. Set four years after the events of Brood War, the game revolves around three species: the Terrans, the Zerg, and the Protoss. The single-player campaign focuses on the Terrans, following Jim Raynor as he leads an insurgent group against the autocratic Terran Dominion. The campaign is non-linear, with players taking missions for money and using those funds to buy additional units and upgrades between missions aboard the battlecruiser Hyperion.\n\nThe game features competitive multiplayer with a matchmaking ladder system, a map editor for user-created content, and support for three playable races with distinct units and abilities. Wings of Liberty has been free-to-play since November 2017 and was followed by two expansion packs: Heart of the Swarm, focusing on the Zerg, and Legacy of the Void, focusing on the Protoss.",
+      "genres": [
+        "Real Time Strategy (RTS)",
+        "Strategy"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "2010-07-27",
+      "rating": 88,
+      "popularity": 1117
+    },
+    {
+      "igdbId": 1033,
+      "name": "The Legend of Zelda: The Wind Waker",
+      "slug": "the-legend-of-zelda-the-wind-waker",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3ohz.jpg",
+      "summary": "The Legend of Zelda: The Wind Waker is the first Zelda game for the Nintendo GameCube and also the first in the series to employ cel-shading, a lighting and texturing technique that results in the game having a cartoon-like appearance. Like its predecessors, The Wind Waker is an action game with puzzle-solving and light role-playing elements. Basic gameplay mechanics are similar to those found in Ocarina of Time, but it differentiates itself with its massive Great Sea which must be explored using a boat named King of Red Lions.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo GameCube"
+      ],
+      "releaseDate": "2002-12-13",
+      "rating": 89,
+      "popularity": 1047
+    },
+    {
+      "igdbId": 1871,
+      "name": "The Walking Dead",
+      "slug": "the-walking-dead",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2j1g.jpg",
+      "summary": "The Walking Dead: Season One (also known as The Walking Dead: The Game) is an episodic interactive drama graphic adventure video game developed and published by Telltale Games. Based on Robert Kirkman's The Walking Dead comic book series, the game consists of five episodes, released between April and November 2012. It is available for Android, iOS, Kindle Fire HDX, Microsoft Windows, Mac OS X, PlayStation 3, PlayStation Vita, Xbox 360, PlayStation 4 and Xbox One. The game is the first of The Walking Dead video game series published by Telltale.",
+      "genres": [
+        "Point-and-click",
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation 4",
+        "Linux",
+        "Android",
+        "PC (Microsoft Windows)",
+        "iOS",
+        "Mac",
+        "PlayStation Vita",
+        "Xbox 360",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2012-04-24",
+      "rating": 85,
+      "popularity": 1735
+    },
+    {
+      "igdbId": 375,
+      "name": "Metal Gear Solid",
+      "slug": "metal-gear-solid",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobpak.jpg",
+      "summary": "Metal Gear Solid is a stealth game created by Hideo Kojima which follows the MSX2 video games Metal Gear and Metal Gear 2: Solid Snake. Despite a transition to 3D, Metal Gear Solid's gameplay remains similar to his predecessors. The game utilizes a traditional top-down view and the player must navigate the protagonist Solid Snake through the game's areas without being detected. Detection will set off an alarm which draws armed enemies to his location. Conversations with Snake's allies and cutscenes are used extensively to advance the plot and gain more insight into it. Metal Gear Solid is regarded as one of the greatest and most important video games of all time, and helped popularize the stealth genre and in-engine cinematic cutscenes.",
+      "genres": [
+        "Shooter",
+        "Tactical",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PlayStation",
+        "PlayStation Portable"
+      ],
+      "releaseDate": "1998-09-03",
+      "rating": 85,
+      "popularity": 1688
+    },
+    {
+      "igdbId": 549,
+      "name": "God of War",
+      "slug": "god-of-war",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3ddc.jpg",
+      "summary": "God of War is an action-adventure hack-and-slash video game developed by Santa Monica Studio and published by Sony Computer Entertainment (SCE). Initially launched for the PlayStation 2, the game stands as the first instalment in the God of War series and the third in chronological order. Loosely inspired by Greek mythology, it unfolds in ancient Greece with vengeance as its central theme. The player takes on the role of Kratos, the protagonist, a Spartan warrior devoted to the Olympian gods. Tasked by the goddess Athena, Kratos is assigned to eliminate Ares, the God of War and Kratos' former mentor. Ares had deceitfully manipulated Kratos into killing his wife and daughter. As Ares attacks Athens fueled by hatred for Athena, Kratos embarks on a quest to locate Pandora's Box, the sole object capable of permanently stopping the vengeful god.",
+      "genres": [
+        "Puzzle",
+        "Hack and slash/Beat 'em up",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2005-03-22",
+      "rating": 88,
+      "popularity": 1052
+    },
+    {
+      "igdbId": 19564,
+      "name": "Death Stranding",
+      "slug": "death-stranding",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cobksf.jpg",
+      "summary": "Death Stranding is an action game set in a post-apocalyptic United States.\n\nPlayers control Sam Porter Bridges, a courier tasked with reconnecting isolated cities via a communication network while delivering essential cargo. The gameplay blends traversal, resource management, and narrative elements, with a focus on social connectivity through asynchronous multiplayer. It is known for its unique mechanics, atmospheric world, and philosophical themes.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)"
+      ],
+      "releaseDate": "2019-11-08",
+      "rating": 85,
+      "popularity": 897
+    },
+    {
+      "igdbId": 103054,
+      "name": "Assassin's Creed Odyssey",
+      "slug": "assassins-creed-odyssey",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2nul.jpg",
+      "summary": "Write your own epic odyssey and become a legendary Spartan hero in Assassin's Creed Odyssey, an inspiring adventure where you must forge your destiny and define your own path in a world on the brink of tearing itself apart. Influence how history unfolds as you experience a rich and ever-changing world shaped by your decisions.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One"
+      ],
+      "releaseDate": "2018-10-05",
+      "rating": 85,
+      "popularity": 969
+    },
+    {
+      "igdbId": 38,
+      "name": "Dead Space 2",
+      "slug": "dead-space-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20xq.jpg",
+      "summary": "Three years after the Necromorph infestation aboard the USS Ishimura, Isaac Clarke awakens from a coma, confused, disoriented, and on a space station called The Sprawl. Just as his health begins to improve, The Sprawl is overrun with even more advanced forms of the alien-zombie hybrids.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2011-01-25",
+      "rating": 88,
+      "popularity": 1057
+    },
+    {
+      "igdbId": 43,
+      "name": "Deus Ex: Human Revolution",
+      "slug": "deus-ex-human-revolution",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rd2.jpg",
+      "summary": "In Deus Ex: Human Revolution you play Adam Jensen, a security specialist, handpicked to oversee the defense of one of America's most experimental biotechnology firms. But when a black ops team breaks in and kills the scientists you were hired to protect, everything you thought you knew about your job changes. At a time when scientific advancements are routinely turning athletes, soldiers and spies into super-enhanced beings, someone is working very hard to ensure mankind's evolution follows a particular path. You need to discover why - because the decisions you take and the choices you make will be the only things that can determine mankind's future.",
+      "genres": [
+        "Shooter",
+        "Puzzle",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360"
+      ],
+      "releaseDate": "2011-08-23",
+      "rating": 88,
+      "popularity": 1043
+    },
+    {
+      "igdbId": 380,
+      "name": "Metal Gear Solid 4: Guns of the Patriots",
+      "slug": "metal-gear-solid-4-guns-of-the-patriots",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5eju.jpg",
+      "summary": "Metal Gear Solid 4: Guns of the Patriots is the final canonical Metal Gear game to feature Solid Snake as the main character. The gameplay of the previous games have been kept along with some new features, such as the ability to roll on your back and also to hide in bins scattered around the environment. Most of the story and the relationship between the characters are explained through cut-scenes with a considerable length, so knowledge of the prior games is recommended to fully understand the story. The game also features a complex multiplayer mode entitled Metal Gear Online with some original missions based on the stealth aspects of the single-player games.",
+      "genres": [
+        "Shooter",
+        "Tactical",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3"
+      ],
+      "releaseDate": "2008-06-12",
+      "rating": 91,
+      "popularity": 736
+    },
+    {
+      "igdbId": 14,
+      "name": "Fallout 2",
+      "slug": "fallout-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8ado.jpg",
+      "summary": "A turn-based tactical Western RPG in which the Chosen One is tasked with exploring post-nuclear California to locate and retrieve the fabled Garden of Eden Creation Kit for their famine-stricken tribe, while coming into contact through branching dialogue trees with numerous tribes, factions and micro-civilizations, each with their own virtues, vices, socioeconomic situations and political agendas.",
+      "genres": [
+        "Puzzle",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "1998-10-29",
+      "rating": 89,
+      "popularity": 888
+    },
+    {
+      "igdbId": 37,
+      "name": "Dead Space",
+      "slug": "dead-space",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2g7w.jpg",
+      "summary": "Dead Space is a 2008 science fiction survival horror video game developed by EA Redwood Shores (now Visceral Games) for Microsoft Windows, PlayStation 3 and Xbox 360. The game was released on all platforms through October 2008. The game puts the player in control of an engineer named Isaac Clarke, who battles the Necromorphs, reanimated human corpses, aboard an interstellar mining ship, the USG Ishimura.",
+      "genres": [
+        "Shooter",
+        "Puzzle"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360"
+      ],
+      "releaseDate": "2008-10-14",
+      "rating": 87,
+      "popularity": 1233
+    },
+    {
+      "igdbId": 8173,
+      "name": "Overwatch",
+      "slug": "overwatch",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rcb.jpg",
+      "summary": "Join the fight for the future in the world of Overwatch and choose your hero from a diverse cast of soldiers, scientists, adventurers, and oddities. Bend time, defy physics, and unleash a dizzying array of extraordinary powers and weapons. Engage your enemies in iconic locations from around the globe in the ultimate team-based shooter.",
+      "genres": [
+        "Shooter",
+        "Strategy"
+      ],
+      "platforms": [
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2016-05-24",
+      "rating": 85,
+      "popularity": 1192
+    },
+    {
+      "igdbId": 1036,
+      "name": "The Legend of Zelda: Twilight Princess",
+      "slug": "the-legend-of-zelda-twilight-princess",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3mtv.jpg",
+      "summary": "The Legend of Zelda: Twilight Princess is the last Zelda game for GameCube, it was highly anticipated by many members of the gaming community and was regarded as finally fulfilling the dreams of those who wanted a much more realistic and mature game than the ones before. The art is similar to the naturalistic style of Ocarina of Time, rather than the cel-shaded look of The Wind Waker. The main adventure takes place in several provinces with dungeons and temples. New to this game is the ability for Link to transform into a Wolf when entering the Twilight. As a wolf, Link can use his senses to solve puzzles and get past obstacles, he can also dig holes to find hearts and rupees. Twilight Princess has received universal acclaim from reviewers and journalists, who cited it as the greatest Zelda game of all time.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo GameCube"
+      ],
+      "releaseDate": "2006-12-02",
+      "rating": 91,
+      "popularity": 702
+    },
+    {
+      "igdbId": 11198,
+      "name": "Rocket League",
+      "slug": "rocket-league",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/cocdio.jpg",
+      "summary": "Rocket League is a high-powered hybrid of arcade-style soccer and vehicular mayhem with easy-to-understand controls and fluid, physics-driven competition. Rocket League includes casual and competitive Online Matches, a fully-featured offline Season Mode, special “Mutators” that let you change the rules entirely, hockey and basketball-inspired Extra Modes, and more than 500 trillion possible cosmetic customization combinations.",
+      "genres": [
+        "Racing",
+        "Sport",
+        "Indie"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "Linux",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Mac",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2015-07-06",
+      "rating": 85,
+      "popularity": 1221
+    },
+    {
+      "igdbId": 364,
+      "name": "Heroes of Might and Magic III: The Restoration of Erathia",
+      "slug": "heroes-of-might-and-magic-iii-the-restoration-of-erathia",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a47.jpg",
+      "summary": "Heroes of Might and Magic III: The Restoration of Erathia is a turn-based strategy game and the third installment of the Heroes of Might and Magic series.\n\nThe game's story is first referenced throughout Might and Magic VI: The Mandate of Heaven and takes place before Might and Magic VII: For Blood and Honor. The player can choose to play through six different campaigns telling the story, or play in a scenario against computer or human opponents.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Strategy",
+        "Turn-based strategy (TBS)"
+      ],
+      "platforms": [
+        "Linux",
+        "PC (Microsoft Windows)",
+        "Mac"
+      ],
+      "releaseDate": "1999-02-28",
+      "rating": 91,
+      "popularity": 715
+    },
+    {
+      "igdbId": 1221,
+      "name": "Kingdom Hearts II",
+      "slug": "kingdom-hearts-ii",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co30t1.jpg",
+      "summary": "Kingdom Hearts II is an action role-playing game, and the primary entry to the series since the 2002 Disney Interactive and Square collaboration. The game's setting is a collection of various levels (referred to in-game as \"worlds\") that the player progresses through. As in the first game, it II allows the player to travel to locales from various Disney works, along with original worlds specifically created for the series.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 2"
+      ],
+      "releaseDate": "2005-12-22",
+      "rating": 89,
+      "popularity": 847
+    },
+    {
+      "igdbId": 974,
+      "name": "Resident Evil 4",
+      "slug": "resident-evil-4",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2wk8.jpg",
+      "summary": "Resident Evil 4 is the sixth installment in the Resident Evil series and is often noted for its departure from the fixed camera angles of earlier titles. It introduced an over-the-shoulder third-person perspective, faster-paced gunplay, and more dynamic controls. The game features larger, more open environments and a new AI system that enables enemies to coordinate attacks and attempt to corner the player. Enemies exhibit more human-like behavior, such as climbing ladders, opening doors, and using weapons.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo GameCube"
+      ],
+      "releaseDate": "2005-01-11",
+      "rating": 84,
+      "popularity": 1667
+    },
+    {
+      "igdbId": 1970,
+      "name": "Assassin's Creed IV Black Flag",
+      "slug": "assassins-creed-iv-black-flag",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4qfn.jpg",
+      "summary": "Assassin’s Creed IV Black Flag begins in 1715, when pirates established a lawless republic in the Caribbean and ruled the land and seas. These outlaws paralyzed navies, halted international trade, and plundered vast fortunes. They threatened the power structures that ruled Europe, inspired the imaginations of millions, and left a legacy that still endures.",
+      "genres": [
+        "Adventure"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "PlayStation 3",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "Wii U",
+        "Xbox 360",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2013-10-29",
+      "rating": 84,
+      "popularity": 1789
+    },
+    {
+      "igdbId": 7323,
+      "name": "Rise of the Tomb Raider",
+      "slug": "rise-of-the-tomb-raider",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rqa.jpg",
+      "summary": "Rise of the Tomb Raider is a third-person action-adventure game in which players control Lara Croft as she searches for the legendary city of Kitezh and a promise of immortality. Combat involves firearms, stealth, and melee weapons, while semi-open hub areas offer challenge tombs with puzzles, side missions, and resource scavenging for crafting. Players earn experience and unlock skills across three trees focused on combat, hunting, and survival. The game features an Expeditions mode that allows replaying levels with modifiers in place of traditional multiplayer.",
+      "genres": [
+        "Shooter",
+        "Adventure"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "PlayStation 4",
+        "Linux",
+        "PlayStation VR",
+        "PC (Microsoft Windows)",
+        "Mac",
+        "Xbox 360",
+        "Xbox One"
+      ],
+      "releaseDate": "2015-11-10",
+      "rating": 84,
+      "popularity": 1348
+    },
+    {
+      "igdbId": 103298,
+      "name": "Doom Eternal",
+      "slug": "doom-eternal",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p5n.jpg",
+      "summary": "Doom Eternal is a first-person shooter developed by id Software and the sequel to Doom (2016). Players control the Doom Slayer as he fights to end a demonic invasion of Earth. Combat is built around aggressive resource management, where health, armor, and ammo are gained by executing, igniting, or chainsawing enemies. The game introduces platforming segments, destructible enemy weak points, an expanded weapon arsenal, and a multiplayer mode called Battlemode, where one player-controlled Slayer fights two player-controlled demons.",
+      "genres": [
+        "Shooter"
+      ],
+      "platforms": [
+        "Google Stadia",
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One",
+        "Nintendo Switch"
+      ],
+      "releaseDate": "2020-03-19",
+      "rating": 85,
+      "popularity": 754
+    },
+    {
+      "igdbId": 9630,
+      "name": "Fallout 4",
+      "slug": "fallout-4",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yc6.jpg",
+      "summary": "Bethesda Game Studios welcome you to the world of Fallout 4, their most ambitious game ever, and the next generation of open-world gaming. As the sole survivor of Vault 111, you enter a world destroyed by nuclear war. Every second is a fight for survival, and every choice is yours. Only you can rebuild and determine the fate of the Wasteland. Welcome home.",
+      "genres": [
+        "Shooter",
+        "Role-playing (RPG)"
+      ],
+      "platforms": [
+        "Xbox Series X|S",
+        "PlayStation 4",
+        "PC (Microsoft Windows)",
+        "PlayStation 5",
+        "Xbox One"
+      ],
+      "releaseDate": "2015-11-09",
+      "rating": 82,
+      "popularity": 1742
+    },
+    {
+      "igdbId": 2909,
+      "name": "The Legend of Zelda: A Link Between Worlds",
+      "slug": "the-legend-of-zelda-a-link-between-worlds",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p0j.jpg",
+      "summary": "The Legend of Zelda: A Link Between Worlds is the first Zelda game made exclusively for the Nintendo 3DS. It is an indirect sequel to A Link to the Past with the same version of Hyrule but with new characters and gameplay elements. Unlike the series' tradition, many areas of the world are accessible from the beginning of the game and the dungeons can be visited in any order. Puzzles are encountered not only in dungeons but also in the open world, a part of them revolves around the game's 3D visual effect. The 3DS touch-screen display shows the world, dungeon or map depending on where you are.",
+      "genres": [
+        "Puzzle",
+        "Adventure"
+      ],
+      "platforms": [
+        "Nintendo 3DS"
+      ],
+      "releaseDate": "2013-11-22",
+      "rating": 90,
+      "popularity": 725
+    },
+    {
+      "igdbId": 19404,
+      "name": "Eador: Imperium",
+      "slug": "eador-imperium",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y1f.jpg",
+      "summary": "Hire heroes, build an army, prevail in battles and try to keep your empire intact in the face of grave danger. Eador. Imperium is a new chapter in Eador series, known for its unique blend of grand strategy, turn-based tactics and RPG elements.",
+      "genres": [
+        "Role-playing (RPG)",
+        "Strategy",
+        "Indie"
+      ],
+      "platforms": [
+        "PC (Microsoft Windows)"
+      ],
+      "releaseDate": "2017-01-27",
+      "rating": 66,
+      "popularity": 5
+    },
+    {
+      "igdbId": 384,
+      "name": "Final Fantasy XIII-2",
+      "slug": "final-fantasy-xiii-2",
+      "cover": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tr9.jpg",
+      "summary": "Final Fantasy XIII‑2 is a story-driven JRPG that blends fast-paced, party-based combat with time-travel exploration. Lead a dynamic duo across branching timelines and varied environments, recruit and customize powerful allies, and refine strategies through real-time command combos, monster collection, and layered progression systems that reward experimentation and replay.",
+      "genres": [
+        "Real Time Strategy (RTS)",
+        "Role-playing (RPG)",
+        "Adventure"
+      ],
+      "platforms": [
+        "PlayStation 3",
+        "PC (Microsoft Windows)",
+        "Xbox 360",
+        "Xbox One"
+      ],
+      "releaseDate": "2011-12-15",
+      "rating": 73,
+      "popularity": 182
+    }
+  ],
+  "userGames": [
+    {
+      "userId": "user_alex",
+      "gameId": 119133,
+      "status": "WISHLIST",
+      "rating": 5,
+      "hoursPlayed": 145,
+      "notes": "Best boss designs in souls history. Malenia took 48 attempts but we got her!",
+      "startedAt": "2025-01-11",
+      "completedAt": "2025-02-28",
+      "updatedAt": "2026-06-28T10:59:27.917Z"
+    },
+    {
+      "userId": "user_alex",
+      "gameId": 119171,
+      "status": "WISHLIST",
+      "rating": 5,
+      "hoursPlayed": 62,
+      "notes": "Tactical combat behaves so well! Playing as a chaotic good bard.",
+      "startedAt": "2025-03-01",
+      "completedAt": null,
+      "updatedAt": "2026-07-16T16:14:51.740Z"
+    },
+    {
+      "userId": "user_alex",
+      "gameId": 113112,
+      "status": "COMPLETED",
+      "rating": 4,
+      "hoursPlayed": 45,
+      "startedAt": "2025-01-20",
+      "completedAt": "2025-02-05",
+      "notes": "Incredibly tight controls and excellent voice acting. Zag is fantastic.",
+      "updatedAt": "2025-02-05T19:30:00Z"
+    },
+    {
+      "userId": "user_alex",
+      "gameId": 13177,
+      "status": "WISHLIST",
+      "rating": 0,
+      "hoursPlayed": 0,
+      "startedAt": null,
+      "completedAt": null,
+      "notes": "Need a cozy game to wind down after intensive raiding",
+      "updatedAt": "2025-03-10T14:15:00Z"
+    },
+    {
+      "userId": "user_sam",
+      "gameId": 1253,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 85,
+      "startedAt": "2025-01-01",
+      "completedAt": "2025-01-25",
+      "notes": "The absolute standard of story pacing, music, and art synergy.",
+      "updatedAt": "2025-01-25T11:00:00Z"
+    },
+    {
+      "userId": "user_sam",
+      "gameId": 384,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 14,
+      "startedAt": "2025-02-01",
+      "completedAt": "2025-02-05",
+      "notes": "Terrifying atmosphere. Unparalleled psychological horror elements.",
+      "updatedAt": "2025-02-05T23:30:00Z"
+    },
+    {
+      "userId": "user_sam",
+      "gameId": 1942,
+      "status": "PLAYED",
+      "rating": 4,
+      "hoursPlayed": 92,
+      "startedAt": "2025-01-15",
+      "completedAt": "2025-03-10",
+      "notes": "Amazing story, although combat feels a bit simplistic. Geralt is a legend.",
+      "updatedAt": "2025-03-10T18:00:00Z"
+    },
+    {
+      "userId": "user_sam",
+      "gameId": 215160,
+      "status": "PLAYING",
+      "rating": 4,
+      "hoursPlayed": 11,
+      "startedAt": "2025-03-15",
+      "completedAt": null,
+      "notes": "Loving the shift between daytime deep sea dive and night sushi tycoon!",
+      "updatedAt": "2025-03-20T21:00:00Z"
+    },
+    {
+      "userId": "user_lucia",
+      "gameId": 19404,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 56,
+      "startedAt": "2025-01-05",
+      "completedAt": "2025-02-12",
+      "notes": "Breathtaking soundtrack, beautiful and tragic world structure. Pantheon of Hallownest is brutal.",
+      "updatedAt": "2025-02-12T16:00:00Z"
+    },
+    {
+      "userId": "user_lucia",
+      "gameId": 26999,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 28,
+      "startedAt": "2025-02-15",
+      "completedAt": "2025-02-28",
+      "notes": "Tightest controls in a 2D action platformer. Hit home emotionally in every chapter.",
+      "updatedAt": "2025-02-28T21:40:00Z"
+    },
+    {
+      "userId": "user_lucia",
+      "gameId": 113112,
+      "status": "PLAYING",
+      "rating": 5,
+      "hoursPlayed": 22,
+      "startedAt": "2025-03-01",
+      "completedAt": null,
+      "notes": "Fists of Talos are my absolute favorite build.",
+      "updatedAt": "2025-03-22T19:00:00Z"
+    },
+    {
+      "userId": "user_lucia",
+      "gameId": 215160,
+      "status": "COMPLETED",
+      "rating": 4,
+      "hoursPlayed": 29,
+      "startedAt": "2025-02-01",
+      "completedAt": "2025-02-20",
+      "notes": "Very charming and funny characters. Cozy fishing is great.",
+      "updatedAt": "2025-02-20T14:30:00Z"
+    },
+    {
+      "userId": "user_lucia",
+      "gameId": 119133,
+      "status": "PLAYING",
+      "rating": 3,
+      "hoursPlayed": 18,
+      "startedAt": "2025-03-10",
+      "completedAt": null,
+      "notes": "Beautiful views, but I am constantly getting crushed. Need to find more seeds.",
+      "updatedAt": "2025-03-18T10:00:00Z"
+    },
+    {
+      "userId": "user_marcos",
+      "gameId": 119171,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 148,
+      "startedAt": "2025-01-05",
+      "completedAt": "2025-02-20",
+      "notes": "Unbelievable depth of choice. Act 3 was a performance grind but outstanding narrative payoffs.",
+      "updatedAt": "2025-02-20T23:00:00Z"
+    },
+    {
+      "userId": "user_marcos",
+      "gameId": 1253,
+      "status": "COMPLETED",
+      "rating": 5,
+      "hoursPlayed": 78,
+      "startedAt": "2025-01-20",
+      "completedAt": "2025-02-10",
+      "notes": "Multi-character combo techniques are brilliant. Peak retro art style.",
+      "updatedAt": "2025-02-10T19:00:00Z"
+    },
+    {
+      "userId": "user_marcos",
+      "gameId": 1942,
+      "status": "PLAYING",
+      "rating": 4,
+      "hoursPlayed": 35,
+      "startedAt": "2025-03-01",
+      "completedAt": null,
+      "notes": "Novigrad quests are extremely detailed. Skellige soundtrack is fantastic.",
+      "updatedAt": "2025-03-23T22:30:00Z"
+    },
+    {
+      "userId": "user_alex",
+      "gameId": 1454,
+      "status": "WISHLIST",
+      "rating": 0,
+      "hoursPlayed": 0,
+      "notes": "",
+      "startedAt": null,
+      "completedAt": null,
+      "updatedAt": "2026-06-21T07:25:06.467Z"
+    },
+    {
+      "userId": "user_1782026956093",
+      "gameId": 1454,
+      "status": "PLAYED",
+      "rating": 4,
+      "hoursPlayed": 40,
+      "notes": "",
+      "startedAt": null,
+      "completedAt": null,
+      "updatedAt": "2026-06-21T07:31:35.246Z"
+    },
+    {
+      "userId": "user_1782026956093",
+      "gameId": 47304,
+      "status": "WISHLIST",
+      "rating": 0,
+      "hoursPlayed": 0,
+      "notes": "",
+      "startedAt": null,
+      "completedAt": null,
+      "updatedAt": "2026-06-21T07:46:58.323Z"
+    },
+    {
+      "userId": "user_1782026956093",
+      "gameId": 14593,
+      "status": "PLAYING",
+      "rating": 4,
+      "hoursPlayed": 15,
+      "notes": "Me encanta la ambientación, la música y el movimiento del personaje.",
+      "startedAt": "2026-07-03",
+      "completedAt": null,
+      "updatedAt": "2026-07-05T11:58:37.493Z"
+    },
+    {
+      "userId": "user_alex",
+      "gameId": 1942,
+      "status": "WISHLIST",
+      "rating": 0,
+      "hoursPlayed": 0,
+      "notes": "",
+      "startedAt": null,
+      "completedAt": null,
+      "updatedAt": "2026-07-16T16:15:24.032Z"
+    },
+    {
+      "userId": "user_1782026956093",
+      "gameId": 1942,
+      "status": "WISHLIST",
+      "rating": 4,
+      "hoursPlayed": 100,
+      "notes": "",
+      "startedAt": null,
+      "completedAt": null,
+      "updatedAt": "2026-07-18T15:27:40.293Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev1",
+      "userId": "user_alex",
+      "gameId": 119133,
+      "title": "Revolutionary Open World Masterpiece",
+      "content": "Elden Ring takes the tight, legendary combat design of souls-like games and spreads it across a breathtaking canvas. No map markers, no chore lists. Just raw curiosity prompting exploration. Exploring Siofra River for the first time is a sensory experience I will never forget. Challenging but undeniably a design pinnacle.",
+      "likes": [
+        "user_sam",
+        "user_lucia",
+        "user_marcos"
+      ],
+      "createdAt": "2025-02-28T22:15:00Z"
+    },
+    {
+      "id": "rev2",
+      "userId": "user_sam",
+      "gameId": 1253,
+      "title": "Chrono Trigger: A Flawless Standard",
+      "content": "Even after three decades, Chrono Trigger remains completely flawless. Yasunori Mitsuda's score weaves melancholic beauty, Akira Toriyama's sprites have endless charisma, and the combat design features zero filler battles. The time travel mechanics are tidy, rewarding, and culminate in numerous clever endings. It isn't just an RPG; it is a masterpiece.",
+      "likes": [
+        "user_marcos",
+        "user_alex"
+      ],
+      "createdAt": "2025-01-25T11:30:00Z"
+    },
+    {
+      "id": "rev3",
+      "userId": "user_lucia",
+      "gameId": 26999,
+      "title": "Extremely Tight, Emotionally Heavy Platformer",
+      "content": "Celeste is a miracle of a platformer. The dash mechanics, wind physics, and level gimmicks are polished to an insane degree. But what makes it immortal is how Madeline's ascent mimics her mental health journey. The mountain isn't just a hurdle; it's a mirror. A spectacular, tough-as-nails tribute to self-acceptance.",
+      "likes": [
+        "user_alex",
+        "user_lucia"
+      ],
+      "createdAt": "2025-02-28T21:50:00Z"
+    }
+  ],
+  "customLists": [
+    {
+      "id": "list1",
+      "userId": "user_lucia",
+      "name": "Masterpieces of Pixel Art",
+      "description": "Games where pixel density and visual choreography tell half the story. Absolute standouts in modern indie history.",
+      "createdAt": "2025-02-20T15:00:00Z"
+    },
+    {
+      "id": "list2",
+      "userId": "user_sam",
+      "name": "Legends of the Golden Era",
+      "description": "The absolute pinnacles of RPG and atmospheric design that paved the road for contemporary mechanics.",
+      "createdAt": "2025-02-10T12:00:00Z"
+    },
+    {
+      "id": "list_1783852093682",
+      "userId": "user_1782026956093",
+      "name": "2027 games",
+      "description": "",
+      "createdAt": "2026-07-12T10:28:13.682Z"
+    },
+    {
+      "id": "list_1783965809260",
+      "userId": "user_1783965192593",
+      "name": "Best of 2026",
+      "description": "Mejores juegos que he jugado en 2026",
+      "createdAt": "2026-07-13T18:03:29.260Z"
+    },
+    {
+      "id": "list_1784388586964",
+      "userId": "user_1782026956093",
+      "name": "2027 games",
+      "description": "",
+      "createdAt": "2026-07-18T15:29:46.964Z"
+    },
+    {
+      "id": "list_1784388690338",
+      "userId": "user_1782026956093",
+      "name": "Ejemplo",
+      "description": "ejemplo",
+      "createdAt": "2026-07-18T15:31:30.338Z"
+    }
+  ],
+  "customListItems": [
+    {
+      "listId": "list1",
+      "gameId": 19404
+    },
+    {
+      "listId": "list1",
+      "gameId": 26999
+    },
+    {
+      "listId": "list1",
+      "gameId": 113112
+    },
+    {
+      "listId": "list1",
+      "gameId": 215160
+    },
+    {
+      "listId": "list2",
+      "gameId": 1253
+    },
+    {
+      "listId": "list2",
+      "gameId": 384
+    },
+    {
+      "listId": "list_1783965809260",
+      "gameId": 119133
+    },
+    {
+      "listId": "list_1784388586964",
+      "gameId": 25076
+    },
+    {
+      "listId": "list_1784388586964",
+      "gameId": 1942
+    }
+  ],
+  "follows": [
+    {
+      "followerId": "user_alex",
+      "followingId": "user_sam"
+    },
+    {
+      "followerId": "user_alex",
+      "followingId": "user_lucia"
+    },
+    {
+      "followerId": "user_sam",
+      "followingId": "user_marcos"
+    },
+    {
+      "followerId": "user_sam",
+      "followingId": "user_alex"
+    },
+    {
+      "followerId": "user_lucia",
+      "followingId": "user_alex"
+    },
+    {
+      "followerId": "user_lucia",
+      "followingId": "user_sam"
+    },
+    {
+      "followerId": "user_marcos",
+      "followingId": "user_alex"
+    },
+    {
+      "followerId": "user_marcos",
+      "followingId": "user_sam"
+    },
+    {
+      "followerId": "user_1782026956093",
+      "followingId": "user_marcos"
+    }
+  ],
+  "activities": [
+    {
+      "id": "act_1784388690390",
+      "userId": "user_1782026956093",
+      "type": "LIST_CREATED",
+      "details": "creó la lista 'Ejemplo' 📁",
+      "createdAt": "2026-07-18T15:31:30.390Z"
+    },
+    {
+      "id": "act_1784388587027",
+      "userId": "user_1782026956093",
+      "type": "LIST_CREATED",
+      "details": "creó la lista '2027 games' 📁",
+      "createdAt": "2026-07-18T15:29:47.027Z"
+    },
+    {
+      "id": "act_1784388460297",
+      "userId": "user_1782026956093",
+      "type": "WISHLIST",
+      "gameId": 1942,
+      "details": "añadió a su wishlist ⭐️ The Witcher 3: Wild Hunt",
+      "createdAt": "2026-07-18T15:27:40.297Z"
+    },
+    {
+      "id": "act_1784388152049",
+      "userId": "user_1782026956093",
+      "type": "LIST_CREATED",
+      "details": "creó la lista '2027 games' 📁",
+      "createdAt": "2026-07-18T15:22:32.049Z"
+    },
+    {
+      "id": "act_1784218524034",
+      "userId": "user_alex",
+      "type": "WISHLIST",
+      "gameId": 1942,
+      "details": "añadió a su wishlist ⭐️ The Witcher 3: Wild Hunt",
+      "createdAt": "2026-07-16T16:15:24.034Z"
+    },
+    {
+      "id": "act_1784218491745",
+      "userId": "user_alex",
+      "type": "WISHLIST",
+      "gameId": 119171,
+      "details": "añadió a su wishlist ⭐️ Baldur's Gate III",
+      "createdAt": "2026-07-16T16:14:51.745Z"
+    },
+    {
+      "id": "act_1783966158614",
+      "userId": "user_1783966158453",
+      "type": "FOLLOWED",
+      "details": "se uni� a GameTracker ??",
+      "createdAt": "2026-07-13T18:09:18.614Z"
+    },
+    {
+      "id": "act_1783965809298",
+      "userId": "user_1783965192593",
+      "type": "LIST_CREATED",
+      "details": "creó la lista 'Best of 2026' 📁",
+      "createdAt": "2026-07-13T18:03:29.298Z"
+    },
+    {
+      "id": "act_1783965192761",
+      "userId": "user_1783965192593",
+      "type": "FOLLOWED",
+      "details": "se uni� a GameTracker ??",
+      "createdAt": "2026-07-13T17:53:12.761Z"
+    },
+    {
+      "id": "act_1783852093706",
+      "userId": "user_1782026956093",
+      "type": "LIST_CREATED",
+      "details": "creó la lista '2027 games' 📁",
+      "createdAt": "2026-07-12T10:28:13.706Z"
+    },
+    {
+      "id": "act_1783252717497",
+      "userId": "user_1782026956093",
+      "type": "PLAYING",
+      "gameId": 14593,
+      "details": "está jugando a 🎮 Hollow Knight",
+      "createdAt": "2026-07-05T11:58:37.497Z"
+    },
+    {
+      "id": "act_1782644367920",
+      "userId": "user_alex",
+      "type": "WISHLIST",
+      "gameId": 119133,
+      "details": "añadió a su wishlist ⭐️ Elden Ring",
+      "createdAt": "2026-06-28T10:59:27.920Z"
+    },
+    {
+      "id": "act_1782028018327",
+      "userId": "user_1782026956093",
+      "type": "WISHLIST",
+      "gameId": 47304,
+      "details": "añadió a su wishlist ⭐️ American Chopper",
+      "createdAt": "2026-06-21T07:46:58.327Z"
+    },
+    {
+      "id": "act_1782027138919",
+      "userId": "user_1782026956093",
+      "type": "FOLLOWED",
+      "targetUserId": "user_marcos",
+      "details": "@Ivax7 comenzó a seguir a @marcos_rpg",
+      "createdAt": "2026-06-21T07:32:18.919Z"
+    },
+    {
+      "id": "act_1782027095254",
+      "userId": "user_1782026956093",
+      "type": "PLAYING",
+      "gameId": 1454,
+      "details": "jugó a Suikoden II",
+      "createdAt": "2026-06-21T07:31:35.254Z"
+    },
+    {
+      "id": "act_1782027010156",
+      "userId": "user_1782026956093",
+      "type": "WISHLIST",
+      "gameId": 1454,
+      "details": "añadió a su wishlist ⭐️ Suikoden II",
+      "createdAt": "2026-06-21T07:30:10.156Z"
+    },
+    {
+      "id": "act_1782026956104",
+      "userId": "user_1782026956093",
+      "type": "FOLLOWED",
+      "details": "se unió a GameTracker 🎉",
+      "createdAt": "2026-06-21T07:29:16.104Z"
+    },
+    {
+      "id": "act_1782026706471",
+      "userId": "user_alex",
+      "type": "WISHLIST",
+      "gameId": 1454,
+      "details": "añadió a su wishlist ⭐️ Suikoden II",
+      "createdAt": "2026-06-21T07:25:06.471Z"
+    },
+    {
+      "id": "act6",
+      "userId": "user_marcos",
+      "type": "FOLLOWED",
+      "targetUserId": "user_alex",
+      "details": "started following alex_gamer",
+      "createdAt": "2025-03-15T18:00:00Z"
+    },
+    {
+      "id": "act4",
+      "userId": "user_alex",
+      "type": "PLAYING",
+      "gameId": 119171,
+      "details": "just started playing!",
+      "createdAt": "2025-03-01T12:00:00Z"
+    },
+    {
+      "id": "act1",
+      "userId": "user_alex",
+      "type": "COMPLETED",
+      "gameId": 119133,
+      "details": "with a rating of 5/5 ⭐",
+      "createdAt": "2025-02-28T22:00:00Z"
+    },
+    {
+      "id": "act3",
+      "userId": "user_lucia",
+      "type": "REVIEWED",
+      "gameId": 26999,
+      "details": "written review 'Extremely Tight, Emotionally Heavy'",
+      "createdAt": "2025-02-28T21:50:00Z"
+    },
+    {
+      "id": "act5",
+      "userId": "user_lucia",
+      "type": "LIST_CREATED",
+      "details": "created 'Masterpieces of Pixel Art'",
+      "createdAt": "2025-02-20T15:00:00Z"
+    },
+    {
+      "id": "act2",
+      "userId": "user_sam",
+      "type": "COMPLETED",
+      "gameId": 1253,
+      "details": "with a rating of 5/5 ⭐ and 85 hours played!",
+      "createdAt": "2025-01-25T11:00:00Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "cca47939b15313cf0732e26c3d03e50a79fd122f1f65ad463f6ec77f4eac7b4c",
+      "userId": "user_1782026956093",
+      "expiresAt": "2026-08-17T15:22:02.497Z",
+      "createdAt": "2026-07-18T15:22:02.497Z"
+    }
+  ]
+}

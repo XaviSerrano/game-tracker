@@ -1,0 +1,1056 @@
+import dotenv from 'dotenv';
+import crypto from 'crypto';
+import express from 'express';
+import nodemailer from 'nodemailer';
+import path from 'path';
+import { createServer as createViteServer } from 'vite';
+import { db } from './server/db.ts';
+import { IgdbService } from './server/igdb.ts';
+import { Activity, User, UserGame, CustomList, Review } from './src/types.ts';
+
+dotenv.config({ path: path.resolve(process.cwd(), '../backend/.env') });
+dotenv.config();
+
+const app = express();
+const PORT = parseInt(process.env.PORT || '3000');
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const MAX_ACTIVE_SESSIONS_PER_USER = 5;
+const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
+const MIN_PASSWORD_LENGTH = 8;
+const SESSION_COOKIE_NAME = 'gt_session';
+
+app.use(express.json());
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  next();
+});
+
+// --- AUTENTICACIÓN MIDDLEWARE ---
+interface AuthenticatedRequest extends express.Request {
+  currUser?: User;
+  authToken?: string;
+}
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const authRateLimits = new Map<string, RateLimitEntry>();
+
+const getRequestIp = (req: express.Request) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  if (Array.isArray(forwardedFor) && forwardedFor.length > 0 && forwardedFor[0].trim()) {
+    return forwardedFor[0].split(',')[0].trim();
+  }
+
+  return req.ip || req.socket.remoteAddress || 'unknown';
+};
+
+const normalizeEmail = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().toLowerCase();
+};
+
+const recordSecurityEvent = (
+  req: express.Request,
+  eventType: string,
+  details: string,
+  userId?: string | null
+) => {
+  db.addSecurityEvent({
+    eventType,
+    userId: userId ?? null,
+    ipAddress: getRequestIp(req),
+    userAgent: req.get('user-agent') || null,
+    details
+  });
+};
+
+const setSessionCookie = (res: express.Response, token: string) => {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=${token}`,
+    'HttpOnly',
+    'Path=/',
+    `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`,
+    'SameSite=Strict'
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', parts.join('; '));
+};
+
+const clearSessionCookie = (res: express.Response) => {
+  const parts = [
+    `${SESSION_COOKIE_NAME}=`,
+    'HttpOnly',
+    'Path=/',
+    'Max-Age=0',
+    'SameSite=Strict'
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    parts.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', parts.join('; '));
+};
+
+const getCookie = (req: express.Request, name: string) => {
+  const cookies = req.headers.cookie?.split(';') || [];
+  const cookie = cookies.find(value => value.trim().startsWith(`${name}=`));
+  return cookie ? cookie.trim().slice(name.length + 1) : null;
+};
+
+const createRateLimiter = (
+  scope: string,
+  maxAttempts: number,
+  windowMs: number,
+  keyResolver: (req: express.Request) => string
+) => {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = `${scope}:${keyResolver(req)}`;
+    const now = Date.now();
+    const current = authRateLimits.get(key);
+
+    if (authRateLimits.size > 1000) {
+      for (const [limitKey, entry] of authRateLimits.entries()) {
+        if (entry.resetAt <= now) {
+          authRateLimits.delete(limitKey);
+        }
+      }
+    }
+
+    if (current && current.resetAt > now) {
+      if (current.count >= maxAttempts) {
+        res.setHeader('Retry-After', Math.ceil((current.resetAt - now) / 1000).toString());
+        recordSecurityEvent(req, 'AUTH_RATE_LIMITED', scope);
+        return res.status(429).json({ error: 'Demasiados intentos. Vuelve a probar más tarde.' });
+      }
+
+      current.count += 1;
+      next();
+      return;
+    }
+
+    authRateLimits.set(key, {
+      count: 1,
+      resetAt: now + windowMs
+    });
+
+    next();
+  };
+};
+
+const hashPassword = (password: string, salt = crypto.randomBytes(16).toString('hex')) => ({
+  passwordHash: crypto.scryptSync(password, salt, 64).toString('hex'),
+  passwordSalt: salt
+});
+
+const verifyPassword = (password: string, passwordHash?: string, passwordSalt?: string) => {
+  if (!passwordHash || !passwordSalt) return false;
+  const computedHash = crypto.scryptSync(password, passwordSalt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(passwordHash, 'hex'));
+};
+
+const createSessionToken = (userId: string) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  db.createSession(userId, token, new Date(Date.now() + SESSION_TTL_MS).toISOString());
+  db.revokeOldestSessionsForUser(userId, MAX_ACTIVE_SESSIONS_PER_USER);
+  return token;
+};
+
+const hashResetToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+const createAuthMailer = () => {
+  const from = process.env.SMTP_FROM || 'GameTracker <no-reply@gametracker.local>';
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    return {
+      transport: nodemailer.createTransport({
+        host,
+        port,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: { user, pass }
+      }),
+      from,
+      configured: true
+    };
+  }
+
+  console.warn('SMTP no configurado. Los emails de recuperación se registraron en consola para entorno local.');
+  return {
+    transport: nodemailer.createTransport({ jsonTransport: true }),
+    from,
+    configured: false
+  };
+};
+
+const authMailer = createAuthMailer();
+const loginRateLimit = createRateLimiter(
+  'auth_login',
+  8,
+  15 * 60 * 1000,
+  (req) => `${getRequestIp(req)}:${normalizeEmail((req.body as { email?: unknown } | undefined)?.email)}`
+);
+const registerRateLimit = createRateLimiter(
+  'auth_register',
+  5,
+  60 * 60 * 1000,
+  (req) => getRequestIp(req)
+);
+const forgotPasswordRateLimit = createRateLimiter(
+  'auth_forgot_password',
+  3,
+  60 * 60 * 1000,
+  (req) => `${getRequestIp(req)}:${normalizeEmail((req.body as { email?: unknown } | undefined)?.email)}`
+);
+const resetPasswordRateLimit = createRateLimiter(
+  'auth_reset_password',
+  5,
+  60 * 60 * 1000,
+  (req) => getRequestIp(req)
+);
+
+const buildResetUrl = (req: express.Request, token: string) => {
+  const publicAppUrl = process.env.PUBLIC_APP_URL?.replace(/\/$/, '');
+  if (publicAppUrl) {
+    return `${publicAppUrl}/?resetToken=${encodeURIComponent(token)}`;
+  }
+
+  const host = req.get('host');
+  return `${req.protocol}://${host}/?resetToken=${encodeURIComponent(token)}`;
+};
+
+const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken: string) => {
+  const resetUrl = buildResetUrl(req, rawToken);
+  const info = await authMailer.transport.sendMail({
+    from: authMailer.from,
+    to: user.email,
+    subject: 'Recupera tu contraseña de GameTracker',
+    text: `Hola ${user.username},\n\nHemos recibido una solicitud para restablecer tu contraseña. Usa este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.`,
+    html: `<p>Hola <strong>${user.username}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contraseña.</p><p><a href="${resetUrl}">Restablecer contraseña</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
+  });
+
+  if (!authMailer.configured) {
+    console.info('Password reset email payload:', info.message);
+  }
+
+  return {
+    resetUrl,
+    usingDebugMailer: !authMailer.configured
+  };
+};
+
+const authenticate = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  const token = getCookie(req, SESSION_COOKIE_NAME) || bearerToken;
+  if (!token) {
+    return res.status(401).json({ error: 'Falta token de autorización' });
+  }
+
+  const user = db.getUserBySessionToken(token);
+  if (!user) {
+    return res.status(401).json({ error: 'Sesión inválida o expirada.' });
+  }
+
+  req.authToken = token;
+  req.currUser = user;
+  next();
+};
+
+// --- ENDPOINTS DE AUTENTICACIÓN ---
+
+app.post('/api/auth/register', registerRateLimit, (req, res) => {
+  const { username, email, password, bio, avatar } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
+  }
+
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedUsername = String(username).trim();
+  const existingEmail = db.getUserByEmail(normalizedEmail);
+  if (existingEmail) {
+    return res.status(400).json({ error: 'El email ya está registrado.' });
+  }
+
+  const existingUser = db.getUserByUsername(normalizedUsername);
+  if (existingUser) {
+    return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
+  }
+
+  const id = `user_${Date.now()}`;
+  const newUser: User = {
+    id,
+    username: normalizedUsername,
+    email: normalizedEmail,
+    avatar: avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${normalizedUsername}`,
+    bio: bio || 'Hola! Soy nuevo en GameTracker.',
+    createdAt: new Date().toISOString()
+  };
+
+  const passwordData = hashPassword(password);
+  db.createUser(newUser, passwordData);
+
+  db.addActivity({
+    id: `act_${Date.now()}`,
+    userId: id,
+    type: 'FOLLOWED',
+    details: 'se unió a GameTracker 🎮',
+    createdAt: new Date().toISOString()
+  });
+
+  const token = createSessionToken(id);
+  setSessionCookie(res, token);
+  recordSecurityEvent(req, 'REGISTRATION_SUCCESS', 'account_created', id);
+  res.status(201).json({ user: newUser });
+});
+
+app.post('/api/auth/login', loginRateLimit, (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'El email y la contraseña son obligatorios.' });
+  }
+
+  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  if (!authUser || !verifyPassword(password, authUser.passwordHash, authUser.passwordSalt)) {
+    recordSecurityEvent(req, 'LOGIN_FAILED', 'invalid_credentials');
+    return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
+  }
+
+  const user = db.getUser(authUser.id)!;
+  const token = createSessionToken(authUser.id);
+  setSessionCookie(res, token);
+  recordSecurityEvent(req, 'LOGIN_SUCCESS', 'session_created', authUser.id);
+  res.json({ user });
+});
+
+app.post('/api/auth/forgot-password', forgotPasswordRateLimit, async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'El email es obligatorio.' });
+  }
+
+  const genericResponse = {
+    message: 'Si existe una cuenta con ese email, recibirás un enlace para restablecer la contraseña.'
+  };
+
+  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  if (!authUser) {
+    return res.json(genericResponse);
+  }
+
+  try {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    db.savePasswordResetToken(
+      authUser.id,
+      hashResetToken(rawToken),
+      new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString()
+    );
+
+    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, db.getUser(authUser.id)!, rawToken);
+    recordSecurityEvent(req, 'PASSWORD_RESET_REQUESTED', 'email_sent', authUser.id);
+    res.json({
+      ...genericResponse,
+      ...(usingDebugMailer && process.env.NODE_ENV !== 'production' ? { debugResetUrl: resetUrl } : {})
+    });
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    res.status(500).json({ error: 'No se pudo enviar el correo de recuperación.' });
+  }
+});
+
+app.post('/api/auth/reset-password', resetPasswordRateLimit, (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ error: 'El token y la nueva contraseña son obligatorios.' });
+  }
+
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+  }
+
+  const authUser = db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
+  if (!authUser) {
+    recordSecurityEvent(req, 'PASSWORD_RESET_FAILED', 'invalid_or_expired_token');
+    return res.status(400).json({ error: 'El enlace de recuperación es inválido o ha caducado.' });
+  }
+
+  const passwordData = hashPassword(password);
+  db.setUserPassword(authUser.id, passwordData.passwordHash, passwordData.passwordSalt);
+  db.revokeSessionsForUser(authUser.id);
+  const sessionToken = createSessionToken(authUser.id);
+  const user = db.getUser(authUser.id)!;
+  setSessionCookie(res, sessionToken);
+  recordSecurityEvent(req, 'PASSWORD_RESET_COMPLETED', 'password_updated', authUser.id);
+
+  res.json({
+    message: 'Contraseña actualizada correctamente.',
+    user
+  });
+});
+
+app.post('/api/auth/logout', authenticate, (req: AuthenticatedRequest, res) => {
+  if (req.authToken) {
+    db.revokeSession(req.authToken);
+  }
+  if (req.currUser) {
+    recordSecurityEvent(req, 'LOGOUT', 'session_revoked', req.currUser.id);
+  }
+  clearSessionCookie(res);
+  res.status(204).end();
+});
+
+app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
+  res.json(req.currUser);
+});
+
+
+// --- ENDPOINTS DE USUARIOS ---
+
+// Obtener perfiles públicos
+app.get('/api/users', (req, res) => {
+  const query = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  if (!query) return res.json([]);
+
+  res.json(db.searchUsersByUsername(query));
+});
+
+app.get('/api/users/:id', (req, res) => {
+  const user = db.getUser(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: 'Usuario no encontrado.' });
+  }
+  const followersCount = db.getFollowers(user.id).length;
+  const followingCount = db.getFollowing(user.id).length;
+  res.json({ ...user, followersCount, followingCount });
+});
+
+// Modificar perfil de usuario
+app.put('/api/users/profile', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const { username, bio, avatar } = req.body;
+
+  if (username && username.toLowerCase() !== user.username.toLowerCase()) {
+    const existing = db.getUserByUsername(username);
+    if (existing) {
+      return res.status(400).json({ error: 'El nombre de usuario ya está tomado.' });
+    }
+  }
+
+  const updated = db.updateUser(user.id, {
+    username: username || user.username,
+    bio: bio !== undefined ? bio : user.bio,
+    avatar: avatar || user.avatar
+  });
+
+  res.json(updated);
+});
+
+// --- ENDPOINTS DE SOCIAL ---
+
+// Feed de actividad (público o seguido)
+app.get('/api/social/feed', (req, res) => {
+  const userId = req.query.userId as string;
+  const scope = req.query.scope as string; // 'all' or 'following'
+
+  const withUsers = (activities: Activity[]) => activities.map((activity) => ({
+    ...activity,
+    author: db.getUser(activity.userId),
+    targetUser: activity.targetUserId ? db.getUser(activity.targetUserId) : null
+  }));
+
+  if (scope === 'following' && userId) {
+    const following = db.getFollowing(userId);
+    // Include user's own activity as well
+    const feed = db.getActivities([...following, userId]);
+    return res.json(withUsers(feed));
+  }
+
+  const feed = db.getActivities();
+  res.json(withUsers(feed));
+});
+
+  app.post('/api/games/import/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+      const existing = db.getGame(id);
+
+      if (existing) {
+        return res.json(existing);
+      }
+
+      const game = await IgdbService.getGameDetails(id);
+
+      if (!game) {
+        return res.status(404).json({
+          error: 'Juego no encontrado'
+        });
+      }
+
+      db.saveGame(game);
+
+      res.json(game);
+    } catch (err: any) {
+      res.status(500).json({
+        error: err.message
+      });
+    }
+  });
+
+// Seguir/Dejar de seguir a un usuario
+app.post('/api/social/follow/:userId', authenticate, (req: AuthenticatedRequest, res) => {
+  const me = req.currUser!;
+  const targetId = req.params.userId;
+
+  if (me.id === targetId) {
+    return res.status(400).json({ error: 'No puedes seguirte a ti mismo.' });
+  }
+
+  const target = db.getUser(targetId);
+  if (!target) {
+    return res.status(404).json({ error: 'Usuario no encontrado.' });
+  }
+
+  const isFollowingNow = db.toggleFollow(me.id, target.id);
+
+  if (isFollowingNow) {
+    // Register activity
+    db.addActivity({
+      id: `act_${Date.now()}`,
+      userId: me.id,
+      type: 'FOLLOWED',
+      targetUserId: target.id,
+      details: `@${me.username} comenzó a seguir a @${target.username}`,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  res.json({ following: isFollowingNow });
+});
+
+// Listas de seguidores/seguidos
+app.get('/api/social/followers/:userId', (req, res) => {
+  const ids = db.getFollowers(req.params.userId);
+  const users = ids.map(id => db.getUser(id)).filter(Boolean);
+  res.json(users);
+});
+
+app.get('/api/social/following/:userId', (req, res) => {
+  const ids = db.getFollowing(req.params.userId);
+  const users = ids.map(id => db.getUser(id)).filter(Boolean);
+  res.json(users);
+});
+
+// --- ENDPOINTS DE VIDEOJUEGOS ---
+
+// Descubrimiento de juegos desde IGDB
+app.get('/api/games', async (req, res) => {
+  try {
+    const search = (req.query.search as string) || '';
+    const genre = (req.query.genre as string) || '';
+    const platform = (req.query.platform as string) || '';
+    const sort = (req.query.sort as string) || 'popularity'; // rating | popularity | name | newest
+    const requestedLimit = Number.parseInt((req.query.limit as string) || '20', 10);
+    const requestedOffset = Number.parseInt((req.query.offset as string) || '0', 10);
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 60) : 20;
+    const offset = Number.isFinite(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0;
+    const hasSearch = search.trim().length > 0;
+
+    const fetchLimit = Math.max(limit + offset + 20, hasSearch ? 50 : 80);
+    let games = hasSearch
+      ? await IgdbService.searchGames(search, fetchLimit)
+      : (sort === 'newest'
+        ? await IgdbService.getRecentGames(fetchLimit)
+        : await IgdbService.getPopularGames(fetchLimit));
+
+    if (genre) {
+      games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
+    }
+    if (platform) {
+      games = games.filter(g => g.platforms.some(p => p.toLowerCase() === platform.toLowerCase()));
+    }
+
+    if (sort === 'rating') {
+      games = [...games].sort((a, b) => {
+        const ratingDifference = (b.rating || 0) - (a.rating || 0);
+        if (ratingDifference !== 0) return ratingDifference;
+
+        return (b.popularity || 0) - (a.popularity || 0);
+      });
+    } else if (sort === 'popularity' && hasSearch) {
+      games = [...games].sort((a, b) => (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0));
+    } else if (sort === 'name') {
+      games = [...games].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sort === 'newest') {
+      games = [...games].sort((a, b) => {
+        const bTime = Date.parse(b.releaseDate);
+        const aTime = Date.parse(a.releaseDate);
+        return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+      });
+    }
+
+    const page = games.slice(offset, offset + limit);
+    res.json(page);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Buscar en IGDB (con fallback a local)
+app.get('/api/games/igdb/search', async (req, res) => {
+  const q = (req.query.q as string) || '';
+  try {
+    const games = await IgdbService.searchGames(q);
+    res.json(games);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Detalle de juego individual (IGDB/Local)
+app.get('/api/games/:id', async (req, res) => {
+  const idNum = parseInt(req.params.id);
+  if (isNaN(idNum)) {
+    return res.status(400).json({ error: 'ID de juego inválido' });
+  }
+
+  try {
+    const game = await IgdbService.getGameDetails(idNum);
+    if (!game) {
+      return res.status(404).json({ error: 'Juego no encontrado' });
+    }
+    res.json(game);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- ENDPOINTS DE BIBLIOTECA (USERGAMES) ---
+
+// Biblioteca de un usuario
+app.get('/api/users/:id/library', async (req, res) => {
+  const userId = req.params.id;
+  const userGames = db.getUserGames(userId);
+
+  try {
+    const completeLibrary = await Promise.all(userGames.map(async (ug) => {
+      let game = db.getGame(ug.gameId);
+      if (!game) {
+        game = await IgdbService.getGameDetails(ug.gameId);
+        if (game) {
+          db.saveGame(game);
+        }
+      }
+
+      return {
+        ...ug,
+        game: game || {
+          igdbId: ug.gameId,
+          name: `Juego #${ug.gameId}`,
+          slug: 'unknown',
+          cover: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg',
+          summary: 'Detalles desconocidos.',
+          genres: [],
+          platforms: [],
+          releaseDate: ''
+        }
+      };
+    }));
+
+    res.json(completeLibrary);
+  } catch (err: any) {
+    console.error('Error loading library for user', userId, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Guardar o cambiar estado de progreso/puntuación
+app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const { gameId, status, rating, hoursPlayed, notes, startedAt, completedAt } = req.body;
+
+  if (gameId === undefined || !status) {
+    return res.status(400).json({ error: 'Campos gameId y status son requeridos.' });
+  }
+
+  // Verify game details exist
+  const game = db.getGame(gameId);
+  if (!game) {
+    return res.status(404).json({ error: 'Videojuego no encontrado en el sistema. Búscalo en IGDB primero.' });
+  }
+
+  const existing = db.getUserGame(user.id, gameId);
+  const userGame: UserGame = {
+    userId: user.id,
+    gameId: parseInt(gameId),
+    status,
+    rating: rating !== undefined ? parseInt(rating) : (existing ? existing.rating : 0),
+    hoursPlayed: hoursPlayed !== undefined ? parseFloat(hoursPlayed) : (existing ? existing.hoursPlayed : 0),
+    notes: notes !== undefined ? notes : (existing ? existing.notes : ''),
+    startedAt: startedAt !== undefined ? startedAt : (existing ? existing.startedAt : null),
+    completedAt: completedAt !== undefined ? completedAt : (existing ? existing.completedAt : null),
+    updatedAt: new Date().toISOString()
+  };
+
+  const saved = db.saveUserGame(userGame);
+
+  // Register social Activity if status changed
+  if (!existing || existing.status !== status) {
+    let actionTxt = 'añadió a su biblioteca';
+    if (status === 'COMPLETED') actionTxt = 'completó 🏆';
+    else if (status === 'PLAYING') actionTxt = 'está jugando a 🎮';
+    else if (status === 'WISHLIST') actionTxt = 'añadió a su wishlist ⭐️';
+    else if (status === 'ABANDONED') actionTxt = 'abandonó ❌';
+    else if (status === 'PLAYED') actionTxt = 'jugó a';
+
+    db.addActivity({
+      id: `act_${Date.now()}`,
+      userId: user.id,
+      type: status === 'COMPLETED' ? 'COMPLETED' : (status === 'WISHLIST' ? 'WISHLIST' : 'PLAYING'),
+      gameId: game.igdbId,
+      details: `${actionTxt} ${game.name}`,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  res.json({ ...saved, game });
+});
+
+// Eliminar de biblioteca
+app.delete('/api/library/:id', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const gameId = parseInt(req.params.id);
+  if (isNaN(gameId)) {
+    return res.status(400).json({ error: 'ID de juego inválido' });
+  }
+
+  const success = db.deleteUserGame(user.id, gameId);
+  res.json({ success });
+});
+
+// --- ENDPOINTS DE RESEÑAS ---
+
+// Obtener reseñas de un juego
+app.get('/api/reviews/:gameId', (req, res) => {
+  const gameId = parseInt(req.params.gameId);
+  const reviews = db.getReviews(gameId);
+  
+  // Decorar con perfiles de usuarios
+  const fullReviews = reviews.map(r => {
+    const author = db.getUser(r.userId);
+    const tracking = db.getUserGame(r.userId, r.gameId);
+    return {
+      ...r,
+      rating: tracking?.rating ?? 0,
+      author: author || { username: 'desconocido', avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=unknown' }
+    };
+  });
+
+  res.json(fullReviews);
+});
+
+// Escribir reseña
+app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const { gameId, title, content, rating } = req.body;
+
+  if (!gameId || !title || !content) {
+    return res.status(400).json({ error: 'Campos gameId, title y content son obligatorios.' });
+  }
+
+  const game = db.getGame(parseInt(gameId));
+  if (!game) {
+    return res.status(444).json({ error: 'El juego debe existir.' });
+  }
+
+  const review: Review = {
+    id: `rev_${Date.now()}`,
+    userId: user.id,
+    gameId: parseInt(gameId),
+    title,
+    content,
+    likes: [],
+    createdAt: new Date().toISOString()
+  };
+
+  db.saveReview(review);
+
+  // Single source of truth for rating: always persist/read from UserGame.
+  const existingUg = db.getUserGame(user.id, game.igdbId);
+  const parsedRating = Number.parseInt(String(rating), 10);
+  const normalizedRating =
+    Number.isInteger(parsedRating) && parsedRating >= 1 && parsedRating <= 5
+      ? parsedRating
+      : (existingUg?.rating ?? 0);
+
+  const syncedUserGame = db.saveUserGame({
+    userId: user.id,
+    gameId: game.igdbId,
+    status: existingUg ? existingUg.status : 'PLAYED',
+    rating: normalizedRating,
+    hoursPlayed: existingUg ? existingUg.hoursPlayed : 0,
+    notes: existingUg ? existingUg.notes : '',
+    startedAt: existingUg ? existingUg.startedAt : null,
+    completedAt: existingUg ? existingUg.completedAt : null,
+    updatedAt: new Date().toISOString()
+  });
+
+  // Register social activity
+  db.addActivity({
+    id: `act_${Date.now()}`,
+    userId: user.id,
+    type: 'REVIEWED',
+    gameId: game.igdbId,
+    details: `reseñó ${game.name}: "${title}" (${syncedUserGame.rating > 0 ? syncedUserGame.rating : 'sin'} ⭐)`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json(review);
+});
+
+// Dar like/Quitar like a reseña
+app.post('/api/reviews/:id/like', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const updatedReview = db.toggleLikeReview(req.params.id, user.id);
+  if (!updatedReview) {
+    return res.status(404).json({ error: 'Reseña no encontrada.' });
+  }
+  res.json(updatedReview);
+});
+
+// --- ENDPOINTS DE LISTAS PERSONALIZADAS ---
+
+// Listas públicas, opcionalmente filtradas por creador.
+app.get(
+  '/api/lists',
+  async (req, res) => {
+    try {
+      const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+      const lists = db.getLists(userId);
+
+      const fullLists = await Promise.all(
+        lists.map(async (list) => {
+          const author = db.getUser(list.userId);
+          const gameIds = db.getListItems(list.id);
+
+          const games = (
+            await Promise.all(
+              gameIds.map(async (gameId) => {
+                let game = db.getGame(gameId);
+
+                if (!game) {
+                  game = await IgdbService.getGameDetails(gameId);
+
+                  if (game) {
+                    db.saveGame(game);
+                  }
+                }
+
+                return game;
+              })
+            )
+          ).filter(Boolean);
+
+          return {
+            ...list,
+            author,
+            games
+          };
+        })
+      );
+
+      res.json(fullLists);
+    } catch (error) {
+      console.error('Error obteniendo las listas:', error);
+
+      res.status(500).json({
+        error: 'No se pudieron cargar las listas.'
+      });
+    }
+  }
+);
+
+// Actualizar lista
+app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const listId = req.params.id;
+  const { name, description, gameIds } = req.body;
+
+  const list = db.getList(listId);
+
+  if (!list) {
+    return res.status(404).json({ error: 'Lista no encontrada.' });
+  }
+
+  if (list.userId !== user.id) {
+    return res.status(403).json({
+      error: 'No tienes permiso para editar esta lista.'
+    });
+  }
+
+  const updatedList = db.updateList(listId, {
+    name: name !== undefined ? name : list.name,
+    description: description !== undefined
+      ? description
+      : list.description
+  });
+
+  if (gameIds && Array.isArray(gameIds)) {
+    db.saveListItems(
+      listId,
+      gameIds.map(id => parseInt(id))
+    );
+  }
+
+  res.json(updatedList);
+});
+
+// Detalle público de lista.
+app.get('/api/lists/:id', async (req, res) => {
+  const list = db.getList(req.params.id);
+  if (!list) return res.status(404).json({ error: 'Lista no encontrada' });
+  const author = db.getUser(list.userId);
+  const gameIds = db.getListItems(list.id);
+  const games = (await Promise.all(gameIds.map(async (gId) => {
+    let game = db.getGame(gId);
+    if (!game) {
+      game = await IgdbService.getGameDetails(gId);
+      if (game) {
+        db.saveGame(game);
+      }
+    }
+    return game;
+  }))).filter(Boolean);
+
+  res.json({
+    ...list,
+    author,
+    games
+  });
+});
+
+// Crear lista
+app.post('/api/lists', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const { name, description, gameIds } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'El nombre de la lista es obligatorio.' });
+  }
+
+  const listId = `list_${Date.now()}`;
+  const newList: CustomList = {
+    id: listId,
+    userId: user.id,
+    name,
+    description: description || '',
+    createdAt: new Date().toISOString()
+  };
+
+  db.createList(newList);
+
+  if (gameIds && Array.isArray(gameIds)) {
+    db.saveListItems(listId, gameIds.map(id => parseInt(id)));
+  }
+
+  // Register activity
+  db.addActivity({
+    id: `act_${Date.now()}`,
+    userId: user.id,
+    type: 'LIST_CREATED',
+    details: `creó la lista '${name}' 📁`,
+    createdAt: new Date().toISOString()
+  });
+
+  res.json(newList);
+});
+
+// Eliminar lista
+app.delete('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  const list = db.getList(req.params.id);
+  if (!list) return res.status(404).json({ error: 'Lista no encontrada.' });
+
+  if (list.userId !== user.id) {
+    return res.status(403).json({ error: 'No tienes permiso para borrar esta lista.' });
+  }
+
+  db.deleteList(list.id);
+  res.json({ success: true });
+});
+
+// --- ENDPOINTS DE ESTADÍSTICAS ---
+app.get('/api/users/:id/stats', (req, res) => {
+  const stats = db.getUserStats(req.params.id);
+  res.json(stats);
+});
+
+// --- ENDPOINTS DE RECOMENDACIONES INTELIGENTES ---
+app.get('/api/recommendations', authenticate, (req: AuthenticatedRequest, res) => {
+  const user = req.currUser!;
+  IgdbService.getPopularGames(120)
+    .then((popularGames) => {
+      popularGames.forEach(game => db.saveGame(game));
+      const recs = db.getRecommendations(user.id);
+      res.json(recs);
+    })
+    .catch((err: any) => {
+      res.status(500).json({ error: err.message });
+    });
+});
+
+// --- VITE EXPRES INTERFACE ---
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      const isKnownAppPath = req.path === '/' || /^\/game\/\d+\/?$/.test(req.path) ||
+        /^\/(discover|library|lists|stats|profile)\/?$/.test(req.path);
+      res.status(isKnownAppPath ? 200 : 404).sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 GameTracker Express Server listening on port ${PORT}`);
+  });
+}
+
+startServer();

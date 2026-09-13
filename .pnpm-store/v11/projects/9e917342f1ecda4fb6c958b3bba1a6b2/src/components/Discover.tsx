@@ -1,0 +1,477 @@
+import React, { useState, useEffect } from 'react';
+import { Game, User } from '../types.ts';
+import { Search, SlidersHorizontal, Gamepad2, Star, Flame, Calendar, RefreshCw, Bookmark, Users } from 'lucide-react';
+import { SpotlightPanel } from './SpotlightPanel.tsx';
+import { ParticleBackdrop } from './ParticleBackdrop.tsx';
+import { ShimmerText } from './ShimmerText.tsx';
+import { TiltCard } from './TiltCard.tsx';
+
+interface DiscoverProps {
+  onSelectGame: (gameId: number) => void;
+  onSelectUser: (userId: string) => void;
+  token?: string;
+  onAuthRequired?: () => void;
+}
+
+export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired }) => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('genre') || '' : ''
+  );
+  const [selectedPlatform, setSelectedPlatform] = useState(() =>
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('platform') || '' : ''
+  );
+  const [sortBy, setSortBy] = useState('popularity'); // 'popularity' | 'rating' | 'newest' | 'name'
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [hasMoreGames, setHasMoreGames] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
+  const [quickActionMessage, setQuickActionMessage] = useState('');
+  const isUserSearch = query.trim().startsWith('@');
+
+  // Preseeded Categories
+  const GENRES = ["Action", "Adventure", "RPG", "Indie", "Metroidvania", "Platformer", "Roguelike", "Horror", "Survival", "Cozy", "Strategy", "Puzzle"];
+  const PLATFORMS = ["PC", "PlayStation 5", "Nintendo Switch", "Xbox Series X/S", "PlayStation 4", "Xbox One", "Mac"];
+
+  const searchGames = async (searchVal: string, genreVal: string, platformVal: string, sortVal: string, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setVisibleCount(20);
+    }
+    setApiError(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('sort', sortVal);
+      params.set('limit', append ? '60' : '80');
+      params.set('offset', String(append ? games.length : 0));
+      if (searchVal.trim()) params.set('search', searchVal.trim());
+      if (genreVal) params.set('genre', genreVal);
+      if (platformVal) params.set('platform', platformVal);
+
+      const res = await fetch(`/api/games?${params.toString()}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        const message = typeof data?.error === 'string' ? data.error : 'No se pudo cargar el catálogo.';
+        throw new Error(message);
+      }
+
+      const nextGames = Array.isArray(data) ? data : [];
+      setGames((prev) => {
+        if (!append) return nextGames;
+        const merged = new Map<number, Game>();
+        prev.forEach((game) => merged.set(game.igdbId, game));
+        nextGames.forEach((game) => merged.set(game.igdbId, game));
+        return Array.from(merged.values());
+      });
+      setHasMoreGames(nextGames.length >= 20 || (append && games.length + nextGames.length > visibleCount));
+    } catch (err) {
+      console.error("Discover Error:", err);
+      if (!append) {
+        setGames([]);
+      }
+      setApiError(err instanceof Error ? err.message : 'Error inesperado al consultar la API.');
+    } finally {
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  };
+
+  const searchUsers = async (searchVal: string) => {
+    const username = searchVal.trim().slice(1).trim();
+    setLoading(true);
+    setApiError(null);
+    setGames([]);
+
+    if (!username) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users?search=${encodeURIComponent(username)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(typeof data?.error === 'string' ? data.error : 'No se pudieron buscar los usuarios.');
+      }
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('User search error:', err);
+      setUsers([]);
+      setApiError(err instanceof Error ? err.message : 'Error inesperado al buscar usuarios.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (query.trim().startsWith('@')) {
+        searchUsers(query);
+      } else {
+        setUsers([]);
+        searchGames(query, selectedGenre, selectedPlatform, sortBy, false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [
+    query,
+    selectedGenre,
+    selectedPlatform,
+    sortBy
+  ]);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const me = await res.json();
+
+        const libraryRes = await fetch(`/api/users/${me.id}/library`);
+        if (!libraryRes.ok) return;
+        const libraryData = await libraryRes.json();
+        const ids = new Set<number>(
+          (Array.isArray(libraryData) ? libraryData : [])
+            .filter((item: any) => item?.status === 'WISHLIST')
+            .map((item: any) => item.gameId)
+        );
+        setWishlistIds(ids);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchWishlist();
+  }, [token]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isUserSearch) {
+      searchUsers(query);
+    } else {
+      searchGames(query, selectedGenre, selectedPlatform, sortBy, false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (isUserSearch || loadingMore) return;
+
+    setVisibleCount((prev) => {
+      const next = Math.min(prev + 20, games.length);
+      setHasMoreGames(next < games.length);
+      return next;
+    });
+  };
+
+  const handleQuickWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (!token) {
+      onAuthRequired?.();
+      return;
+    }
+    if (wishlistIds.has(gameId) || savingWishlistGameId === gameId) return;
+
+    setSavingWishlistGameId(gameId);
+    setQuickActionMessage('');
+
+    try {
+      const importRes = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+      const importData = await importRes.json();
+      if (!importRes.ok) {
+        throw new Error(importData?.error || 'No se pudo importar el juego.');
+      }
+
+      const saveRes = await fetch('/api/library', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ gameId, status: 'WISHLIST' })
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) {
+        throw new Error(saveData?.error || 'No se pudo añadir a wishlist.');
+      }
+
+      setWishlistIds(prev => new Set([...prev, gameId]));
+      setQuickActionMessage('¡Juego añadido a wishlist!');
+      setTimeout(() => setQuickActionMessage(''), 3000);
+    } catch (err: any) {
+      setQuickActionMessage(`Error: ${err.message}`);
+    } finally {
+      setSavingWishlistGameId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+      {/* Search Header */}
+      <SpotlightPanel className="space-y-6 rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0f121d] via-[#111317] to-[#0b0c0e] p-6 md:p-7">
+        <ParticleBackdrop className="opacity-60" count={14} />
+        <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold font-display text-white tracking-tight">
+              Descubrir <ShimmerText>Videojuegos</ShimmerText>
+            </h2>
+            <p className="max-w-2xl text-slate-400 text-xs leading-relaxed">
+              Busca en el catálogo completo de IGDB o filtra según tus categorías preferidas
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSearchSubmit} className="mt-3 flex gap-3">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Busca juegos o @usuarios..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl px-4 py-3 pl-11 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition outline-none"
+            />
+            <Search className="absolute left-4 top-3.5 w-4.5 h-4.5 text-slate-500" />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-3 bg-blue-600 text-white rounded-xl text-xs font-semibold cursor-pointer hover:bg-blue-500 transition flex items-center gap-1.5"
+          >
+            Buscar
+          </button>
+          {!isUserSearch && (
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3.5 py-3 border rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 ${showFilters ? 'bg-slate-800/80 text-blue-400 border-blue-500/20' : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          )}
+        </form>
+
+        {/* Extended filters */}
+        {showFilters && !isUserSearch && (
+          <div className="mt-1 p-5 md:p-6 bg-[#0f121d] border border-slate-850 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 animate-fade-in">
+            {/* Genre filter */}
+            <div className="space-y-2.5">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Género</label>
+              <select
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+                className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
+              >
+                <option value="">Todos los géneros</option>
+                {GENRES.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Platform Filter */}
+            <div className="space-y-2.5">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Plataforma</label>
+              <select
+                value={selectedPlatform}
+                onChange={(e) => setSelectedPlatform(e.target.value)}
+                className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
+              >
+                <option value="">Todas las plataformas</option>
+                {PLATFORMS.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sorting */}
+            <div className="space-y-2.5">
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ordenar Catálogo</label>
+              <div className="flex gap-1.5 bg-[#07090e] p-1.5 rounded-lg border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setSortBy('popularity')}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'popularity' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                >
+                  <Flame className="w-3 h-3" /> Popular tags
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy('rating')}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'rating' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                >
+                  <Star className="w-3 h-3" /> Rating
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setQuery(''); setSortBy('newest'); }}
+                  className={`flex-1 py-2 rounded-md text-[10px] font-bold transition flex items-center justify-center gap-1 ${sortBy === 'newest' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400'}`}
+                >
+                  <Calendar className="w-3 h-3" /> Fecha
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </SpotlightPanel>
+
+      {quickActionMessage && (
+        <div className={`p-2.5 border text-xs rounded-xl ${quickActionMessage.includes('Error') ? 'bg-red-950/40 border-red-500/20 text-red-400' : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400'}`}>
+          {quickActionMessage}
+        </div>
+      )}
+
+      {isUserSearch ? (
+        loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-[#0f121d] border border-slate-850 rounded-xl" />)}
+          </div>
+        ) : apiError ? (
+          <div className="bg-[#0f121d] border border-red-500/20 p-12 rounded-2xl text-center space-y-3">
+            <Users className="w-10 h-10 text-red-400 mx-auto" />
+            <p className="text-red-300 text-sm font-semibold">Error buscando usuarios</p>
+            <p className="text-slate-400 text-xs">{apiError}</p>
+          </div>
+        ) : query.trim() === '@' ? (
+          <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-2">
+            <Users className="w-10 h-10 text-slate-700 mx-auto" />
+            <p className="text-slate-400 text-sm font-semibold">Escribe un nombre de usuario</p>
+            <p className="text-slate-500 text-xs">Por ejemplo, <span className="text-blue-400">@alex</span>.</p>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-2">
+            <Users className="w-10 h-10 text-slate-700 mx-auto" />
+            <p className="text-slate-400 text-sm font-semibold">No se encontraron usuarios</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {users.map(user => (
+              <button
+                key={user.id}
+                type="button"
+                onClick={() => onSelectUser(user.id)}
+                className="flex items-center gap-3 text-left bg-[#0f121d] border border-slate-850 hover:border-blue-500/40 p-4 rounded-xl transition cursor-pointer"
+              >
+                <img src={user.avatar} alt={user.username} referrerPolicy="no-referrer" className="w-11 h-11 rounded-full border border-slate-800 bg-[#07090e]" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-white truncate">@{user.username}</span>
+                  <span className="block mt-1 text-[11px] text-slate-500 line-clamp-2">{user.bio || 'Sin bio por ahora.'}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )
+      ) : loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className="space-y-2 animate-pulse bg-[#0f121d]/40 p-2.5 border border-slate-850 rounded-xl">
+              <div className="w-full aspect-[3/4] bg-slate-800 rounded-lg"></div>
+              <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+              <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      ) : apiError ? (
+        <div className="bg-[#0f121d] border border-red-500/20 p-12 rounded-2xl text-center space-y-3">
+          <Gamepad2 className="w-10 h-10 text-red-400 mx-auto" />
+          <p className="text-red-300 text-sm font-semibold">Error cargando juegos</p>
+          <p className="text-slate-400 text-xs max-w-sm mx-auto">{apiError}</p>
+          <button
+            onClick={() => searchGames(query, selectedGenre, selectedPlatform, sortBy, false)}
+            className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl hover:text-white transition cursor-pointer flex items-center gap-1.5 mx-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Reintentar
+          </button>
+        </div>
+      ) : games.length === 0 ? (
+        <div className="bg-[#0f121d] border border-slate-800 p-12 rounded-2xl text-center space-y-3">
+          <Gamepad2 className="w-10 h-10 text-slate-700 mx-auto" />
+          <p className="text-slate-400 text-sm font-semibold">No se encontraron juegos</p>
+          <p className="text-slate-500 text-xs max-w-sm mx-auto">
+            Prueba a buscar con otras palabras, retira filtros o haz click en enter para realizar una query profunda a la API de IGDB.
+          </p>
+          <button
+            onClick={() => { setQuery(''); setSelectedGenre(''); setSelectedPlatform(''); setSortBy('popularity'); }}
+            className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl hover:text-white transition cursor-pointer flex items-center gap-1.5 mx-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Reestablecer filtros
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {games.slice(0, visibleCount).map(game => (
+              <TiltCard key={game.igdbId} className="rounded-xl">
+                <div
+                  onClick={() => onSelectGame(game.igdbId)}
+                  className="group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-200 cursor-pointer block"
+                >
+                  <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 group-hover:shadow-lg group-hover:scale-[1.02] transition duration-200">
+                    <img
+                      src={game.cover}
+                      alt={game.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    {game.rating && (
+                      <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold text-yellow-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        {game.rating}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleQuickWishlist(game.igdbId, e)}
+                      disabled={savingWishlistGameId === game.igdbId || wishlistIds.has(game.igdbId)}
+                      className="absolute top-2 left-2 h-7 w-7 rounded-full bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 flex items-center justify-center transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
+                      aria-label={wishlistIds.has(game.igdbId) ? 'Ya está en wishlist' : 'Añadir a wishlist'}
+                    >
+                      <Bookmark className={`w-3.5 h-3.5 ${wishlistIds.has(game.igdbId) ? 'fill-indigo-400 text-indigo-400' : ''}`} />
+                    </button>
+                  </div>
+
+                  <div className="mt-3.5 flex-1 min-w-0">
+                    <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
+                      {game.name}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 mt-1 truncate">
+                      {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
+                    </p>
+                  </div>
+                </div>
+              </TiltCard>
+            ))}
+          </div>
+
+          {hasMoreGames && !isUserSearch && (
+            <div className="flex justify-center pt-1">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="px-4 py-2.5 rounded-xl border border-blue-500/30 bg-blue-600/10 text-blue-300 text-xs font-semibold hover:bg-blue-600/15 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loadingMore ? 'Cargando...' : 'Ver más'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};

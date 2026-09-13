@@ -1,0 +1,843 @@
+import React, { useState, useEffect } from 'react';
+import { User, Review, Game, CustomList } from '../types.ts';
+import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
+
+interface UserProfileProps {
+  userId: string;
+  currentUser: User;
+  onUpdateCurrentUser: (user: User) => void;
+  token: string;
+  onSelectGame: (gameId: number) => void;
+  onSelectUser?: (userId: string) => void;
+}
+
+type PublicList = CustomList & {
+games: Game[];
+};
+
+export const UserProfile: React.FC<UserProfileProps> = ({
+  userId,
+  currentUser,
+  onUpdateCurrentUser,
+  token,
+  onSelectGame,
+  onSelectUser,
+}) => {
+  const [profile, setProfile] = useState<
+    | (User & {
+        followersCount: number;
+        followingCount: number;
+      })
+    | null
+  >(null);
+
+  const [reviews, setReviews] = useState<(Review & { game: Game })[]>([]);
+  const [lists, setLists] = useState<PublicList[]>([]);
+  const [selectedList, setSelectedList] = useState<PublicList | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Social Connections Modal state
+  const [socialModalTab, setSocialModalTab] = useState<'followers' | 'following' | null>(null);
+  const [socialUsers, setSocialUsers] = useState<User[]>([]);
+  const [myFollowingSet, setMyFollowingSet] = useState<Set<string>>(new Set());
+  const [loadingSocial, setLoadingSocial] = useState(false);
+  const [socialSearch, setSocialSearch] = useState('');
+
+  // Edit profile states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+
+const isOwnProfile = userId === currentUser.id;
+
+const fetchProfileData = async () => {
+setLoading(true);
+
+try {
+  // 1. Fetch user profile
+  const userRes = await fetch(`/api/users/${userId}`);
+
+  if (userRes.ok) {
+    const userData = await userRes.json();
+
+    setProfile(userData);
+    setEditUsername(userData.username);
+    setEditBio(userData.bio ?? '');
+    setEditAvatar(userData.avatar ?? '');
+  }
+
+  // 2. Fetch user's library and generate reviews
+  const libRes = await fetch(`/api/users/${userId}/library`);
+
+  if (libRes.ok) {
+    const libraryGames: any[] = await libRes.json();
+
+    const userReviews = libraryGames
+      .filter((lib) => Number(lib.rating) > 0 || lib.notes)
+      .map((lib) => ({
+        id: `rev_${lib.gameId}`,
+        userId,
+        gameId: lib.gameId,
+        rating: lib.rating,
+        title: lib.notes ? 'Anotación de Diario' : 'Valoración',
+        content: lib.notes || 'Añadido con nota rápida.',
+        likes: [],
+        createdAt: lib.updatedAt ?? new Date().toISOString(),
+        game: lib.game,
+      }))
+      .filter((review) => review.game);
+
+    setReviews(userReviews);
+  }
+
+  // 3. Fetch lists belonging to the visited profile
+  const listsRes = await fetch(`/api/lists?userId=${userId}`);
+
+  if (listsRes.ok) {
+    const listsData = await listsRes.json();
+
+    setLists(Array.isArray(listsData) ? listsData : []);
+  }
+
+  // 4. Check if following
+  if (!isOwnProfile) {
+    const followRes = await fetch(
+      `/api/social/followers/${userId}`
+    );
+
+    if (followRes.ok) {
+      const followers: User[] = await followRes.json();
+
+      setIsFollowing(
+        followers.some(
+          (follower) => follower.id === currentUser.id
+        )
+      );
+    }
+  }
+} catch (err) {
+  console.error(err);
+} finally {
+  setLoading(false);
+}
+
+
+};
+
+useEffect(() => {
+fetchProfileData();
+setSelectedList(null);
+}, [userId, currentUser.id]);
+
+const handleFollowToggle = async () => {
+try {
+const res = await fetch(
+`/api/social/follow/${userId}`,
+{
+method: 'POST',
+headers: {
+Authorization: `Bearer ${token}`,
+},
+}
+);
+
+  if (res.ok) {
+    const data = await res.json();
+
+    setIsFollowing(data.following);
+
+    if (profile) {
+      setProfile({
+        ...profile,
+        followersCount: data.following
+          ? profile.followersCount + 1
+          : profile.followersCount - 1,
+      });
+    }
+  }
+} catch (err) {
+  console.error(err);
+}
+
+};
+
+const openSocialModal = async (tab: 'followers' | 'following') => {
+  setSocialModalTab(tab);
+  setLoadingSocial(true);
+  setSocialSearch('');
+
+  try {
+    const [usersRes, myFollowingRes] = await Promise.all([
+      fetch(`/api/social/${tab}/${userId}`),
+      fetch(`/api/social/following/${currentUser.id}`)
+    ]);
+
+    if (usersRes.ok) {
+      const uData: User[] = await usersRes.json();
+      setSocialUsers(Array.isArray(uData) ? uData : []);
+    }
+
+    if (myFollowingRes.ok) {
+      const myF: User[] = await myFollowingRes.json();
+      setMyFollowingSet(new Set(myF.map((u) => u.id)));
+    }
+  } catch (err) {
+    console.error('Error cargando conexiones sociales:', err);
+  } finally {
+    setLoadingSocial(false);
+  }
+};
+
+const handleToggleFollowInModal = async (targetUser: User) => {
+  if (targetUser.id === currentUser.id) return;
+
+  try {
+    const res = await fetch(`/api/social/follow/${targetUser.id}`, {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const isNowFollowing = data.following;
+
+      setMyFollowingSet((prev) => {
+        const next = new Set(prev);
+        if (isNowFollowing) {
+          next.add(targetUser.id);
+        } else {
+          next.delete(targetUser.id);
+        }
+        return next;
+      });
+
+      if (profile) {
+        if (isOwnProfile && socialModalTab === 'following') {
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  followingCount: isNowFollowing
+                    ? prev.followingCount + 1
+                    : Math.max(0, prev.followingCount - 1)
+                }
+              : null
+          );
+        } else if (targetUser.id === userId) {
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  followersCount: isNowFollowing
+                    ? prev.followersCount + 1
+                    : Math.max(0, prev.followersCount - 1)
+                }
+              : null
+          );
+          setIsFollowing(isNowFollowing);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error actualizando seguimiento en modal:', err);
+  }
+};
+
+const filteredSocialUsers = socialUsers.filter(
+  (u) =>
+    u.username.toLowerCase().includes(socialSearch.toLowerCase()) ||
+    (u.bio || '').toLowerCase().includes(socialSearch.toLowerCase())
+);
+
+const handleUpdateProfile = async (
+e: React.FormEvent
+) => {
+e.preventDefault();
+setEditMessage('');
+
+try {
+  const res = await fetch(
+    '/api/users/profile',
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        username: editUsername,
+        bio: editBio,
+        avatar: editAvatar,
+      }),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.error || 'Failed to update profile'
+    );
+  }
+
+  onUpdateCurrentUser(data);
+
+  setProfile((prev) =>
+    prev
+      ? {
+          ...prev,
+          ...data,
+        }
+      : prev
+  );
+
+  setIsEditing(false);
+  setEditMessage('¡Perfil guardado!');
+
+  setTimeout(
+    () => setEditMessage(''),
+    3000
+  );
+} catch (err: any) {
+  setEditMessage(`Error: ${err.message}`);
+}
+
+};
+
+if (loading) {
+return ( <div className="space-y-6 pb-20 animate-pulse"> <div className="h-44 bg-slate-850 rounded-2xl w-full" />
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="h-40 bg-slate-850 rounded-2xl" />
+      <div className="h-40 bg-slate-850 rounded-2xl md:col-span-2" />
+    </div>
+  </div>
+);
+
+}
+
+if (!profile) {
+return ( <div className="text-center py-12 text-slate-500"> <p>Usuario no encontrado en la comunidad.</p> </div>
+);
+}
+
+return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+
+  {/* Selected list modal */}
+  {selectedList && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+      <div className="max-h-[85vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-slate-800 bg-[#0f121d] p-5 md:p-6">
+
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+              Lista de @{profile.username}
+            </p>
+
+            <h2 className="mt-1 text-xl font-bold text-white">
+              {selectedList.name}
+            </h2>
+
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">
+              {selectedList.description || 'Sin descripción.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSelectedList(null)}
+            className="rounded-lg border border-slate-800 p-2 text-slate-400 hover:text-white"
+            aria-label="Cerrar detalle de lista"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {selectedList.games.length === 0 ? (
+          <p className="py-10 text-center text-xs text-slate-500">
+            Esta lista todavía no contiene juegos.
+          </p>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {selectedList.games.map((game) => (
+              <button
+                key={game.igdbId}
+                type="button"
+                onClick={() => onSelectGame(game.igdbId)}
+                className="group text-left"
+              >
+                <img
+                  src={game.cover}
+                  alt={game.name}
+                  referrerPolicy="no-referrer"
+                  className="aspect-[3/4] w-full rounded-lg border border-slate-800 object-cover transition group-hover:scale-[1.02]"
+                />
+
+                <span className="mt-2 block truncate text-xs font-bold text-white group-hover:text-blue-400">
+                  {game.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+
+  {/* Social Connections Modal */}
+  {socialModalTab && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-fade-in">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-[#0f121d] flex flex-col shadow-2xl">
+        {/* Modal Header */}
+        <div className="p-4 md:p-5 border-b border-slate-850 flex items-center justify-between bg-[#0b0e17]">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-400" />
+            <div>
+              <h2 className="text-sm font-bold text-white leading-none">
+                Conexiones de @{profile.username}
+              </h2>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {socialModalTab === 'followers' ? 'Jugadores que le siguen' : 'Jugadores a los que sigue'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSocialModalTab(null)}
+            className="rounded-lg border border-slate-800 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-slate-850 bg-[#0d101a]">
+          <button
+            type="button"
+            onClick={() => openSocialModal('followers')}
+            className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
+              socialModalTab === 'followers'
+                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                : 'text-slate-400 border-transparent hover:text-slate-200'
+            }`}
+          >
+            Seguidores ({profile.followersCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => openSocialModal('following')}
+            className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
+              socialModalTab === 'following'
+                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                : 'text-slate-400 border-transparent hover:text-slate-200'
+            }`}
+          >
+            Siguiendo ({profile.followingCount})
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="p-3 border-b border-slate-850 bg-[#0b0e17]/50">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar por usuario o biografía..."
+              value={socialSearch}
+              onChange={(e) => setSocialSearch(e.target.value)}
+              className="w-full bg-[#07090e] border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition"
+            />
+          </div>
+        </div>
+
+        {/* List Container */}
+        <div className="p-3 md:p-4 overflow-y-auto space-y-2 max-h-[55vh] min-h-[220px]">
+          {loadingSocial ? (
+            <div className="py-12 text-center text-xs text-slate-500 space-y-2">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p>Cargando lista de jugadores...</p>
+            </div>
+          ) : filteredSocialUsers.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 space-y-2">
+              <UserX className="w-8 h-8 mx-auto text-slate-600 opacity-60" />
+              <p className="text-xs font-medium text-slate-400">
+                {socialSearch
+                  ? 'No se encontraron jugadores para esa búsqueda.'
+                  : socialModalTab === 'followers'
+                  ? 'Aún no tiene seguidores.'
+                  : 'Aún no sigue a ningún jugador.'}
+              </p>
+            </div>
+          ) : (
+            filteredSocialUsers.map((u) => {
+              const isMe = u.id === currentUser.id;
+              const isFollowedByMe = myFollowingSet.has(u.id);
+
+              return (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-slate-850 bg-[#0a0c14] hover:border-slate-800 transition group"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSocialModalTab(null);
+                      onSelectUser?.(u.id);
+                    }}
+                    className="flex items-center gap-3 min-w-0 text-left cursor-pointer flex-1"
+                  >
+                    <img
+                      src={u.avatar}
+                      alt={u.username}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-full border border-slate-800 bg-[#07090e] object-cover flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
+                        @{u.username}
+                      </p>
+                      <p className="text-[11px] text-slate-400 truncate leading-snug">
+                        {u.bio || '¡Sin biografía todavía!'}
+                      </p>
+                    </div>
+                  </button>
+
+                  <div className="flex-shrink-0">
+                    {isMe ? (
+                      <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full">
+                        Tú
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFollowInModal(u)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition flex items-center gap-1 border ${
+                          isFollowedByMe
+                            ? 'bg-[#07090e] text-slate-300 border-slate-800 hover:border-red-500/30 hover:text-red-400'
+                            : 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+                        }`}
+                      >
+                        {isFollowedByMe ? (
+                          <>
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Siguiendo</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Seguir</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Profile main card */}
+  <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl relative overflow-hidden">
+
+    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+
+    <div className="relative z-10 flex flex-col sm:flex-row gap-5 items-center justify-between text-center sm:text-left">
+
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <img
+          src={profile.avatar}
+          alt={profile.username}
+          referrerPolicy="no-referrer"
+          className="w-20 h-20 rounded-full border-2 border-blue-500/20 bg-[#07090e] p-1 shadow-lg"
+        />
+
+        <div className="space-y-1.5 max-w-sm">
+          <h1 className="text-2xl font-bold text-white font-display tracking-tight leading-snug">
+            @{profile.username}
+          </h1>
+
+          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+            {profile.bio || '¡Sin biografía todavía!'}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center sm:items-end gap-3.5 flex-shrink-0">
+
+        {/* Follow stats */}
+        <div className="flex gap-4 text-xs font-semibold text-slate-400">
+          <button
+            type="button"
+            onClick={() => openSocialModal('followers')}
+            className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
+            title="Ver seguidores"
+          >
+            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
+              {profile.followersCount}
+            </span>
+            <span className="group-hover:text-slate-200 transition">
+              {profile.followersCount === 1 ? 'seguidor' : 'seguidores'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openSocialModal('following')}
+            className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
+            title="Ver usuarios seguidos"
+          >
+            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
+              {profile.followingCount}
+            </span>
+            <span className="group-hover:text-slate-200 transition">seguidos</span>
+          </button>
+        </div>
+
+        {isOwnProfile ? (
+          <button
+            type="button"
+            onClick={() => setIsEditing(!isEditing)}
+            className="px-4 py-2 border border-slate-800 hover:border-blue-500/20 bg-[#07090e] hover:bg-slate-900 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
+          >
+            <PenSquare className="w-3.5 h-3.5" />
+            Editar Perfil
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleFollowToggle}
+            className={`px-5 py-2 text-xs font-bold rounded-xl cursor-pointer transition flex items-center gap-1.5 border ${
+              isFollowing
+                ? 'bg-[#07090e] text-slate-300 border-slate-800'
+                : 'bg-blue-600 text-white border-blue-500'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            {isFollowing
+              ? 'Siguiendo ✓'
+              : 'Seguir jugador'}
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Profile editor */}
+    {isEditing && (
+      <form
+        onSubmit={handleUpdateProfile}
+        className="mt-6 pt-6 border-t border-slate-850 space-y-4 max-w-md animate-fade-in text-left"
+      >
+        <h3 className="text-xs uppercase font-bold tracking-wider text-slate-500">
+          Formulario de Edición
+        </h3>
+
+        {editMessage && (
+          <p className="text-[11px] text-blue-400 font-bold">
+            {editMessage}
+          </p>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase font-bold text-slate-500">
+            Nombre de usuario
+          </label>
+
+          <input
+            type="text"
+            required
+            value={editUsername}
+            onChange={(e) => setEditUsername(e.target.value)}
+            className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase font-bold text-slate-500">
+            Biografía
+          </label>
+
+          <textarea
+            value={editBio}
+            rows={2}
+            onChange={(e) => setEditBio(e.target.value)}
+            className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none resize-none"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase font-bold text-slate-500">
+            Pixel Avatar seed
+          </label>
+
+          <input
+            type="text"
+            value={editAvatar}
+            onChange={(e) => setEditAvatar(e.target.value)}
+            placeholder="Ingresa url de tu foto..."
+            className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none"
+          />
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="px-3.5 py-1.5 bg-slate-850 text-slate-400 font-semibold rounded-lg text-[11px]"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg text-[11px]"
+          >
+            Guardar
+          </button>
+        </div>
+      </form>
+    )}
+  </div>
+
+  {/* Grid panels */}
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {/* User reviews */}
+    <div className="lg:col-span-2 space-y-4">
+
+      <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
+        <Trophy className="w-4.5 h-4.5 text-yellow-500" />
+        Valoraciones y Diario ({reviews.length})
+      </h3>
+
+      {reviews.length === 0 ? (
+        <div className="bg-slate-900/30 p-8 rounded-xl border border-slate-850 text-center text-slate-500 text-xs">
+          Este gamer no ha realizado anotaciones o ratings todavía.
+        </div>
+      ) : (
+        <div className="space-y-3">
+
+          {reviews.map((rev) => (
+            <div
+              key={rev.id}
+              className="bg-[#0f121d] border border-slate-850 p-4 rounded-xl flex gap-3 hover:border-slate-800 transition"
+            >
+
+              <button
+                type="button"
+                onClick={() => onSelectGame(rev.gameId)}
+                className="flex-shrink-0 cursor-pointer"
+              >
+                <img
+                  src={rev.game.cover}
+                  alt={rev.game.name}
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-14 rounded object-cover shadow border border-slate-900"
+                />
+              </button>
+
+              <div className="flex-1 min-w-0">
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => onSelectGame(rev.gameId)}
+                    className="text-xs font-bold text-white hover:text-blue-400 transition truncate"
+                  >
+                    {rev.game.name}
+                  </button>
+
+                  <div className="flex gap-0.5 text-yellow-400">
+                    {(rev.rating ?? 0) > 0 && (
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3 h-3 ${
+                              (rev.rating ?? 0) >= star
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-slate-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-450 leading-relaxed mt-1 line-clamp-3 italic">
+                  "{rev.content}"
+                </p>
+              </div>
+            </div>
+          ))}
+
+        </div>
+      )}
+    </div>
+
+    {/* User public lists */}
+    <div className="space-y-4">
+
+      <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
+        <Swords className="w-4.5 h-4.5 text-indigo-400" />
+        Listas Públicas ({lists.length})
+      </h3>
+
+      {lists.length === 0 ? (
+        <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-xl text-center text-slate-500 text-xs">
+          No hay colecciones publicadas.
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+
+          {lists.map((list) => (
+            <button
+              key={list.id}
+              type="button"
+              onClick={() => setSelectedList(list)}
+              className="w-full bg-[#0f121d] border border-slate-850/80 hover:border-indigo-500/40 p-3.5 rounded-xl space-y-3 text-left transition cursor-pointer"
+            >
+              <h4 className="text-xs font-bold text-white truncate">
+                {list.name}
+              </h4>
+
+              <p className="text-[10px] text-slate-500 leading-normal line-clamp-2">
+                {list.description || 'Sin descripción.'}
+              </p>
+
+              <div className="flex h-14 gap-1.5 overflow-hidden rounded-lg border border-slate-850 bg-[#07090e]/50 p-1">
+                {list.games.slice(0, 5).map((game) => (
+                  <img
+                    key={game.igdbId}
+                    src={game.cover}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="h-full w-8.5 rounded-sm border border-slate-900 object-cover"
+                  />
+                ))}
+
+                {list.games.length === 0 && (
+                  <span className="p-2 text-[10px] italic text-slate-600">
+                    Lista vacía.
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+);
+};
