@@ -18,7 +18,7 @@ import {
   Maximize2,
   ChevronLeft,
   ChevronRight,
-  Heart,
+  Bookmark,
   BookmarkPlus
 } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs.tsx';
@@ -216,6 +216,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const selectedProgressOption = PROGRESS_PHASE_OPTIONS.find(option => option.value === status) || PROGRESS_PHASE_OPTIONS[0];
   // Screenshot gallery
   const [selectedScreenshot, setSelectedScreenshot] = useState(0);
@@ -252,6 +253,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
           setNotes(found.notes);
           setStartedAt(found.startedAt || '');
           setCompletedAt(found.completedAt || '');
+          setIsInWishlist(found.status === 'WISHLIST');
         }
       }
 
@@ -363,10 +365,65 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     await saveTracking(status);
   };
 
-  const handleAddToWishlist = async () => {
+  const handleToggleWishlist = async () => {
+    if (savingWishlist) return;
+
     setSavingWishlist(true);
-    await saveTracking('WISHLIST', '¡Juego añadido a tu wishlist!');
-    setSavingWishlist(false);
+    setMessage('');
+
+    try {
+      if (isInWishlist) {
+        // Eliminar de wishlist
+        const res = await fetch(`/api/library/${gameId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          setIsInWishlist(false);
+          setUserGame(null);
+          setStatus('WISHLIST');
+          setRating(0);
+          setHoursPlayed(0);
+          setNotes('');
+          setStartedAt('');
+          setCompletedAt('');
+          setMessage('Juego removido de tu wishlist.');
+          setTimeout(() => setMessage(''), 3000);
+        }
+      } else {
+        // Añadir a wishlist
+        const importRes = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+        const importData = await importRes.json();
+        if (!importRes.ok) {
+          throw new Error(importData?.error || 'No se pudo importar el juego.');
+        }
+
+        const saveRes = await fetch('/api/library', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ gameId, status: 'WISHLIST' })
+        });
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) {
+          throw new Error(saveData?.error || 'No se pudo añadir a wishlist.');
+        }
+
+        setIsInWishlist(true);
+        setUserGame(saveData);
+        setStatus(saveData.status);
+        setMessage('¡Juego añadido a tu wishlist!');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (err: any) {
+      setMessage(`Error: ${err.message}`);
+    } finally {
+      setSavingWishlist(false);
+    }
   };
 
   const handleDeleteTracking = async () => {
@@ -380,6 +437,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
       });
       if (res.ok) {
         setUserGame(null);
+        setIsInWishlist(false);
         setStatus('WISHLIST');
         setRating(0);
         setHoursPlayed(0);
@@ -765,16 +823,16 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
-                  onClick={handleAddToWishlist}
-                  disabled={savingWishlist || (userGame?.status === 'WISHLIST' && status === 'WISHLIST')}
-                  title={userGame?.status === 'WISHLIST' && status === 'WISHLIST' ? 'Ya está en tu Wishlist' : 'Añadir a Wishlist'}
+                  onClick={handleToggleWishlist}
+                  disabled={savingWishlist}
+                  title={isInWishlist ? 'Remover de Wishlist' : 'Añadir a Wishlist'}
                   className={`p-2 rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
-                    userGame?.status === 'WISHLIST'
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 shadow-sm shadow-rose-500/10'
-                      : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10'
+                    isInWishlist
+                      ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-sm shadow-indigo-500/10'
+                      : 'bg-[#07090e] border-slate-800 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 hover:bg-indigo-500/10'
                   }`}
                 >
-                  <Heart className={`w-4 h-4 ${userGame?.status === 'WISHLIST' ? 'fill-rose-400 text-rose-400' : ''}`} />
+                  <Bookmark className={`w-4 h-4 ${isInWishlist ? 'fill-indigo-400 text-indigo-400' : ''}`} />
                 </button>
 
                 <button
@@ -789,16 +847,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
                   <BookmarkPlus className="w-4 h-4" />
                 </button>
 
-                {userGame && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteTracking}
-                    title="Eliminar tracking de tu diario"
-                    className="p-2 rounded-xl border border-slate-800 bg-[#07090e] text-slate-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-all cursor-pointer flex items-center justify-center"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             </div>
 

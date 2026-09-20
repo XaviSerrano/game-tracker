@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserGame, Game, GameStatus } from '../types.ts';
 import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
+import { GameCard } from './GameCard.tsx';
 
 interface LibraryProps {
   userId: string;
@@ -15,6 +16,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'rating' | 'hours' | 'name' | 'date'>('date');
   const [loading, setLoading] = useState(true);
+  const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
 
   const fetchLibrary = async () => {
     setLoading(true);
@@ -70,6 +72,60 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
     setFilteredLib(results);
   }, [completeLib, activeTab, searchQuery, sortBy]);
+
+  const handleToggleWishlist = async (gameId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+
+    if (togglingWishlistId !== null) return;
+
+    setTogglingWishlistId(gameId);
+
+    try {
+      const item = completeLib.find(i => i.gameId === gameId);
+      if (!item) return;
+
+      if (item.status === 'WISHLIST') {
+        // Remove from wishlist
+        const res = await fetch(`/api/library/${gameId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          setCompleteLib(prev => prev.filter(i => i.gameId !== gameId));
+        }
+      } else {
+        // Change status to wishlist
+        const res = await fetch('/api/library', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ gameId, status: 'WISHLIST' })
+        });
+
+        if (res.ok) {
+          const updated = await res.json();
+          setCompleteLib(prev => {
+            const index = prev.findIndex(i => i.gameId === gameId);
+            if (index !== -1) {
+              const newLib = [...prev];
+              newLib[index] = updated;
+              return newLib;
+            }
+            return prev;
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTogglingWishlistId(null);
+    }
+  };
 
   const STATUS_TABS: { label: string, value: GameStatus | 'ALL' }[] = [
     { label: 'Todo', value: 'ALL' },
@@ -178,55 +234,17 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filteredLib.map(item => (
-            <button
+            <GameCard
               key={item.gameId}
-              onClick={() => onSelectGame(item.gameId)}
-              className="text-left group bg-[#0f121d] border border-slate-850/80 hover:border-slate-800 rounded-xl p-2.5 transition flex flex-col justify-between hover:translate-y-[-2px] duration-205 cursor-pointer block"
-            >
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden border border-slate-900 shadow">
-                <img
-                  src={item.game.cover}
-                  alt={item.game.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                />
-
-                {/* Rating display over cover */}
-                {item.rating > 0 && (
-                  <div className="absolute top-2 left-2 bg-black/85 backdrop-blur-md text-[9px] font-bold text-yellow-400 border border-slate-750 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    {item.rating}
-                  </div>
-                )}
-
-                {/* Status indicator pill bottom */}
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between gap-1">
-                  <span className={`text-[8px] font-bold border rounded-full px-2 py-0.5 text-center truncate ${item.status === 'COMPLETED' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/20' : item.status === 'PLAYING' ? 'bg-blue-900/95 text-blue-300 border-blue-500/20' : item.status === 'WISHLIST' ? 'bg-indigo-950/90 text-indigo-300 border-indigo-500/20' : 'bg-slate-950/90 text-slate-300 border-slate-700'}`}>
-                    {item.status}
-                  </span>
-                  {item.hoursPlayed > 0 && (
-                    <span className="text-[8px] font-bold bg-black/85 backdrop-blur-md border border-slate-750 rounded-full px-2 py-0.5 font-mono text-slate-300">
-                      {item.hoursPlayed}h
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-3.5 flex-1 min-w-0">
-                <h3 className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate leading-snug">
-                  {item.game.name}
-                </h3>
-                {item.notes ? (
-                  <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 italic">
-                    "{item.notes}"
-                  </p>
-                ) : (
-                  <p className="text-[9px] text-slate-500 mt-1 truncate uppercase font-mono">
-                    {item.game.genres.slice(0, 1).join(', ') || 'Videojuego'}
-                  </p>
-                )}
-              </div>
-            </button>
+              game={item.game}
+              userGameStatus={item.status}
+              userGameRating={item.rating}
+              userGameHours={item.hoursPlayed}
+              userGameNotes={item.notes}
+              onSelectGame={onSelectGame}
+              onToggleWishlist={handleToggleWishlist}
+              togglingWishlistId={togglingWishlistId}
+            />
           ))}
         </div>
       )}

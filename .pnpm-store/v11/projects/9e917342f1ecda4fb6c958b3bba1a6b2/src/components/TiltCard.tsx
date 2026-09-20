@@ -39,7 +39,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
   return (
     <div
       ref={cardRef}
-      onMouseMove={(event) => {
+      className={`relative rounded-xl w-full h-full min-w-0 ${className}`}      onMouseMove={(event) => {
         const rect = cardRef.current?.getBoundingClientRect();
         if (!rect) return;
 
@@ -53,7 +53,6 @@ export const TiltCard: React.FC<TiltCardProps> = ({
         });
       }}
       onMouseLeave={() => setPointer({ x: 0.5, y: 0.5, active: false })}
-      className={`relative ${className}`}
       style={cardStyle}
     >
       <div
