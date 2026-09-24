@@ -673,8 +673,6 @@ app.get('/api/games/:id', async (req, res) => {
   }
 });
 
-
-
 // --- ENDPOINTS DE BIBLIOTECA (USERGAMES) ---
 
 // Biblioteca de un usuario
