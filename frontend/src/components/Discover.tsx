@@ -19,9 +19,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [users, setUsers] = useState<User[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState(() =>
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('genre') || '' : ''
-  );
+  // const [selectedGenre, setSelectedGenre] = useState(() =>
+  //   typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('genre') || '' : ''
+  // );
   const [selectedPlatform, setSelectedPlatform] = useState(() =>
     typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('platform') || '' : ''
   );
@@ -36,7 +36,58 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const isUserSearch = query.trim().startsWith('@');
 
-  const GENRES = ["Action", "Adventure", "RPG", "Indie", "Metroidvania", "Platformer", "Roguelike", "Horror", "Survival", "Cozy", "Strategy", "Puzzle"];
+  // const GENRES = [
+  //   "Action",
+  //   "Adventure",
+  //   "Role-playing (RPG)",  // ← Cambio aquí
+  //   "Indie",
+  //   "Metroidvania",
+  //   "Platformer",
+  //   "Roguelike",
+  //   "Horror",
+  //   "Survival",
+  //   "Cozy",
+  //   "Strategy",
+  //   "Puzzle",
+  //   "Shooter",
+  //   "Platform",
+  //   "Visual Novel"
+  // ];
+
+  const [genres, setGenres] = useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState(() =>
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('genre') || ''
+      : ''
+  );
+
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const res = await fetch('/api/games/genres');
+
+        console.log('Genres response status:', res.status);
+
+        if (!res.ok) {
+          throw new Error('No se pudieron cargar los géneros.');
+        }
+
+        const data = await res.json();
+
+        console.log('Genres received:', data);
+
+        setGenres(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error loading genres:', err);
+        setGenres([]);
+      }
+    };
+
+    fetchGenres();
+  }, []);
+
+
+
   const PLATFORMS = ["PC", "PlayStation 5", "Nintendo Switch", "Xbox Series X/S", "PlayStation 4", "Xbox One", "Mac"];
 
   const searchGames = async (searchVal: string, genreVal: string, platformVal: string, sortVal: string, append = false) => {
@@ -272,8 +323,11 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
                 className="w-full bg-[#07090e] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500 transition"
               >
                 <option value="">Todos los géneros</option>
-                {GENRES.map(g => (
-                  <option key={g} value={g}>{g}</option>
+
+                {genres.map(genre => (
+                  <option key={genre} value={genre}>
+                    {genre}
+                  </option>
                 ))}
               </select>
             </div>
