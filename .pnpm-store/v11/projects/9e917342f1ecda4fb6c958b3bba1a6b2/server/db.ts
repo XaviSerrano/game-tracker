@@ -1347,6 +1347,215 @@ class GameDatabase {
   }
 
   // ==================================================
+  // STATISTICS
+  // ==================================================
+
+  getUserStats(userId: string): UserStats {
+    const userGames = this.getUserGames(userId);
+
+    const completedGames = userGames.filter(
+      ug => ug.status === 'PLAYED' || ug.status === 'COMPLETED'
+    );
+
+    const totalHours = userGames.reduce(
+      (total, ug) => total + (ug.hoursPlayed || 0),
+      0
+    );
+
+    // Obtener los juegos de la biblioteca del usuario
+    const gamesDetails = userGames
+      .map(ug => this.getGame(ug.gameId))
+      .filter((game): game is Game => game !== null);
+
+    // ================================
+    // GÉNEROS
+    // ================================
+
+    const genreCounts: Record<string, number> = {};
+
+    gamesDetails.forEach(game => {
+      game.genres.forEach(genre => {
+        genreCounts[genre] =
+          (genreCounts[genre] || 0) + 1;
+      });
+    });
+
+    // ================================
+    // PLATAFORMAS
+    // ================================
+
+    const platformCounts: Record<string, number> = {};
+
+    gamesDetails.forEach(game => {
+      game.platforms.forEach(platform => {
+        platformCounts[platform] =
+          (platformCounts[platform] || 0) + 1;
+      });
+    });
+
+    // ================================
+    // GÉNERO FAVORITO
+    // ================================
+
+    let favoriteGenre = 'Ninguno';
+    let maxGenreCount = 0;
+
+    Object.entries(genreCounts).forEach(
+      ([genre, count]) => {
+        if (count > maxGenreCount) {
+          maxGenreCount = count;
+          favoriteGenre = genre;
+        }
+      }
+    );
+
+    // ================================
+    // PLATAFORMA FAVORITA
+    // ================================
+
+    let favoritePlatform = 'Ninguna';
+    let maxPlatformCount = 0;
+
+    Object.entries(platformCounts).forEach(
+      ([platform, count]) => {
+        if (count > maxPlatformCount) {
+          maxPlatformCount = count;
+          favoritePlatform = platform;
+        }
+      }
+    );
+
+    // ================================
+    // JUEGOS MEJOR VALORADOS
+    // ================================
+
+    const topRatedGames = userGames
+      .filter(ug => ug.rating > 0)
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5)
+      .map(ug => {
+        const game = this.getGame(ug.gameId);
+
+        if (!game) {
+          return null;
+        }
+
+        return {
+          ...game,
+          myRating: ug.rating,
+          hoursPlayed: ug.hoursPlayed
+        };
+      })
+      .filter(Boolean);
+
+    // ================================
+    // ESTADÍSTICAS MENSUALES
+    // ================================
+
+    const months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic'
+    ];
+
+    const monthlyHistory: Record<
+      string,
+      {
+        completed: number;
+        hours: number;
+      }
+    > = {};
+
+    const now = new Date();
+
+    // Últimos 12 meses
+    for (let i = 12; i >= 0; i--) {
+      const date = new Date(
+        now.getFullYear(),
+        now.getMonth() - i,
+        1
+      );
+
+      const key = `${months[date.getMonth()]} ${
+        date.getFullYear() % 100
+      }`;
+
+      monthlyHistory[key] = {
+        completed: 0,
+        hours: 0
+      };
+    }
+
+    userGames.forEach(ug => {
+      if (!ug.updatedAt) return;
+
+      const date = new Date(ug.updatedAt);
+
+      if (Number.isNaN(date.getTime())) {
+        return;
+      }
+
+      const key = `${months[date.getMonth()]} ${
+        date.getFullYear() % 100
+      }`;
+
+      if (!monthlyHistory[key]) {
+        return;
+      }
+
+      monthlyHistory[key].hours +=
+        ug.hoursPlayed || 0;
+
+      if (ug.status === 'PLAYED' || ug.status === "COMPLETED") {
+        monthlyHistory[key].completed += 1;
+      }
+    });
+
+    const monthlyStats = Object.entries(
+      monthlyHistory
+    ).map(([month, data]) => ({
+      month,
+      completed: data.completed,
+      hours: data.hours
+    }));
+
+    return {
+      totalHours,
+      completedCount: completedGames.length,
+      favoriteGenre,
+      favoritePlatform,
+      topRatedGames,
+      monthlyStats,
+
+      platformsDistribution:
+        Object.entries(platformCounts).map(
+          ([name, value]) => ({
+            name,
+            value
+          })
+        ),
+
+      genresDistribution:
+        Object.entries(genreCounts).map(
+          ([name, value]) => ({
+            name,
+            value
+          })
+        )
+    };
+  }
+
+
+  // ==================================================
   // ACTIVITIES
   // ==================================================
 

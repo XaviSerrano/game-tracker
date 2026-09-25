@@ -2,38 +2,52 @@ import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Clock, Trophy, Gamepad2, Heart, Star, Sparkles, TrendingUp } from 'lucide-react';
 import { User } from '../types.ts';
+import { GameCard } from './GameCard.tsx';
 
 interface StatsDashboardProps {
   userId: string;
   token: string;
+  onSelectGame: (gameId: number) => void;
 }
 
-export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token }) => {
+export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, onSelectGame }) => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/users/${userId}/stats`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchStats = async () => {
+    setLoading(true);
 
-    fetchStats();
-  }, [userId]);
+    try {
+      const res = await fetch(
+        `/api/users/${userId}/stats`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error ||
+          'No se pudieron cargar las estadísticas.'
+        );
+      }
+
+      setStats(data);
+    } catch (err) {
+      console.error('Error cargando estadísticas:', err);
+      setStats(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchStats();
+}, [userId, token]);
 
   const COLORS = ['#3b82f6', '#4f46e5', '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e', '#f97316'];
 
@@ -85,7 +99,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token })
             <Trophy className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Completados</span>
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Jugados</span>
             <span className="text-xl font-black text-white font-display leading-tight">{stats.completedCount} juegos</span>
           </div>
         </div>
@@ -184,32 +198,24 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token })
       {/* Top Rated library titles */}
       <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
         <h3 className="font-semibold text-slate-300 font-display text-sm mb-4 flex items-center gap-1.5">
-          <Star className="w-4.5 h-4.5 text-yellow-500 fill-yellow-500/20" /> Mis juegos mejor puntuados
+          <Star className="w-4.5 h-4.5 text-yellow-500 fill-yellow-500/20" />
+          Mis juegos mejor puntuados
         </h3>
+
         {stats.topRatedGames.length === 0 ? (
-          <p className="text-xs text-slate-500 text-center py-6">Puntúa tus juegos de 1 a 5 estrellas para verlos listados aquí.</p>
+          <p className="text-xs text-slate-500 text-center py-6">
+            Puntúa tus juegos de 1 a 5 estrellas para verlos listados aquí.
+          </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {stats.topRatedGames.map((game: any) => (
-              <div
-                key={game.gameId}
-                className="bg-[#07090e]/60 border border-slate-850 p-2.5 rounded-xl flex sm:flex-col items-center gap-3"
-              >
-                <img
-                  src={game.cover}
-                  alt={game.name}
-                  referrerPolicy="no-referrer"
-                  className="w-10 sm:w-full h-14 sm:aspect-[3/4] object-cover rounded shadow"
-                />
-                <div className="flex-1 sm:w-full text-left sm:text-center min-w-0">
-                  <h4 className="text-xs font-bold text-white truncate">{game.name}</h4>
-                  <div className="flex items-center sm:justify-center gap-1 text-yellow-400 mt-1">
-                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-500 animate-pulse" />
-                    <span className="text-xs font-bold text-white">{game.myRating}</span>
-                    <span className="text-[10px] text-slate-600">/5</span>
-                  </div>
-                </div>
-              </div>
+              <GameCard
+                key={game.igdbId}
+                game={game}
+                userGameRating={game.myRating}
+                userGameHours={game.hoursPlayed}
+                onSelectGame={onSelectGame}
+              />
             ))}
           </div>
         )}

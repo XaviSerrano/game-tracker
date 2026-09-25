@@ -1029,22 +1029,19 @@ app.delete('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
 
 // --- ENDPOINTS DE ESTADÍSTICAS ---
 app.get('/api/users/:id/stats', (req, res) => {
-  const stats = db.getUserStats(req.params.id);
-  res.json(stats);
-});
+  try {
+    const stats = db.getUserStats(req.params.id);
+    res.json(stats);
+  } catch (error) {
+    console.error(
+      '❌ Error obteniendo estadísticas:',
+      error
+    );
 
-// --- ENDPOINTS DE RECOMENDACIONES INTELIGENTES ---
-app.get('/api/recommendations', authenticate, (req: AuthenticatedRequest, res) => {
-  const user = req.currUser!;
-  IgdbService.getPopularGames(120)
-    .then((popularGames) => {
-      popularGames.forEach(game => db.saveGame(game));
-      const recs = db.getRecommendations(user.id);
-      res.json(recs);
-    })
-    .catch((err: any) => {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: 'No se pudieron calcular las estadísticas.'
     });
+  }
 });
 
 // --- VITE EXPRES INTERFACE ---

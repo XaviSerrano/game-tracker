@@ -289,7 +289,7 @@ export default function App() {
           />
         );
       case 'stats':
-        return <StatsDashboard userId={currentUser.id} token={token} />;
+        return <StatsDashboard userId={currentUser.id} token={token} onSelectGame={handleSelectGame}/>;
       case 'profile':
         return (
           <UserProfile

@@ -127,7 +127,22 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     }
   };
 
-  const STATUS_TABS: { label: string, value: GameStatus | 'ALL' }[] = [
+
+  const getStatusCount = (status: GameStatus | 'ALL') => {
+    if (status === 'ALL') {
+      return completeLib.length;
+    }
+
+    return completeLib.filter(
+      item => item.status === status
+    ).length;
+  };
+
+
+  const STATUS_TABS: {
+    label: string;
+    value: GameStatus | 'ALL';
+  }[] = [
     { label: 'Todo', value: 'ALL' },
     { label: 'Pendiente (Wishlist) ⭐️', value: 'WISHLIST' },
     { label: 'Jugando 🎮', value: 'PLAYING' },
@@ -149,17 +164,28 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       </div>
 
       {/* Categories slider */}
-      <div className="flex gap-2.5 overflow-x-auto pb-1 scrolling-touch">
-        {STATUS_TABS.map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition border ${activeTab === tab.value ? 'bg-blue-600 text-white border-blue-500Shadow' : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'}`}
+      {STATUS_TABS.map(tab => (
+        <button
+          key={tab.value}
+          onClick={() => setActiveTab(tab.value)}
+          className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition border ${
+            activeTab === tab.value
+              ? 'bg-blue-600 text-white border-blue-500Shadow'
+              : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'
+          }`}
+        >
+          <span>{tab.label}</span>
+          <span
+            className={`ml-1.5 ${
+              activeTab === tab.value
+                ? 'text-white/80'
+                : 'text-slate-600'
+            }`}
           >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            ({getStatusCount(tab.value)})
+          </span>
+        </button>
+      ))}
 
       {/* Search and Sort panel */}
       <div className="flex flex-col md:flex-row gap-3">
@@ -203,6 +229,30 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             A-Z
           </button>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
+
+          <p className="text-[11px] uppercase tracking-widest font-semibold text-slate-500">
+            Biblioteca
+          </p>
+
+          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-400">
+            {filteredLib.length}
+          </span>
+
+          <span className="text-[11px] text-slate-600">
+            {filteredLib.length === 1 ? 'juego' : 'juegos'}
+          </span>
+        </div>
+
+        {searchQuery && (
+          <span className="text-[10px] text-slate-600">
+            Filtrado por "{searchQuery}"
+          </span>
+        )}
       </div>
 
       {/* Grid listing */}
