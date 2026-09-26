@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 export interface BreadcrumbItem {
   label: string;
   href?: string;
+  onClick?: () => void;
 }
 
 interface BreadcrumbsProps {
@@ -18,24 +19,57 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
       '@type': 'ListItem',
       position: index + 1,
       name: item.label,
-      ...(item.href ? { item: new URL(item.href, window.location.origin).toString() } : {})
+      ...(item.href
+        ? {
+            item: new URL(
+              item.href,
+              window.location.origin
+            ).toString()
+          }
+        : {})
     }))
   };
 
   return (
     <>
-      <nav aria-label="Migas de pan" className="mb-4 overflow-x-auto">
-        <ol className="flex min-w-max items-center gap-1 text-[11px] text-slate-500">
+      <nav aria-label="Breadcrumb" className="mb-6">
+        <ol className="flex items-center gap-1.5">
           {items.map((item, index) => (
             <React.Fragment key={`${item.label}-${index}`}>
-              {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-700" aria-hidden="true" />}
+              {index > 0 && (
+                <ChevronRight
+                  className="w-3.5 h-3.5 text-slate-700 flex-shrink-0"
+                  aria-hidden="true"
+                />
+              )}
+
               <li>
-                {item.href ? (
-                  <a href={item.href} className="transition hover:text-blue-400">
+                {item.onClick ? (
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    className="
+                      text-xs text-slate-400
+                      hover:text-white
+                      transition-colors
+                      cursor-pointer
+                    "
+                  >
+                    {item.label}
+                  </button>
+                ) : item.href ? (
+                  <a
+                    href={item.href}
+                    className="
+                      text-xs text-slate-400
+                      hover:text-white
+                      transition-colors
+                    "
+                  >
                     {item.label}
                   </a>
                 ) : (
-                  <span aria-current="page" className="font-semibold text-slate-300">
+                  <span className="text-xs text-white font-medium">
                     {item.label}
                   </span>
                 )}
@@ -44,7 +78,10 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
           ))}
         </ol>
       </nav>
-      <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+
+      <script type="application/ld+json">
+        {JSON.stringify(structuredData)}
+      </script>
     </>
   );
 };

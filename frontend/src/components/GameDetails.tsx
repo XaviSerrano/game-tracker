@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameRow, UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
+import { UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
 import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
 import { DatePicker } from './DatePicker.tsx';
 import {
@@ -11,7 +11,6 @@ import {
   Send,
   MessageSquare,
   ThumbsUp,
-  Trash2,
   ArrowLeft,
   ChevronDown,
   X,
@@ -29,6 +28,8 @@ interface GameDetailsProps {
   token: string;
   onBack: () => void;
   onSelectUser: (userId: string) => void;
+  onGoHome: () => void;
+  onGoDiscover: () => void;
 }
 
 interface PlatformStyle {
@@ -188,7 +189,15 @@ const PlatformBadgeLogo: React.FC<{ platform: PlatformStyle }> = ({ platform }) 
   );
 };
 
-export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, token, onBack, onSelectUser }) => {
+export const GameDetails: React.FC<GameDetailsProps> = ({
+  gameId,
+  currentUser,
+  token,
+  onBack,
+  onSelectUser,
+  onGoHome,
+  onGoDiscover
+}) => {
   const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [userGame, setUserGame] = useState<UserGame | null>(null);
@@ -683,15 +692,17 @@ export const GameDetails: React.FC<GameDetailsProps> = ({ gameId, currentUser, t
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
       <Breadcrumbs
         items={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Juegos', href: '/discover' },
-          ...(game.genres[0]
-            ? [{ label: game.genres[0], href: `/discover?genre=${encodeURIComponent(game.genres[0])}` }]
-            : []),
-          ...(game.platforms[0]
-            ? [{ label: game.platforms[0], href: `/discover?platform=${encodeURIComponent(game.platforms[0])}` }]
-            : []),
-          { label: game.name }
+          {
+            label: 'Inicio',
+            onClick: onGoHome
+          },
+          {
+            label: 'Juegos',
+            onClick: onGoDiscover
+          },
+          {
+            label: game.name
+          }
         ]}
       />
       {/* Back navigaton top link */}

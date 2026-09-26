@@ -165,6 +165,20 @@ export default function App() {
     navigateTo(SECTION_PATHS[tab]);
   };
 
+  const handleGoHome = () => {
+    setActiveTab('feed');
+    setSelectedGameId(null);
+    setSelectedUserId(null);
+    navigateTo('/');
+  };
+
+  const handleGoDiscover = () => {
+    setActiveTab('discover');
+    setSelectedGameId(null);
+    setSelectedUserId(null);
+    navigateTo('/discover');
+  };
+
   // Subnavigation shortcuts
   const handleSelectGame = (gameId: number) => {
     navigateTo(`/game/${gameId}`);
@@ -232,8 +246,10 @@ export default function App() {
           gameId={selectedGameId}
           currentUser={currentUser}
           token={token}
-          onBack={() => setSelectedGameId(null)}
+          onBack={handleBack}
           onSelectUser={handleSelectUser}
+          onGoHome={handleGoHome}
+          onGoDiscover={handleGoDiscover}
         />
       );
     }
@@ -244,8 +260,10 @@ export default function App() {
           gameId={gamePathId}
           currentUser={currentUser}
           token={token}
-          onBack={() => navigateTo('/')}
+          onBack={handleGoDiscover}
           onSelectUser={handleSelectUser}
+          onGoHome={handleGoHome}
+          onGoDiscover={handleGoDiscover}
         />
       );
     }
