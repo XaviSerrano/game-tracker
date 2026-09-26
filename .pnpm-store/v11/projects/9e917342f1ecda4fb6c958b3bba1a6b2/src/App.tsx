@@ -55,6 +55,7 @@ export default function App() {
   // Sub-navigation targets
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [gameReturnPath, setGameReturnPath] = useState('/');
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // The session is kept in an httpOnly cookie and verified server-side.
@@ -179,14 +180,51 @@ export default function App() {
     navigateTo('/discover');
   };
 
+  const getGameParentLabel = (path: string) => {
+    switch (path) {
+      case '/':
+        return 'Inicio';
+      case '/discover':
+        return 'Descubrir';
+      case '/library':
+        return 'Biblioteca';
+      case '/lists':
+        return 'Listas';
+      case '/stats':
+        return 'Estadísticas';
+      case '/profile':
+        return 'Mi Perfil';
+      default:
+        return 'Descubrir';
+    }
+  };
+
   // Subnavigation shortcuts
   const handleSelectGame = (gameId: number) => {
+    // Guardamos desde qué sección se abrió el juego
+    setGameReturnPath(pathname);
+
     navigateTo(`/game/${gameId}`);
     setSelectedGameId(null);
     setSelectedUserId(null);
+
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setSidebarOpen(false);
     }
+  };
+
+  const handleBackFromGame = () => {
+    setSelectedGameId(null);
+    setSelectedUserId(null);
+
+    const previousTab = (
+      Object.entries(SECTION_PATHS).find(
+        ([, path]) => path === gameReturnPath
+      )?.[0] || 'feed'
+    ) as MainTab;
+
+    setActiveTab(previousTab);
+    navigateTo(gameReturnPath);
   };
 
   const handleSelectUser = (uId: string) => {
@@ -246,10 +284,11 @@ export default function App() {
           gameId={selectedGameId}
           currentUser={currentUser}
           token={token}
-          onBack={handleBack}
+          onBack={handleBackFromGame}
           onSelectUser={handleSelectUser}
           onGoHome={handleGoHome}
-          onGoDiscover={handleGoDiscover}
+          breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
+          onGoBackToParent={handleBackFromGame}
         />
       );
     }
@@ -260,10 +299,11 @@ export default function App() {
           gameId={gamePathId}
           currentUser={currentUser}
           token={token}
-          onBack={handleGoDiscover}
+          onBack={handleBackFromGame}
           onSelectUser={handleSelectUser}
           onGoHome={handleGoHome}
-          onGoDiscover={handleGoDiscover}
+          breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
+          onGoBackToParent={handleBackFromGame}        
         />
       );
     }

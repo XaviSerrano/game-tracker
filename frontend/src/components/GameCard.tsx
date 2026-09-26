@@ -53,10 +53,24 @@ export const GameCard: React.FC<GameCardProps> = ({
     ? userGameStatus === 'WISHLIST'
     : isInWishlist;
 
+  const handleCardClick = () => {
+    onSelectGame(game.igdbId);
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelectGame(game.igdbId);
+    }
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => onSelectGame(game.igdbId)}
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalles de ${game.name}`}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
       className={`
         w-full h-full min-w-0 text-left group
         bg-[#0f121d]
@@ -81,7 +95,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           group-hover:scale-[1.02]
           transition
           duration-200
-          ${isFeedCard ? 'aspect-[3/4]' : 'aspect-[3/4]'}
+          aspect-[3/4]
         `}
       >
         <img
@@ -136,6 +150,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             {userGameRating && userGameRating > 0 ? (
               <>
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+
                 <span className="text-yellow-400">
                   {userGameRating}
                 </span>
@@ -149,6 +164,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             ) : game.rating ? (
               <>
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+
                 <span className="text-yellow-400">
                   {game.rating}
                 </span>
@@ -223,14 +239,12 @@ export const GameCard: React.FC<GameCardProps> = ({
                 </p>
               ) : (
                 <p className="text-[9px] text-slate-500 mt-1 truncate uppercase font-mono">
-                  {game.genres.slice(0, 1).join(', ') ||
-                    'Videojuego'}
+                  {game.genres.slice(0, 1).join(', ') || 'Videojuego'}
                 </p>
               )
             ) : (
               <p className="text-[10px] text-slate-500 mt-1 truncate">
-                {game.genres.slice(0, 2).join(', ') ||
-                  'Videojuego'}
+                {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
               </p>
             )}
           </>
@@ -238,11 +252,10 @@ export const GameCard: React.FC<GameCardProps> = ({
 
         {isFeedCard && (
           <p className="text-[9px] text-slate-500 mt-0.5 truncate">
-            {game.genres?.slice(0, 1).join(', ') ||
-              'Videojuego'}
+            {game.genres?.slice(0, 1).join(', ') || 'Videojuego'}
           </p>
         )}
       </div>
-    </button>
+    </div>
   );
 };

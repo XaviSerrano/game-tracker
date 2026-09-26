@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserGame, Review, CustomList, User, GameStatus } from '../types.ts';
+
+import {
+  Game,
+  UserGame,
+  Review,
+  CustomList,
+  User,
+  GameStatus
+} from '../types.ts';
+
 import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
 import { DatePicker } from './DatePicker.tsx';
 import {
@@ -28,8 +37,11 @@ interface GameDetailsProps {
   token: string;
   onBack: () => void;
   onSelectUser: (userId: string) => void;
+
   onGoHome: () => void;
-  onGoDiscover: () => void;
+
+  breadcrumbParentLabel: string;
+  onGoBackToParent: () => void;
 }
 
 interface PlatformStyle {
@@ -196,7 +208,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   onBack,
   onSelectUser,
   onGoHome,
-  onGoDiscover
+  breadcrumbParentLabel,
+  onGoBackToParent
 }) => {
   const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
@@ -691,26 +704,40 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
       <Breadcrumbs
-        items={[
-          {
-            label: 'Inicio',
-            onClick: onGoHome
-          },
-          {
-            label: 'Juegos',
-            onClick: onGoDiscover
-          },
-          {
-            label: game.name
-          }
-        ]}
+        items={
+          breadcrumbParentLabel === 'Inicio'
+            ? [
+                {
+                  label: 'Inicio',
+                  onClick: onGoHome
+                },
+                {
+                  label: game.name
+                }
+              ]
+            : [
+                {
+                  label: 'Inicio',
+                  onClick: onGoHome
+                },
+                {
+                  label: breadcrumbParentLabel,
+                  onClick: onGoBackToParent
+                },
+                {
+                  label: game.name
+                }
+              ]
+        }
       />
       {/* Back navigaton top link */}
       <button
+        type="button"
         onClick={onBack}
         className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white mb-2 transition cursor-pointer group"
       >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition" /> Volver al Catálogo
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition" />
+        Volver a {breadcrumbParentLabel}
       </button>
 
       {/* Game Header panel */}
