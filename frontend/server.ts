@@ -641,17 +641,13 @@ app.get('/api/games/igdb/search', async (req, res) => {
 // Backend: Obtener todos los géneros únicos
 app.get('/api/games/genres', async (req, res) => {
   try {
-    const games = await IgdbService.getPopularGames(500); // O traer de la BD si tienes local
-    const genresSet = new Set<string>();
-    
-    games.forEach(g => {
-      g.genres.forEach(genre => genresSet.add(genre));
-    });
-    
-    const genres = Array.from(genresSet).sort();
+    const genres = await IgdbService.getGenres();
     res.json(genres);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('Error loading genres:', err);
+    res.status(500).json({
+      error: 'No se pudieron cargar los géneros.'
+    });
   }
 });
 
