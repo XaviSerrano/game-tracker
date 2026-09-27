@@ -64,7 +64,7 @@ function getIgdbCredentials() {
 }
 
 // ==================================================
-// TYPES / MAPPERS
+// HELPERS
 // ==================================================
 
 interface RankedIgdbGame {
@@ -104,23 +104,25 @@ function mapIgdbGame(item: any): Game {
     name: item.name,
     slug: item.slug || '',
     cover: item.cover
-      ? `https:${item.cover.url.replace(
-          't_thumb',
-          't_cover_big'
-        )}`
+      ? `https:${item.cover.url.replace('t_thumb', 't_cover_big')}`
       : 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1u0f.jpg',
     summary: item.summary || 'No summary available.',
     genres: Array.isArray(item.genres)
-      ? item.genres.map((g: any) => g.name)
+      ? item.genres
+          .map((genre: any) => genre?.name)
+          .filter(Boolean)
       : ['Unknown'],
     platforms: Array.isArray(item.platforms)
-      ? item.platforms.map((p: any) => p.name)
+      ? item.platforms
+          .map((platform: any) => platform?.name)
+          .filter(Boolean)
       : ['Unknown'],
     releaseDate: releaseTimestamp
       ? new Date(releaseTimestamp).toISOString().split('T')[0]
       : 'Unknown',
     rating:
-      typeof item.total_rating === 'number' && item.total_rating > 0
+      typeof item.total_rating === 'number' &&
+      item.total_rating > 0
         ? Math.round(item.total_rating)
         : undefined,
     popularity:
@@ -152,7 +154,7 @@ function mapRankedIgdbGame(item: any): RankedIgdbGame {
 }
 
 // ==================================================
-// GAME RANKING
+// DISCOVER RANKING
 // ==================================================
 
 function calculateDiscoverRelevanceScore(
@@ -166,12 +168,12 @@ function calculateDiscoverRelevanceScore(
       ? (
           (game.ratingCount /
             (game.ratingCount + minimumVotes)) *
-            game.rating
+          game.rating
         ) +
         (
           (minimumVotes /
             (game.ratingCount + minimumVotes)) *
-            averageRating
+          averageRating
         )
       : averageRating * 0.7;
 
@@ -284,18 +286,15 @@ function getLocalPopularFallback(limit: number): Game[] {
         Boolean(game?.cover)
     )
     .sort((a, b) => {
-      const popularityDelta =
+      const popularityDifference =
         (b.popularity || b.rating || 0) -
         (a.popularity || a.rating || 0);
 
-      if (popularityDelta !== 0) {
-        return popularityDelta;
+      if (popularityDifference !== 0) {
+        return popularityDifference;
       }
 
-      return (
-        (b.rating || 0) -
-        (a.rating || 0)
-      );
+      return (b.rating || 0) - (a.rating || 0);
     })
     .slice(0, limit);
 
@@ -303,7 +302,6 @@ function getLocalPopularFallback(limit: number): Game[] {
     return localGames;
   }
 
-  // Último fallback absoluto.
   return [
     {
       igdbId: 119133,
@@ -449,9 +447,9 @@ async function getTwitchToken(): Promise<string> {
       60000;
 
     return twitchAccessToken;
-  } catch (err) {
+  } catch (error) {
     throw new Error(
-      `IGDB: error obteniendo token de Twitch: ${err}`
+      `IGDB: error obteniendo token de Twitch: ${error}`
     );
   }
 }
@@ -475,16 +473,27 @@ export class IgdbService {
       return this.getPopularGames(limit);
     }
 
-    const cacheKey = `search:${trimmedQuery}:${limit}`;
-    const cached = cacheGet<Game[]>(cacheKey);
+    const normalizedLimit = Math.max(
+      1,
+      Math.min(limit, 500)
+    );
+
+    const cacheKey =
+      `search:${trimmedQuery}:${normalizedLimit}`;
+
+    const cached =
+      cacheGet<Game[]>(cacheKey);
 
     if (cached) {
       return cached;
     }
 
     try {
-      const token = await getTwitchToken();
-      const { clientId } = getIgdbCredentials();
+      const token =
+        await getTwitchToken();
+
+      const { clientId } =
+        getIgdbCredentials();
 
       const response = await fetch(
         'https://api.igdb.com/v4/games',
@@ -509,21 +518,25 @@ export class IgdbService {
               total_rating,
               total_rating_count,
               screenshots.url;
-            where category = 0 & cover != null;
-            limit ${Math.min(limit, 500)};
+            where
+              category = 0 &
+              cover != null;
+            limit ${normalizedLimit};
           `
         }
       );
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText =
+          await response.text();
 
         throw new Error(
-          `IGDB returned status ${response.status}: ${errorText}`
+          `IGDB search failed (${response.status}): ${errorText}`
         );
       }
 
-      const apiData = await response.json();
+      const apiData =
+        await response.json();
 
       const mapped: Game[] =
         Array.isArray(apiData)
@@ -536,12 +549,15 @@ export class IgdbService {
         db.createGame(game)
       );
 
-      cacheSet(cacheKey, mapped);
+      cacheSet(
+        cacheKey,
+        mapped
+      );
 
       return mapped;
-    } catch (err) {
+    } catch (error) {
       throw new Error(
-        `IGDB search request failed: ${err}`
+        `IGDB search request failed: ${error}`
       );
     }
   }
@@ -558,16 +574,22 @@ export class IgdbService {
       Math.min(limit, 500)
     );
 
-    const cacheKey = `popular:${normalizedLimit}`;
-    const cached = cacheGet<Game[]>(cacheKey);
+    const cacheKey =
+      `popular:${normalizedLimit}`;
+
+    const cached =
+      cacheGet<Game[]>(cacheKey);
 
     if (cached) {
       return cached;
     }
 
     try {
-      const token = await getTwitchToken();
-      const { clientId } = getIgdbCredentials();
+      const token =
+        await getTwitchToken();
+
+      const { clientId } =
+        getIgdbCredentials();
 
       const igdbLimit = Math.min(
         Math.max(normalizedLimit * 2, 120),
@@ -659,7 +681,8 @@ export class IgdbService {
         );
 
         if (!response.ok) {
-          const errorText = await response.text();
+          const errorText =
+            await response.text();
 
           lastError =
             `IGDB popular request failed (${response.status}): ${errorText}`;
@@ -667,7 +690,8 @@ export class IgdbService {
           continue;
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (
           Array.isArray(data) &&
@@ -678,40 +702,39 @@ export class IgdbService {
         }
       }
 
-      // --------------------------------------------------
-      // IGDB HA FUNCIONADO
-      // --------------------------------------------------
-
+      // IGDB ha funcionado
       if (apiData.length > 0) {
-        const mapped = rankGamesForDiscover(
-          apiData,
-          normalizedLimit
-        );
+        const mapped =
+          rankGamesForDiscover(
+            apiData,
+            normalizedLimit
+          );
 
         mapped.forEach((game) =>
           db.createGame(game)
         );
 
-        cacheSet(cacheKey, mapped);
+        cacheSet(
+          cacheKey,
+          mapped
+        );
 
         return mapped;
       }
-
-      // --------------------------------------------------
-      // IGDB HA RESPONDIDO PERO SIN RESULTADOS
-      // --------------------------------------------------
 
       if (lastError) {
         console.error(lastError);
       }
 
+      // Segundo intento utilizando búsquedas
       const fallbackSearchQueries = [
         'a',
         'the',
         'of'
       ];
 
-      const merged = new Map<number, any>();
+      const merged =
+        new Map<number, any>();
 
       for (const term of fallbackSearchQueries) {
         const response = await fetch(
@@ -754,7 +777,8 @@ export class IgdbService {
           continue;
         }
 
-        const data = await response.json();
+        const data =
+          await response.json();
 
         if (!Array.isArray(data)) {
           continue;
@@ -764,12 +788,16 @@ export class IgdbService {
           if (
             typeof item?.id === 'number'
           ) {
-            merged.set(item.id, item);
+            merged.set(
+              item.id,
+              item
+            );
           }
         }
 
         if (
-          merged.size >= normalizedLimit * 2
+          merged.size >=
+          normalizedLimit * 2
         ) {
           break;
         }
@@ -778,7 +806,9 @@ export class IgdbService {
       if (merged.size > 0) {
         const fallbackMapped =
           rankGamesForDiscover(
-            Array.from(merged.values()),
+            Array.from(
+              merged.values()
+            ),
             normalizedLimit
           );
 
@@ -800,21 +830,12 @@ export class IgdbService {
       );
     }
 
-    // --------------------------------------------------
-    // IGDB FALLA → SQLITE → 5 FALLBACK
-    // --------------------------------------------------
-
-    const localFallback =
-      getLocalPopularFallback(
-        normalizedLimit
-      );
-
-    cacheSet(
-      cacheKey,
-      localFallback
+    // IGDB falla → usar SQLite / fallback absoluto.
+    // Importante: NO cacheamos este resultado para
+    // poder recuperar IGDB en la siguiente petición.
+    return getLocalPopularFallback(
+      normalizedLimit
     );
-
-    return localFallback;
   }
 
   // ==================================================
@@ -829,16 +850,22 @@ export class IgdbService {
       Math.min(limit, 500)
     );
 
-    const cacheKey = `recent:${normalizedLimit}`;
-    const cached = cacheGet<Game[]>(cacheKey);
+    const cacheKey =
+      `recent:${normalizedLimit}`;
+
+    const cached =
+      cacheGet<Game[]>(cacheKey);
 
     if (cached) {
       return cached;
     }
 
     try {
-      const token = await getTwitchToken();
-      const { clientId } = getIgdbCredentials();
+      const token =
+        await getTwitchToken();
+
+      const { clientId } =
+        getIgdbCredentials();
 
       const nowUnix =
         Math.floor(Date.now() / 1000);
@@ -909,8 +936,8 @@ export class IgdbService {
 
       const normalizeRecentResults = (
         items: any[]
-      ): Game[] =>
-        items
+      ): Game[] => {
+        return items
           .map((item: any) =>
             mapIgdbGame(item)
           )
@@ -926,21 +953,15 @@ export class IgdbService {
               !slugDlcPattern.test(game.slug)
           )
           .sort((a, b) => {
-            const bTime = Date.parse(
-              b.releaseDate
-            );
+            const bTime =
+              Date.parse(b.releaseDate);
 
-            const aTime = Date.parse(
-              a.releaseDate
-            );
+            const aTime =
+              Date.parse(a.releaseDate);
 
             const timeDifference =
-              (Number.isNaN(bTime)
-                ? 0
-                : bTime) -
-              (Number.isNaN(aTime)
-                ? 0
-                : aTime);
+              (Number.isNaN(bTime) ? 0 : bTime) -
+              (Number.isNaN(aTime) ? 0 : aTime);
 
             if (timeDifference !== 0) {
               return timeDifference;
@@ -962,6 +983,7 @@ export class IgdbService {
             );
           })
           .slice(0, normalizedLimit);
+      };
 
       for (const query of candidateQueries) {
         const response = await fetch(
@@ -981,14 +1003,15 @@ export class IgdbService {
           continue;
         }
 
-        const apiData = await response.json();
+        const data =
+          await response.json();
 
         if (
-          Array.isArray(apiData) &&
-          apiData.length > 0
+          Array.isArray(data) &&
+          data.length > 0
         ) {
           const mapped =
-            normalizeRecentResults(apiData);
+            normalizeRecentResults(data);
 
           if (mapped.length > 0) {
             mapped.forEach((game) =>
@@ -1005,111 +1028,16 @@ export class IgdbService {
         }
       }
 
-      // --------------------------------------------------
-      // FALLBACK SEARCH
-      // --------------------------------------------------
-
-      const fallbackSearchQueries = [
-        'a',
-        'the',
-        'of'
-      ];
-
-      const merged = new Map<number, any>();
-
-      for (const term of fallbackSearchQueries) {
-        const response = await fetch(
-          'https://api.igdb.com/v4/games',
-          {
-            method: 'POST',
-            headers: {
-              'Client-ID': clientId,
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'text/plain'
-            },
-            body: `
-              search "${term}";
-              fields
-                id,
-                name,
-                slug,
-                summary,
-                cover.url,
-                genres.name,
-                platforms.name,
-                first_release_date,
-                total_rating,
-                total_rating_count;
-              where
-                category = 0 &
-                first_release_date != null &
-                first_release_date >= ${recentWindowUnix} &
-                first_release_date <= ${nowUnix} &
-                total_rating != null &
-                total_rating > 0 &
-                cover != null;
-              sort first_release_date desc;
-              limit ${Math.min(
-                Math.max(normalizedLimit, 50),
-                500
-              )};
-            `
-          }
-        );
-
-        if (!response.ok) {
-          continue;
-        }
-
-        const data = await response.json();
-
-        if (!Array.isArray(data)) {
-          continue;
-        }
-
-        for (const item of data) {
-          if (
-            typeof item?.id === 'number'
-          ) {
-            merged.set(item.id, item);
-          }
-        }
-
-        if (
-          merged.size >= normalizedLimit * 2
-        ) {
-          break;
-        }
-      }
-
-      const fallback =
-        normalizeRecentResults(
-          Array.from(merged.values())
-        );
-
-      cacheSet(
-        cacheKey,
-        fallback
-      );
-
-      return fallback;
+      return [];
     } catch (error) {
       console.error(
         '❌ Error consultando IGDB para juegos recientes:',
         error
       );
 
-      const localFallback =
-        getLocalPopularFallback(
-          normalizedLimit
-        );
-
-      cacheSet(
-        cacheKey,
-        localFallback
+      return getLocalPopularFallback(
+        normalizedLimit
       );
-
-      return localFallback;
     }
   }
 
@@ -1168,31 +1096,38 @@ export class IgdbService {
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      const genreSet =
+        new Set<string>();
+
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          if (
+            typeof item?.name === 'string'
+          ) {
+            const name =
+              item.name.trim();
+
+            if (name) {
+              genreSet.add(name);
+            }
+          }
+        }
+      }
 
       const genres =
-        Array.isArray(data)
-          ? Array.from(
-              new Set(
-                data
-                  .map((item: any) =>
-                    typeof item?.name === 'string'
-                      ? item.name.trim()
-                      : ''
-                  )
-                  .filter(Boolean)
-              )
-            ).sort((a, b) =>
-              a.localeCompare(
-                b,
-                'es',
-                {
-                  sensitivity: 'base'
-                }
-              )
+        Array.from(genreSet).sort(
+          (a, b) =>
+            a.localeCompare(
+              b,
+              'es',
+              {
+                sensitivity: 'base'
+              }
             )
-          )
-          : [];
+        );
 
       if (genres.length > 0) {
         cacheSet(
@@ -1212,34 +1147,47 @@ export class IgdbService {
         error
       );
 
-      // Fallback: géneros disponibles localmente.
-      const localGenres = Array.from(
-        new Set(
-          db
-            .getGames()
-            .flatMap((game) =>
-              Array.isArray(game.genres)
-                ? game.genres
-                : []
-            )
-            .filter(
-              (genre) =>
-                typeof genre === 'string' &&
-                genre.trim().length > 0 &&
-                genre !== 'Unknown'
-            )
-            .map((genre) => genre.trim())
-        )
-      ).sort((a, b) =>
-        a.localeCompare(b, 'es', {
-          sensitivity: 'base'
-        })
-      );
+      // Fallback local
+      const genreSet =
+        new Set<string>();
 
-      cacheSet(
-        cacheKey,
-        localGenres
-      );
+      for (const game of db.getGames()) {
+        if (!Array.isArray(game.genres)) {
+          continue;
+        }
+
+        for (const genre of game.genres) {
+          if (
+            typeof genre === 'string' &&
+            genre.trim() &&
+            genre !== 'Unknown'
+          ) {
+            genreSet.add(
+              genre.trim()
+            );
+          }
+        }
+      }
+
+      const localGenres =
+        Array.from(genreSet).sort(
+          (a, b) =>
+            a.localeCompare(
+              b,
+              'es',
+              {
+                sensitivity: 'base'
+              }
+            )
+        );
+
+      // No cacheamos un fallback vacío.
+      if (localGenres.length > 0) {
+        cacheSet(
+          cacheKey,
+          localGenres
+        );
+      }
 
       return localGenres;
     }
@@ -1252,7 +1200,9 @@ export class IgdbService {
   static async getGameDetails(
     id: number
   ): Promise<Game | null> {
-    const cacheKey = `game:${id}`;
+    const cacheKey =
+      `game:${id}`;
+
     const cached =
       cacheGet<Game>(cacheKey);
 
@@ -1260,9 +1210,9 @@ export class IgdbService {
       return cached;
     }
 
-    const local = db.getGame(id);
+    const local =
+      db.getGame(id);
 
-    // Conservamos metadata local completa.
     if (
       local &&
       local.screenshots.length > 0 &&
@@ -1310,22 +1260,22 @@ export class IgdbService {
           await response.text();
 
         throw new Error(
-          `IGDB Details call failed (${response.status}): ${errorText}`
+          `IGDB details failed (${response.status}): ${errorText}`
         );
       }
 
-      const apiData =
+      const data =
         await response.json();
 
       if (
-        !apiData ||
-        apiData.length === 0
+        !Array.isArray(data) ||
+        data.length === 0
       ) {
         return local;
       }
 
-      const mapped: Game =
-        mapIgdbGame(apiData[0]);
+      const mapped =
+        mapIgdbGame(data[0]);
 
       mapped.timeToBeat =
         await getGameTimeToBeat(
@@ -1351,7 +1301,6 @@ export class IgdbService {
         error
       );
 
-      // Si IGDB falla, seguimos sirviendo el juego local.
       return local;
     }
   }
@@ -1364,12 +1313,16 @@ export class IgdbService {
 function secondsToHours(
   seconds: unknown
 ): number | undefined {
-  return typeof seconds === 'number' &&
-    seconds > 0
-    ? Math.round(
-        (seconds / 3600) * 10
-      ) / 10
-    : undefined;
+  if (
+    typeof seconds !== 'number' ||
+    seconds <= 0
+  ) {
+    return undefined;
+  }
+
+  return Math.round(
+    (seconds / 3600) * 10
+  ) / 10;
 }
 
 async function getGameTimeToBeat(
@@ -1401,14 +1354,14 @@ async function getGameTimeToBeat(
     const data =
       await response.json();
 
-    const entry = data?.[0];
+    const entry =
+      data?.[0];
 
     if (!entry) {
       return undefined;
     }
 
-    const timeToBeat:
-      Game['timeToBeat'] = {
+    const timeToBeat = {
       hastily: secondsToHours(
         entry.hastily
       ),
@@ -1420,12 +1373,13 @@ async function getGameTimeToBeat(
       )
     };
 
-    return Object.values(
-      timeToBeat
-    ).some(
-      (value) =>
-        typeof value === 'number'
-    )
+    const hasValue =
+      Object.values(timeToBeat).some(
+        (value) =>
+          typeof value === 'number'
+      );
+
+    return hasValue
       ? timeToBeat
       : undefined;
   } catch {

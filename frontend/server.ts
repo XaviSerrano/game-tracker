@@ -645,6 +645,7 @@ app.get('/api/games/genres', async (req, res) => {
     res.json(genres);
   } catch (err: any) {
     console.error('Error loading genres:', err);
+
     res.status(500).json({
       error: 'No se pudieron cargar los géneros.'
     });
