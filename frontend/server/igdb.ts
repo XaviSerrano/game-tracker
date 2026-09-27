@@ -205,6 +205,7 @@ function getLocalPopularFallback(limit: number): Game[] {
     return localGames;
   }
 
+  // Si no encuentra juegos devuelve juegos pre-cargados
   return [
     {
       igdbId: 119133,

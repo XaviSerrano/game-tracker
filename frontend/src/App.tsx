@@ -27,6 +27,8 @@ import { UserProfile } from './components/UserProfile.tsx';
 import { StatsDashboard } from './components/StatsDashboard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 
+import { Analytics } from '@vercel/analytics/react';
+
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
 const SECTION_PATHS: Record<MainTab, string> = {
   feed: '/',
@@ -562,6 +564,7 @@ export default function App() {
           );
         })}
       </nav>
+      <Analytics />
     </div>
   );
 }
