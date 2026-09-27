@@ -48,7 +48,7 @@ export default function App() {
   // Sidebar toggle: colapsable en desktop, drawer con overlay en móvil.
   // Por defecto abierto en desktop y cerrado en móvil.
   const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
   const [pathname, setPathname] = useState(() =>
     typeof window !== 'undefined' ? window.location.pathname : '/'
@@ -376,65 +376,58 @@ export default function App() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-200 flex flex-col md:flex-row font-sans">
-
-      {/* 1. DESKTOP SIDEBAR TOGGLE (visible cuando el sidebar está cerrado) */}
+    <div className="min-h-screen bg-[#07090e] text-slate-200 flex flex-col lg:flex-row font-sans">
+      
+      {/* 1. DESKTOP SIDEBAR TOGGLE */}
       {!sidebarOpen && (
         <button
+          type="button"
           onClick={() => setSidebarOpen(true)}
           className="hidden md:flex fixed top-5 left-5 z-30 p-2.5 bg-[#0f121d] border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-slate-700 transition cursor-pointer"
           aria-label="Abrir menú de navegación"
         >
-          <Menu className="w-4.5 h-4.5" />
+          <PanelLeftClose className="w-4.5 h-4.5 rotate-180" />
         </button>
       )}
 
-      {/* 2. SIDEBAR (desktop: colapsable in-flow / mobile: drawer con overlay) */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            {/* Overlay solo en mobile, para cerrar tocando fuera */}
-            <motion.div
-              key="sidebar-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              onClick={() => setSidebarOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/60 z-30"
-            />
-
+      {/* 2. SIDEBAR - SOLO DESKTOP */}
+      <div className="hidden lg:block">
+        <AnimatePresence>
+          {sidebarOpen && (
             <motion.aside
               key="sidebar-panel"
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="flex flex-col justify-between w-64 bg-[#0f121d] border-r border-slate-850 p-5 shrink-0 fixed top-0 bottom-0 left-0 z-40"
+              className="flex flex-col justify-between w-64 bg-[#0f121d] border-r border-slate-850 p-5 fixed top-0 bottom-0 left-0 z-40"
             >
               <div className="space-y-6">
-                {/* Logo brand + close toggle */}
+
+                {/* Logo */}
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-2.5">
                     <div className="p-1.5 bg-blue-600/25 rounded-lg border border-blue-500/20 text-blue-500">
                       <Gamepad2 className="w-5 h-5" />
                     </div>
+
                     <span className="font-bold text-lg font-display tracking-tight text-white select-none">
                       GameTracker
                     </span>
                   </div>
+
                   <button
+                    type="button"
                     onClick={() => setSidebarOpen(false)}
                     className="p-1 text-slate-500 hover:text-white transition cursor-pointer"
                     aria-label="Cerrar menú de navegación"
                   >
-                    <X className="w-4 h-4 md:hidden" />
-                    <PanelLeftClose className="w-4 h-4 hidden md:block" />
+                    <PanelLeftClose className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* User profile brief */}
-                <div className="p-3 bg-[#07090e]/60 border border-slate-850/65 rounded-xl space-y-3">
+                {/* User profile */}
+                <div className="p-3 bg-[#07090e]/60 border border-slate-850/65 rounded-xl">
                   <div className="flex items-center gap-2.5">
                     <img
                       src={currentUser.avatar}
@@ -442,19 +435,29 @@ export default function App() {
                       referrerPolicy="no-referrer"
                       className="w-9 h-9 rounded-full border border-slate-800"
                     />
+
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">@{currentUser.username}</p>
-                      <p className="text-[10px] text-slate-500 truncate">Miembro activo</p>
+                      <p className="text-xs font-bold text-white truncate">
+                        @{currentUser.username}
+                      </p>
+
+                      <p className="text-[10px] text-slate-500 truncate">
+                        Miembro activo
+                      </p>
                     </div>
                   </div>
-
                 </div>
 
-                {/* Navigation Links */}
+                {/* Navigation */}
                 <nav className="space-y-1">
                   {navItems.map(item => {
-                    const active = (routeTab || activeTab) === item.id && selectedGameId === null && selectedUserId === null;
+                    const active =
+                      (routeTab || activeTab) === item.id &&
+                      selectedGameId === null &&
+                      selectedUserId === null;
+
                     const Icon = item.icon;
+
                     return (
                       <a
                         key={item.id}
@@ -463,49 +466,57 @@ export default function App() {
                           event.preventDefault();
                           handleNavigation(item.id);
                         }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${active ? 'bg-blue-600 text-white border-blue-500Shadow' : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'}`}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
+                          active
+                            ? 'bg-blue-600 text-white border-blue-500Shadow'
+                            : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
                           <span>{item.label}</span>
                         </div>
-                        {active && <ChevronRight className="w-3.5 h-3.5" />}
+
+                        {active && (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        )}
                       </a>
                     );
                   })}
                 </nav>
               </div>
 
-              {/* Footer actions */}
+              {/* Logout */}
               <button
+                type="button"
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
               >
-                <LogOut className="w-4.5 h-4.5" /> Cerrar Sesión
+                <LogOut className="w-4.5 h-4.5" />
+                Cerrar Sesión
               </button>
             </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
 
-      {/* 3. MOBILE HEADER & NAVIGATION */}
-      <header className="md:hidden flex items-center justify-between bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
+      {/* 3. MOBILE HEADER */}
+      <header className="lg:hidden flex items-center justify-between bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 -ml-1.5 text-slate-300 hover:text-white transition cursor-pointer"
-            aria-label="Abrir menú de navegación"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
           <Gamepad2 className="w-5 h-5 text-blue-500" />
-          <h1 className="font-bold text-sm font-display tracking-tight text-white">GameTracker</h1>
+
+          <h1 className="font-bold text-sm font-display tracking-tight text-white">
+            GameTracker
+          </h1>
         </div>
+
         <div className="flex items-center gap-2">
-          {/* Quick profile edit link */}
+          {/* Profile */}
           <button
+            type="button"
             onClick={() => handleNavigation('profile')}
             className="p-1 rounded-full border border-slate-800"
+            aria-label="Mi perfil"
           >
             <img
               src={currentUser.avatar}
@@ -514,21 +525,33 @@ export default function App() {
               className="w-6 h-6 rounded-full"
             />
           </button>
+
+          {/* Logout */}
           <button
+            type="button"
             onClick={handleLogout}
             className="p-1.5 text-red-400"
+            aria-label="Cerrar sesión"
           >
             <LogOut className="w-4.5 h-4.5" />
           </button>
         </div>
       </header>
 
-      {/* 3. CORE VIEWPORT CONTAINER */}
-      <main className={`flex-1 min-w-0 transition-[margin] duration-200 ${sidebarOpen ? 'md:ml-72' : 'md:ml-0'}`}>
+      {/* 4. CORE VIEWPORT */}
+      <main
+        className={`flex-1 min-w-0 transition-[margin] duration-200 ${
+          sidebarOpen ? 'lg:ml-72' : 'lg:ml-0'
+        }`}
+      >
         <div className="w-full max-w-6xl mx-auto px-3 py-4 md:px-5 md:py-6">
           <AnimatePresence mode="wait">
             <motion.div
-              key={(routeTab || activeTab) + (selectedGameId || '') + (selectedUserId || '')}
+              key={
+                (routeTab || activeTab) +
+                (selectedGameId || '') +
+                (selectedUserId || '')
+              }
               initial={{ opacity: 0, y: 3 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -3 }}
@@ -540,11 +563,16 @@ export default function App() {
         </div>
       </main>
 
-      {/* 5. MOBILE BOTTOM NAV RAIL */}
-      <nav className="md:hidden flex items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 h-16 px-2 py-1 z-20">
+      {/* 5. MOBILE BOTTOM NAV */}
+      <nav className="flex lg:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 h-16 px-2 py-1 z-20">
         {navItems.map(item => {
-        const active = (routeTab || activeTab) === item.id && selectedGameId === null && selectedUserId === null;
+          const active =
+            (routeTab || activeTab) === item.id &&
+            selectedGameId === null &&
+            selectedUserId === null;
+
           const Icon = item.icon;
+
           return (
             <a
               key={item.id}
@@ -553,18 +581,28 @@ export default function App() {
                 event.preventDefault();
                 handleNavigation(item.id);
               }}
-              className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer text-center relative ${active ? 'text-blue-500' : 'text-slate-500 hover:text-slate-350'}`}
+              className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer text-center relative ${
+                active
+                  ? 'text-blue-500'
+                  : 'text-slate-500 hover:text-slate-350'
+              }`}
             >
               <Icon className="w-4.5 h-4.5" />
-              <span className="text-[9px] font-bold tracking-tight">{item.label}</span>
+
+              <span className="text-[9px] font-bold tracking-tight">
+                {item.label}
+              </span>
+
               {active && (
-                <span className="absolute bottom-[-4px] w-4 h-0.5 bg-blue-500 rounded-full"></span>
+                <span className="absolute bottom-[-4px] w-4 h-0.5 bg-blue-500 rounded-full" />
               )}
             </a>
           );
         })}
       </nav>
+
       <Analytics />
     </div>
   );
+
 }
