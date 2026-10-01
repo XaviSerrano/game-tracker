@@ -72,7 +72,7 @@ export interface Follow {
   followingId: string;
 }
 
-export type ActivityType = 'COMPLETED' | 'WISHLIST' | 'PLAYING' | 'REVIEWED' | 'LIST_CREATED' | 'FOLLOWED';
+export type ActivityType = 'COMPLETED' | 'WISHLIST' | 'PLAYING' | 'PLAYED' | 'ABANDONED' | 'REVIEWED' | 'LIST_CREATED' | 'FOLLOWED';
 
 export interface Activity {
   id: string;
