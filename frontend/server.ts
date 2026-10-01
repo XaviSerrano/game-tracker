@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import './server/env.ts';
 import crypto from 'crypto';
 import express from 'express';
 import nodemailer from 'nodemailer';
@@ -7,9 +7,6 @@ import { createServer as createViteServer } from 'vite';
 import { db, initDb } from './server/db.ts';
 import { IgdbService } from './server/igdb.ts';
 import { Activity, ActivityType, User, UserGame, CustomList, Review } from './src/types.ts';
-
-dotenv.config({ path: path.resolve(process.cwd(), '../backend/.env') });
-dotenv.config();
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000');
