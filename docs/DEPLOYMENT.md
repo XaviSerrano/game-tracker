@@ -124,12 +124,12 @@ Minimo esperado:
 
 ## Estado actual
 
-- Express usa `appdata.json`
-- FastAPI usa `backend/gametracker.db`
+- Express usa **PostgreSQL** (`frontend/server/db.ts`, vía `DATABASE_URL`)
+- FastAPI usa `backend/gametracker.db` (prototipo, sin uso en produccion)
 
 ## Recomendacion para produccion
 
-- usar **PostgreSQL**
+- usar **PostgreSQL** ✅ ya implementado en Express
 
 ## Motivo
 
@@ -137,6 +137,22 @@ Minimo esperado:
 - integridad de datos
 - mejor escalabilidad
 - facilidad de backups
+- persiste entre reinicios/deploys (a diferencia del disco efimero de Render)
+
+## Pasos para configurar PostgreSQL en Render (dashboard manual)
+
+1. Dashboard de Render → **New** → **PostgreSQL**. Elige un nombre (p. ej.
+   `gametracker-db`) y el plan (Free expira a los 90 dias; revisa el plan
+   pagado si necesitas persistencia indefinida).
+2. Copia la **Internal Database URL** (si el servicio web vive en la misma
+   región de Render) o la **External Database URL** en otro caso.
+3. En el servicio web `gametracker-api` → **Environment** → añade la
+   variable `DATABASE_URL` con ese valor.
+4. Redeploy del servicio. Al arrancar, `frontend/server.ts` llama a
+   `initDb()` (ver `frontend/server/db.ts`), que crea el esquema
+   automaticamente si no existe — no hace falta ninguna migracion manual.
+5. En local, define `DATABASE_URL` en `frontend/.env` apuntando a tu propia
+   instancia de Postgres (ver `.env.example`).
 
 ---
 
@@ -350,10 +366,12 @@ Mientras existan Express y FastAPI con responsabilidades duplicadas, el desplieg
 
 ## 4.2 Persistencia local
 
-- `appdata.json`
-- `gametracker.db`
+- Express (produccion) usa **PostgreSQL** via `DATABASE_URL` ✅
+- FastAPI (sin usar en produccion) sigue usando `backend/gametracker.db`
 
-no son una solucion final multiusuario para produccion.
+La migracion de Express a PostgreSQL ya resuelve el problema de persistencia
+en Render (antes se perdian los datos en cada restart/deploy al usar SQLite
+sobre disco efimero).
 
 ## 4.3 Auth de prototipo
 

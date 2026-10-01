@@ -1,5 +1,4 @@
-import Database from 'better-sqlite3';
-import path from 'node:path';
+import { Pool } from 'pg';
 
 import type {
   User,
@@ -19,39 +18,47 @@ interface StoredUser extends User {
   passwordResetExpiresAt?: string | null;
 }
 
-interface AuthSession {
-  token: string;
-  userId: string;
-  expiresAt: string;
-  createdAt: string;
-}
-
-interface SecurityEvent {
-  id: string;
-  userId: string | null;
-  eventType: string;
-  ipAddress: string | null;
-  userAgent: string | null;
-  details: string | null;
-  createdAt: string;
+interface StatsGameSummary {
+  igdbId: number;
+  name: string;
+  slug: string;
+  cover: string;
+  summary: string;
+  genres: string[];
+  platforms: string[];
+  releaseDate: string;
+  rating?: number;
+  myRating: number;
+  hoursPlayed: number;
 }
 
 interface UserStats {
   totalHours: number;
+  totalGames: number;
   completedCount: number;
+  playedCount: number;
+  playingCount: number;
+  abandonedCount: number;
+  wishlistCount: number;
+  averageRating: number;
+  ratedGamesCount: number;
+  averageHoursPerGame: number;
+  completionRate: number;
   favoriteGenre: string;
   favoritePlatform: string;
-  topRatedGames: {
-    gameId: number;
-    name: string;
-    cover: string;
-    myRating: number;
-    hoursPlayed: number;
+  mostPlayedGame: StatsGameSummary | null;
+  topRatedGames: StatsGameSummary[];
+  mostPlayedGames: StatsGameSummary[];
+  ratingsDistribution: {
+    stars: number;
+    count: number;
   }[];
-  monthlyStats: {
-    month: string;
-    completed: number;
+  monthlyActivity: {
+    monthKey: string;
+    label: string;
     hours: number;
+    completed: number;
+    added: number;
   }[];
   platformsDistribution: {
     name: string;
@@ -61,11 +68,6 @@ interface UserStats {
     name: string;
     value: number;
   }[];
-}
-
-interface Recommendation {
-  game: Game;
-  score: number;
 }
 
 interface ActivityRow {
@@ -78,216 +80,163 @@ interface ActivityRow {
   createdAt: string;
 }
 
-// `import.meta.url` disappears when esbuild creates the CommonJS bundle used
-// by Render. Resolve from the process working directory instead, and allow a
-// persistent disk path to be supplied in production.
-const dbPath = process.env.DATABASE_PATH
-  ? path.resolve(process.env.DATABASE_PATH)
-  : path.resolve(process.cwd(), '../data/gametracker.db');
+// ── Conexión a PostgreSQL ───────────────────────────────────────────────────
+//
+// En Render, crea una base de datos PostgreSQL y copia su "Internal/External
+// Connection String" en la variable de entorno DATABASE_URL del servicio web.
+// En local, apunta DATABASE_URL a una instancia propia (ver .env.example).
 
-console.log(`📦 SQLite: ${dbPath}`);
+const connectionString = process.env.DATABASE_URL;
 
-const sqlite = new Database(dbPath);
-
-sqlite.pragma('foreign_keys = ON');
-sqlite.pragma('journal_mode = WAL');
-
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    username TEXT NOT NULL UNIQUE,
-    email TEXT NOT NULL UNIQUE,
-    avatar TEXT NOT NULL DEFAULT '',
-    bio TEXT NOT NULL DEFAULT '',
-    createdAt TEXT NOT NULL,
-    passwordHash TEXT,
-    passwordSalt TEXT,
-    passwordResetTokenHash TEXT,
-    passwordResetExpiresAt TEXT
+if (!connectionString) {
+  throw new Error(
+    'DATABASE_URL no está definida. Configura la cadena de conexión de PostgreSQL (ver .env.example).'
   );
-
-  CREATE TABLE IF NOT EXISTS games (
-    igdbId INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL DEFAULT '',
-    cover TEXT NOT NULL DEFAULT '',
-    summary TEXT NOT NULL DEFAULT '',
-    genres TEXT NOT NULL DEFAULT '[]',
-    platforms TEXT NOT NULL DEFAULT '[]',
-    releaseDate TEXT NOT NULL DEFAULT '',
-    rating REAL DEFAULT 0,
-    popularity REAL DEFAULT 0,
-    averagePlaytimeHours REAL,
-    timeToBeat TEXT NOT NULL DEFAULT '{}'
-  );
-
-  CREATE TABLE IF NOT EXISTS userGames (
-    userId TEXT NOT NULL,
-    gameId INTEGER NOT NULL,
-    status TEXT NOT NULL,
-    rating REAL NOT NULL DEFAULT 0,
-    hoursPlayed REAL NOT NULL DEFAULT 0,
-    startedAt TEXT,
-    completedAt TEXT,
-    notes TEXT NOT NULL DEFAULT '',
-    updatedAt TEXT NOT NULL,
-
-    PRIMARY KEY (userId, gameId),
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (gameId)
-      REFERENCES games(igdbId)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS reviews (
-    id TEXT PRIMARY KEY,
-    userId TEXT NOT NULL,
-    gameId INTEGER NOT NULL,
-    title TEXT NOT NULL DEFAULT '',
-    content TEXT NOT NULL,
-    rating REAL DEFAULT 0,
-    likes TEXT NOT NULL DEFAULT '[]',
-    createdAt TEXT NOT NULL,
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (gameId)
-      REFERENCES games(igdbId)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS customLists (
-    id TEXT PRIMARY KEY,
-    userId TEXT NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT '',
-    createdAt TEXT NOT NULL,
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS customListItems (
-    listId TEXT NOT NULL,
-    gameId INTEGER NOT NULL,
-
-    PRIMARY KEY (listId, gameId),
-
-    FOREIGN KEY (listId)
-      REFERENCES customLists(id)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (gameId)
-      REFERENCES games(igdbId)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS follows (
-    followerId TEXT NOT NULL,
-    followingId TEXT NOT NULL,
-
-    PRIMARY KEY (followerId, followingId),
-
-    FOREIGN KEY (followerId)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (followingId)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
-
-    CHECK (followerId != followingId)
-  );
-
-  CREATE TABLE IF NOT EXISTS activities (
-    id TEXT PRIMARY KEY,
-    userId TEXT NOT NULL,
-    type TEXT NOT NULL,
-    gameId INTEGER,
-    targetUserId TEXT,
-    details TEXT,
-    createdAt TEXT NOT NULL,
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (gameId)
-      REFERENCES games(igdbId)
-      ON DELETE CASCADE,
-
-    FOREIGN KEY (targetUserId)
-      REFERENCES users(id)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY,
-    userId TEXT NOT NULL,
-    expiresAt TEXT NOT NULL,
-    createdAt TEXT NOT NULL,
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS securityEvents (
-    id TEXT PRIMARY KEY,
-    userId TEXT,
-    eventType TEXT NOT NULL,
-    ipAddress TEXT,
-    userAgent TEXT,
-    details TEXT,
-    createdAt TEXT NOT NULL,
-
-    FOREIGN KEY (userId)
-      REFERENCES users(id)
-      ON DELETE SET NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_userGames_userId
-    ON userGames(userId);
-
-  CREATE INDEX IF NOT EXISTS idx_userGames_gameId
-    ON userGames(gameId);
-
-  CREATE INDEX IF NOT EXISTS idx_reviews_gameId
-    ON reviews(gameId);
-
-  CREATE INDEX IF NOT EXISTS idx_reviews_userId
-    ON reviews(userId);
-
-  CREATE INDEX IF NOT EXISTS idx_activities_createdAt
-    ON activities(createdAt);
-
-  CREATE INDEX IF NOT EXISTS idx_sessions_expiresAt
-    ON sessions(expiresAt);
-
-  CREATE INDEX IF NOT EXISTS idx_securityEvents_createdAt
-    ON securityEvents(createdAt);
-`);
-
-// Migración: añade columna screenshots si no existe (tablas creadas antes de este cambio)
-const gameColumns = sqlite.prepare(`PRAGMA table_info(games)`).all() as { name: string }[];
-if (!gameColumns.some(col => col.name === 'screenshots')) {
-  sqlite.exec(`ALTER TABLE games ADD COLUMN screenshots TEXT NOT NULL DEFAULT '[]'`);
-  console.log('📦 SQLite: columna "screenshots" añadida a la tabla games');
 }
-if (!gameColumns.some(col => col.name === 'averagePlaytimeHours')) {
-  sqlite.exec(`ALTER TABLE games ADD COLUMN averagePlaytimeHours REAL`);
-  console.log('📦 SQLite: columna "averagePlaytimeHours" añadida a la tabla games');
-}
-if (!gameColumns.some(col => col.name === 'timeToBeat')) {
-  sqlite.exec(`ALTER TABLE games ADD COLUMN timeToBeat TEXT NOT NULL DEFAULT '{}'`);
-  console.log('📦 SQLite: columna "timeToBeat" añadida a la tabla games');
+
+// Render (y la mayoría de proveedores gestionados) requieren SSL para
+// conexiones externas, pero una Postgres local no lo soporta por defecto.
+const isLocalConnection = /localhost|127\.0\.0\.1/.test(connectionString);
+
+const pool = new Pool({
+  connectionString,
+  ssl: isLocalConnection ? false : { rejectUnauthorized: false }
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Error inesperado en el pool de PostgreSQL:', err);
+});
+
+console.log(`📦 PostgreSQL: conectando (${isLocalConnection ? 'local' : 'remoto/SSL'})`);
+
+// ── Esquema ──────────────────────────────────────────────────────────────────
+//
+// Se ejecuta una vez al arrancar el servidor (ver initDb(), llamado desde
+// server.ts antes de app.listen). Los nombres de columna camelCase se citan
+// entre comillas dobles para que PostgreSQL no los pliegue a minúsculas.
+
+export async function initDb(): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL UNIQUE,
+      avatar TEXT NOT NULL DEFAULT '',
+      bio TEXT NOT NULL DEFAULT '',
+      "createdAt" TEXT NOT NULL,
+      "passwordHash" TEXT,
+      "passwordSalt" TEXT,
+      "passwordResetTokenHash" TEXT,
+      "passwordResetExpiresAt" TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS games (
+      "igdbId" INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL DEFAULT '',
+      cover TEXT NOT NULL DEFAULT '',
+      summary TEXT NOT NULL DEFAULT '',
+      genres TEXT NOT NULL DEFAULT '[]',
+      platforms TEXT NOT NULL DEFAULT '[]',
+      "releaseDate" TEXT NOT NULL DEFAULT '',
+      rating DOUBLE PRECISION DEFAULT 0,
+      popularity DOUBLE PRECISION DEFAULT 0,
+      "averagePlaytimeHours" DOUBLE PRECISION,
+      "timeToBeat" TEXT NOT NULL DEFAULT '{}',
+      screenshots TEXT NOT NULL DEFAULT '[]'
+    );
+
+    CREATE TABLE IF NOT EXISTS "userGames" (
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "gameId" INTEGER NOT NULL REFERENCES games("igdbId") ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      rating DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "hoursPlayed" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "startedAt" TEXT,
+      "completedAt" TEXT,
+      notes TEXT NOT NULL DEFAULT '',
+      "updatedAt" TEXT NOT NULL,
+      "addedAt" TEXT,
+      PRIMARY KEY ("userId", "gameId")
+    );
+
+    CREATE TABLE IF NOT EXISTS reviews (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "gameId" INTEGER NOT NULL REFERENCES games("igdbId") ON DELETE CASCADE,
+      title TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL,
+      rating DOUBLE PRECISION DEFAULT 0,
+      likes TEXT NOT NULL DEFAULT '[]',
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS "customLists" (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS "customListItems" (
+      "listId" TEXT NOT NULL REFERENCES "customLists"(id) ON DELETE CASCADE,
+      "gameId" INTEGER NOT NULL REFERENCES games("igdbId") ON DELETE CASCADE,
+      position SERIAL,
+      PRIMARY KEY ("listId", "gameId")
+    );
+
+    CREATE TABLE IF NOT EXISTS follows (
+      "followerId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "followingId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY ("followerId", "followingId"),
+      CHECK ("followerId" != "followingId")
+    );
+
+    CREATE TABLE IF NOT EXISTS activities (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      "gameId" INTEGER REFERENCES games("igdbId") ON DELETE CASCADE,
+      "targetUserId" TEXT REFERENCES users(id) ON DELETE CASCADE,
+      details TEXT,
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "expiresAt" TEXT NOT NULL,
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS "securityEvents" (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT REFERENCES users(id) ON DELETE SET NULL,
+      "eventType" TEXT NOT NULL,
+      "ipAddress" TEXT,
+      "userAgent" TEXT,
+      details TEXT,
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_userGames_userId ON "userGames"("userId");
+    CREATE INDEX IF NOT EXISTS idx_userGames_gameId ON "userGames"("gameId");
+    CREATE INDEX IF NOT EXISTS idx_reviews_gameId ON reviews("gameId");
+    CREATE INDEX IF NOT EXISTS idx_reviews_userId ON reviews("userId");
+    CREATE INDEX IF NOT EXISTS idx_activities_createdAt ON activities("createdAt");
+    CREATE INDEX IF NOT EXISTS idx_sessions_expiresAt ON sessions("expiresAt");
+    CREATE INDEX IF NOT EXISTS idx_securityEvents_createdAt ON "securityEvents"("createdAt");
+  `);
+
+  // Migraciones idempotentes para despliegues previos a estas columnas.
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS screenshots TEXT NOT NULL DEFAULT '[]'`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "averagePlaytimeHours" DOUBLE PRECISION`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "timeToBeat" TEXT NOT NULL DEFAULT '{}'`);
+  await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "addedAt" TEXT`);
+  await pool.query(`UPDATE "userGames" SET "addedAt" = "updatedAt" WHERE "addedAt" IS NULL`);
+
+  console.log('📦 PostgreSQL: esquema verificado/creado correctamente');
 }
 
 function parseJson<T>(
@@ -307,6 +256,10 @@ function parseJson<T>(
 
 function serializeJson(value: unknown): string {
   return JSON.stringify(value ?? []);
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
 }
 
 function hydrateGame(row: any): Game {
@@ -367,10 +320,10 @@ function hydrateActivity(row: ActivityRow): Activity {
 }
 
 class GameDatabase {
-  private db: Database.Database;
+  private pool: Pool;
 
-  constructor(database: Database.Database) {
-    this.db = database;
+  constructor(pool: Pool) {
+    this.pool = pool;
   }
 
   // ==================================================
@@ -388,142 +341,110 @@ class GameDatabase {
     };
   }
 
-  getUsers(): User[] {
-    return this.db
-      .prepare(`
-        SELECT
-          id,
-          username,
-          email,
-          avatar,
-          bio,
-          createdAt
-        FROM users
-        ORDER BY datetime(createdAt) ASC
-      `)
-      .all() as User[];
+  async getUsers(): Promise<User[]> {
+    const { rows } = await this.pool.query(`
+      SELECT id, username, email, avatar, bio, "createdAt"
+      FROM users
+      ORDER BY "createdAt" ASC
+    `);
+
+    return rows as User[];
   }
 
-  searchUsersByUsername(query: string): User[] {
-    return this.db
-      .prepare(`
-        SELECT id, username, email, avatar, bio, createdAt
+  async searchUsersByUsername(query: string): Promise<User[]> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT id, username, email, avatar, bio, "createdAt"
         FROM users
-        WHERE LOWER(username) LIKE LOWER(?)
+        WHERE LOWER(username) LIKE LOWER($1)
         ORDER BY username ASC
         LIMIT 20
-      `)
-      .all(`%${query.trim()}%`) as User[];
+      `,
+      [`%${query.trim()}%`]
+    );
+
+    return rows as User[];
   }
 
-  getUser(userId: string): User | null {
-    const user = this.db
-      .prepare(`
-        SELECT
-          id,
-          username,
-          email,
-          avatar,
-          bio,
-          createdAt
+  async getUser(userId: string): Promise<User | null> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT id, username, email, avatar, bio, "createdAt"
         FROM users
-        WHERE id = ?
-      `)
-      .get(userId) as User | undefined;
+        WHERE id = $1
+      `,
+      [userId]
+    );
 
-    return user ?? null;
+    return (rows[0] as User) ?? null;
   }
 
-  getUserByEmail(email: string): User | null {
-    const user = this.db
-      .prepare(`
-        SELECT
-          id,
-          username,
-          email,
-          avatar,
-          bio,
-          createdAt
+  async getUserByEmail(email: string): Promise<User | null> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT id, username, email, avatar, bio, "createdAt"
         FROM users
-        WHERE LOWER(email) = LOWER(?)
-      `)
-      .get(email) as User | undefined;
+        WHERE LOWER(email) = LOWER($1)
+      `,
+      [email]
+    );
 
-    return user ?? null;
+    return (rows[0] as User) ?? null;
   }
 
-  getUserByUsername(username: string): User | null {
-    const user = this.db
-      .prepare(`
-        SELECT
-          id,
-          username,
-          email,
-          avatar,
-          bio,
-          createdAt
+  async getUserByUsername(username: string): Promise<User | null> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT id, username, email, avatar, bio, "createdAt"
         FROM users
-        WHERE LOWER(username) = LOWER(?)
-      `)
-      .get(username) as User | undefined;
+        WHERE LOWER(username) = LOWER($1)
+      `,
+      [username]
+    );
 
-    return user ?? null;
+    return (rows[0] as User) ?? null;
   }
 
-  getAuthUserByEmail(email: string): StoredUser | null {
-    const user = this.db
-      .prepare(`
-        SELECT *
-        FROM users
-        WHERE LOWER(email) = LOWER(?)
-      `)
-      .get(email) as StoredUser | undefined;
+  async getAuthUserByEmail(email: string): Promise<StoredUser | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM users WHERE LOWER(email) = LOWER($1)`,
+      [email]
+    );
 
-    return user ?? null;
+    return (rows[0] as StoredUser) ?? null;
   }
 
-  getAuthUserById(userId: string): StoredUser | null {
-    const user = this.db
-      .prepare(`
-        SELECT *
-        FROM users
-        WHERE id = ?
-      `)
-      .get(userId) as StoredUser | undefined;
+  async getAuthUserById(userId: string): Promise<StoredUser | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM users WHERE id = $1`,
+      [userId]
+    );
 
-    return user ?? null;
+    return (rows[0] as StoredUser) ?? null;
   }
 
-  createUser(
+  async createUser(
     user: User,
     auth?: {
       passwordHash: string;
       passwordSalt: string;
     }
-  ): User {
-    const existing = this.getAuthUserById(user.id);
+  ): Promise<User> {
+    const existing = await this.getAuthUserById(user.id);
 
     if (existing) {
       return this.toPublicUser(existing);
     }
 
-    this.db
-      .prepare(`
+    await this.pool.query(
+      `
         INSERT INTO users (
-          id,
-          username,
-          email,
-          avatar,
-          bio,
-          createdAt,
-          passwordHash,
-          passwordSalt,
-          passwordResetTokenHash,
-          passwordResetExpiresAt
+          id, username, email, avatar, bio, "createdAt",
+          "passwordHash", "passwordSalt", "passwordResetTokenHash", "passwordResetExpiresAt"
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
-      `)
-      .run(
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)
+      `,
+      [
         user.id,
         user.username,
         user.email,
@@ -532,16 +453,17 @@ class GameDatabase {
         user.createdAt,
         auth?.passwordHash ?? null,
         auth?.passwordSalt ?? null
-      );
+      ]
+    );
 
     return user;
   }
 
-  updateUser(
+  async updateUser(
     userId: string,
     updates: Partial<User>
-  ): User | null {
-    const existing = this.getAuthUserById(userId);
+  ): Promise<User | null> {
+    const existing = await this.getAuthUserById(userId);
 
     if (!existing) {
       return null;
@@ -549,24 +471,25 @@ class GameDatabase {
 
     const fields: string[] = [];
     const values: unknown[] = [];
+    let idx = 1;
 
     if (updates.username !== undefined) {
-      fields.push('username = ?');
+      fields.push(`username = $${idx++}`);
       values.push(updates.username);
     }
 
     if (updates.email !== undefined) {
-      fields.push('email = ?');
+      fields.push(`email = $${idx++}`);
       values.push(updates.email);
     }
 
     if (updates.avatar !== undefined) {
-      fields.push('avatar = ?');
+      fields.push(`avatar = $${idx++}`);
       values.push(updates.avatar);
     }
 
     if (updates.bio !== undefined) {
-      fields.push('bio = ?');
+      fields.push(`bio = $${idx++}`);
       values.push(updates.bio);
     }
 
@@ -576,124 +499,112 @@ class GameDatabase {
 
     values.push(userId);
 
-    this.db
-      .prepare(`
-        UPDATE users
-        SET ${fields.join(', ')}
-        WHERE id = ?
-      `)
-      .run(...values);
+    await this.pool.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`,
+      values
+    );
 
     return this.getUser(userId);
   }
 
-  setUserPassword(
+  async setUserPassword(
     userId: string,
     passwordHash: string,
     passwordSalt: string
-  ): User | null {
-    const result = this.db
-      .prepare(`
+  ): Promise<User | null> {
+    const result = await this.pool.query(
+      `
         UPDATE users
         SET
-          passwordHash = ?,
-          passwordSalt = ?,
-          passwordResetTokenHash = NULL,
-          passwordResetExpiresAt = NULL
-        WHERE id = ?
-      `)
-      .run(
-        passwordHash,
-        passwordSalt,
-        userId
-      );
+          "passwordHash" = $1,
+          "passwordSalt" = $2,
+          "passwordResetTokenHash" = NULL,
+          "passwordResetExpiresAt" = NULL
+        WHERE id = $3
+      `,
+      [passwordHash, passwordSalt, userId]
+    );
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return null;
     }
 
     return this.getUser(userId);
   }
 
-  savePasswordResetToken(
+  async savePasswordResetToken(
     userId: string,
     tokenHash: string,
     expiresAt: string
-  ): User | null {
-    const result = this.db
-      .prepare(`
+  ): Promise<User | null> {
+    const result = await this.pool.query(
+      `
         UPDATE users
         SET
-          passwordResetTokenHash = ?,
-          passwordResetExpiresAt = ?
-        WHERE id = ?
-      `)
-      .run(
-        tokenHash,
-        expiresAt,
-        userId
-      );
+          "passwordResetTokenHash" = $1,
+          "passwordResetExpiresAt" = $2
+        WHERE id = $3
+      `,
+      [tokenHash, expiresAt, userId]
+    );
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return null;
     }
 
     return this.getUser(userId);
   }
 
-  clearPasswordResetToken(userId: string): void {
-    this.db
-      .prepare(`
+  async clearPasswordResetToken(userId: string): Promise<void> {
+    await this.pool.query(
+      `
         UPDATE users
         SET
-          passwordResetTokenHash = NULL,
-          passwordResetExpiresAt = NULL
-        WHERE id = ?
-      `)
-      .run(userId);
+          "passwordResetTokenHash" = NULL,
+          "passwordResetExpiresAt" = NULL
+        WHERE id = $1
+      `,
+      [userId]
+    );
   }
 
-  getAuthUserByPasswordResetTokenHash(
+  async getAuthUserByPasswordResetTokenHash(
     tokenHash: string
-  ): StoredUser | null {
-    const user = this.db
-      .prepare(`
+  ): Promise<StoredUser | null> {
+    const { rows } = await this.pool.query(
+      `
         SELECT *
         FROM users
-        WHERE passwordResetTokenHash = ?
-          AND passwordResetExpiresAt IS NOT NULL
-          AND datetime(passwordResetExpiresAt) > datetime('now')
-      `)
-      .get(tokenHash) as StoredUser | undefined;
+        WHERE "passwordResetTokenHash" = $1
+          AND "passwordResetExpiresAt" IS NOT NULL
+          AND "passwordResetExpiresAt" > $2
+      `,
+      [tokenHash, nowIso()]
+    );
 
-    return user ?? null;
+    return (rows[0] as StoredUser) ?? null;
   }
 
   // ==================================================
   // SESSIONS
   // ==================================================
 
-  private purgeExpiredSessions(): void {
-    this.db
-      .prepare(`
-        DELETE FROM sessions
-        WHERE datetime(expiresAt) <= datetime('now')
-      `)
-      .run();
+  private async purgeExpiredSessions(): Promise<void> {
+    await this.pool.query(
+      `DELETE FROM sessions WHERE "expiresAt" <= $1`,
+      [nowIso()]
+    );
   }
 
-  getUserBySessionToken(token: string): User | null {
-    this.purgeExpiredSessions();
+  async getUserBySessionToken(token: string): Promise<User | null> {
+    await this.purgeExpiredSessions();
 
-    const session = this.db
-      .prepare(`
-        SELECT userId
-        FROM sessions
-        WHERE token = ?
-      `)
-      .get(token) as {
-        userId: string;
-      } | undefined;
+    const { rows } = await this.pool.query(
+      `SELECT "userId" FROM sessions WHERE token = $1`,
+      [token]
+    );
+
+    const session = rows[0] as { userId: string } | undefined;
 
     if (!session) {
       return null;
@@ -702,69 +613,62 @@ class GameDatabase {
     return this.getUser(session.userId);
   }
 
-  createSession(
+  async createSession(
     userId: string,
     token: string,
     expiresAt: string
-  ): string {
-    this.purgeExpiredSessions();
+  ): Promise<string> {
+    await this.purgeExpiredSessions();
 
-    this.db
-      .prepare(`
-        INSERT OR REPLACE INTO sessions (
-          token,
-          userId,
-          expiresAt,
-          createdAt
-        )
-        VALUES (?, ?, ?, ?)
-      `)
-      .run(
-        token,
-        userId,
-        expiresAt,
-        new Date().toISOString()
-      );
+    await this.pool.query(
+      `
+        INSERT INTO sessions (token, "userId", "expiresAt", "createdAt")
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (token)
+        DO UPDATE SET
+          "userId" = excluded."userId",
+          "expiresAt" = excluded."expiresAt",
+          "createdAt" = excluded."createdAt"
+      `,
+      [token, userId, expiresAt, nowIso()]
+    );
 
     return token;
   }
 
-  revokeSession(token: string): boolean {
-    const result = this.db
-      .prepare(`
-        DELETE FROM sessions
-        WHERE token = ?
-      `)
-      .run(token);
+  async revokeSession(token: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM sessions WHERE token = $1`,
+      [token]
+    );
 
-    return result.changes > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
-  revokeSessionsForUser(userId: string): void {
-    this.db
-      .prepare(`
-        DELETE FROM sessions
-        WHERE userId = ?
-      `)
-      .run(userId);
+  async revokeSessionsForUser(userId: string): Promise<void> {
+    await this.pool.query(
+      `DELETE FROM sessions WHERE "userId" = $1`,
+      [userId]
+    );
   }
 
-  revokeOldestSessionsForUser(userId: string, maxSessions: number): void {
-    this.db
-      .prepare(`
+  async revokeOldestSessionsForUser(userId: string, maxSessions: number): Promise<void> {
+    await this.pool.query(
+      `
         DELETE FROM sessions
         WHERE token IN (
           SELECT token
           FROM sessions
-          WHERE userId = ?
-          ORDER BY datetime(createdAt) DESC
-          LIMIT -1 OFFSET ?
+          WHERE "userId" = $1
+          ORDER BY "createdAt" DESC
+          OFFSET $2
         )
-      `)
-      .run(userId, maxSessions);
+      `,
+      [userId, maxSessions]
+    );
   }
 
-  addSecurityEvent(event: {
+  async addSecurityEvent(event: {
     id?: string;
     userId?: string | null;
     eventType: string;
@@ -772,95 +676,64 @@ class GameDatabase {
     userAgent?: string | null;
     details?: string | null;
     createdAt?: string;
-  }): void {
-    this.db
-      .prepare(`
-        INSERT INTO securityEvents (
-          id,
-          userId,
-          eventType,
-          ipAddress,
-          userAgent,
-          details,
-          createdAt
+  }): Promise<void> {
+    await this.pool.query(
+      `
+        INSERT INTO "securityEvents" (
+          id, "userId", "eventType", "ipAddress", "userAgent", details, "createdAt"
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `)
-      .run(
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
         event.id ?? `sec_${Date.now()}_${Math.random().toString(16).slice(2)}`,
         event.userId ?? null,
         event.eventType,
         event.ipAddress ?? null,
         event.userAgent ?? null,
         event.details ?? null,
-        event.createdAt ?? new Date().toISOString()
-      );
+        event.createdAt ?? nowIso()
+      ]
+    );
 
-    this.db
-      .prepare(`
-        DELETE FROM securityEvents
-        WHERE id NOT IN (
-          SELECT id
-          FROM securityEvents
-          ORDER BY datetime(createdAt) DESC
-          LIMIT 500
-        )
-      `)
-      .run();
+    await this.pool.query(`
+      DELETE FROM "securityEvents"
+      WHERE id NOT IN (
+        SELECT id FROM "securityEvents" ORDER BY "createdAt" DESC LIMIT 500
+      )
+    `);
   }
 
   // ==================================================
   // GAMES
   // ==================================================
 
-  getGames(): Game[] {
-    const rows = this.db
-      .prepare(`
-        SELECT *
-        FROM games
-        ORDER BY name ASC
-      `)
-      .all();
-
+  async getGames(): Promise<Game[]> {
+    const { rows } = await this.pool.query(`SELECT * FROM games ORDER BY name ASC`);
     return rows.map(hydrateGame);
   }
 
-  getGame(igdbId: number): Game | null {
-    const row = this.db
-      .prepare(`
-        SELECT *
-        FROM games
-        WHERE igdbId = ?
-      `)
-      .get(igdbId);
+  async getGame(igdbId: number): Promise<Game | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM games WHERE "igdbId" = $1`,
+      [igdbId]
+    );
 
-    return row ? hydrateGame(row) : null;
+    return rows[0] ? hydrateGame(rows[0]) : null;
   }
 
-  createGame(game: Game): Game {
+  async createGame(game: Game): Promise<Game> {
     return this.saveGame(game);
   }
 
-  saveGame(game: Game): Game {
-    this.db
-      .prepare(`
+  async saveGame(game: Game): Promise<Game> {
+    await this.pool.query(
+      `
         INSERT INTO games (
-          igdbId,
-          name,
-          slug,
-          cover,
-          summary,
-          genres,
-          platforms,
-          releaseDate,
-          rating,
-          popularity,
-          averagePlaytimeHours,
-          timeToBeat,
-          screenshots
+          "igdbId", name, slug, cover, summary, genres, platforms,
+          "releaseDate", rating, popularity, "averagePlaytimeHours", "timeToBeat", screenshots
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(igdbId)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT ("igdbId")
         DO UPDATE SET
           name = excluded.name,
           slug = excluded.slug,
@@ -868,14 +741,14 @@ class GameDatabase {
           summary = excluded.summary,
           genres = excluded.genres,
           platforms = excluded.platforms,
-          releaseDate = excluded.releaseDate,
+          "releaseDate" = excluded."releaseDate",
           rating = excluded.rating,
           popularity = excluded.popularity,
-          averagePlaytimeHours = excluded.averagePlaytimeHours,
-          timeToBeat = excluded.timeToBeat,
+          "averagePlaytimeHours" = excluded."averagePlaytimeHours",
+          "timeToBeat" = excluded."timeToBeat",
           screenshots = excluded.screenshots
-      `)
-      .run(
+      `,
+      [
         game.igdbId,
         game.name,
         game.slug ?? '',
@@ -889,7 +762,8 @@ class GameDatabase {
         game.averagePlaytimeHours ?? null,
         serializeJson(game.timeToBeat),
         serializeJson(game.screenshots)
-      );
+      ]
+    );
 
     return game;
   }
@@ -898,71 +772,57 @@ class GameDatabase {
   // USER GAMES
   // ==================================================
 
-  getUserGames(userId: string): UserGame[] {
-    const rows = this.db
-      .prepare(`
-        SELECT *
-        FROM userGames
-        WHERE userId = ?
-        ORDER BY datetime(updatedAt) DESC
-      `)
-      .all(userId);
+  async getUserGames(userId: string): Promise<UserGame[]> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT * FROM "userGames"
+        WHERE "userId" = $1
+        ORDER BY "updatedAt" DESC
+      `,
+      [userId]
+    );
 
     return rows.map(hydrateUserGame);
   }
 
-  getUserGame(
+  async getUserGame(
     userId: string,
     gameId: number
-  ): UserGame | null {
-    const row = this.db
-      .prepare(`
-        SELECT *
-        FROM userGames
-        WHERE userId = ?
-          AND gameId = ?
-      `)
-      .get(
-        userId,
-        gameId
-      );
+  ): Promise<UserGame | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2`,
+      [userId, gameId]
+    );
 
-    return row ? hydrateUserGame(row) : null;
+    return rows[0] ? hydrateUserGame(rows[0]) : null;
   }
 
-  saveUserGame(userGame: UserGame): UserGame {
-    const updatedAt = new Date().toISOString();
+  async saveUserGame(userGame: UserGame): Promise<UserGame> {
+    const updatedAt = nowIso();
 
     const updatedUserGame: UserGame = {
       ...userGame,
       updatedAt
     };
 
-    this.db
-      .prepare(`
-        INSERT INTO userGames (
-          userId,
-          gameId,
-          status,
-          rating,
-          hoursPlayed,
-          startedAt,
-          completedAt,
-          notes,
-          updatedAt
+    await this.pool.query(
+      `
+        INSERT INTO "userGames" (
+          "userId", "gameId", status, rating, "hoursPlayed",
+          "startedAt", "completedAt", notes, "updatedAt", "addedAt"
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(userId, gameId)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT ("userId", "gameId")
         DO UPDATE SET
           status = excluded.status,
           rating = excluded.rating,
-          hoursPlayed = excluded.hoursPlayed,
-          startedAt = excluded.startedAt,
-          completedAt = excluded.completedAt,
+          "hoursPlayed" = excluded."hoursPlayed",
+          "startedAt" = excluded."startedAt",
+          "completedAt" = excluded."completedAt",
           notes = excluded.notes,
-          updatedAt = excluded.updatedAt
-      `)
-      .run(
+          "updatedAt" = excluded."updatedAt"
+      `,
+      [
         updatedUserGame.userId,
         updatedUserGame.gameId,
         updatedUserGame.status,
@@ -971,102 +831,74 @@ class GameDatabase {
         updatedUserGame.startedAt ?? null,
         updatedUserGame.completedAt ?? null,
         updatedUserGame.notes ?? '',
+        updatedAt,
         updatedAt
-      );
+      ]
+    );
 
     return updatedUserGame;
   }
 
-  deleteUserGame(
+  async deleteUserGame(
     userId: string,
     gameId: number
-  ): boolean {
-    const result = this.db
-      .prepare(`
-        DELETE FROM userGames
-        WHERE userId = ?
-          AND gameId = ?
-      `)
-      .run(
-        userId,
-        gameId
-      );
+  ): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2`,
+      [userId, gameId]
+    );
 
-    return result.changes > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // ==================================================
   // REVIEWS
   // ==================================================
 
-  getReviews(gameId?: number): Review[] {
-    const rows = gameId !== undefined
-      ? this.db
-          .prepare(`
-            SELECT *
-            FROM reviews
-            WHERE gameId = ?
-            ORDER BY datetime(createdAt) DESC
-          `)
-          .all(gameId)
-      : this.db
-          .prepare(`
-            SELECT *
-            FROM reviews
-            ORDER BY datetime(createdAt) DESC
-          `)
-          .all();
-
-    return rows.map(hydrateReview);
-  }
-
-  getReview(id: string): Review | null {
-    const row = this.db
-      .prepare(`
-        SELECT *
-        FROM reviews
-        WHERE id = ?
-      `)
-      .get(id);
-
-    return row ? hydrateReview(row) : null;
-  }
-
-  getUserReviews(userId: string): Review[] {
-    const rows = this.db
-      .prepare(`
-        SELECT *
-        FROM reviews
-        WHERE userId = ?
-        ORDER BY datetime(createdAt) DESC
-      `)
-      .all(userId);
-
-    return rows.map(hydrateReview);
-  }
-
-  saveReview(review: Review): Review {
-    this.db
-      .prepare(`
-        INSERT INTO reviews (
-          id,
-          userId,
-          gameId,
-          title,
-          content,
-          rating,
-          likes,
-          createdAt
+  async getReviews(gameId?: number): Promise<Review[]> {
+    const { rows } = gameId !== undefined
+      ? await this.pool.query(
+          `SELECT * FROM reviews WHERE "gameId" = $1 ORDER BY "createdAt" DESC`,
+          [gameId]
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id)
+      : await this.pool.query(`SELECT * FROM reviews ORDER BY "createdAt" DESC`);
+
+    return rows.map(hydrateReview);
+  }
+
+  async getReview(id: string): Promise<Review | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM reviews WHERE id = $1`,
+      [id]
+    );
+
+    return rows[0] ? hydrateReview(rows[0]) : null;
+  }
+
+  async getUserReviews(userId: string): Promise<Review[]> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM reviews WHERE "userId" = $1 ORDER BY "createdAt" DESC`,
+      [userId]
+    );
+
+    return rows.map(hydrateReview);
+  }
+
+  async saveReview(review: Review): Promise<Review> {
+    await this.pool.query(
+      `
+        INSERT INTO reviews (
+          id, "userId", "gameId", title, content, rating, likes, "createdAt"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (id)
         DO UPDATE SET
           title = excluded.title,
           content = excluded.content,
           rating = excluded.rating,
           likes = excluded.likes
-      `)
-      .run(
+      `,
+      [
         review.id,
         review.userId,
         review.gameId,
@@ -1075,16 +907,17 @@ class GameDatabase {
         review.rating ?? 0,
         serializeJson(review.likes),
         review.createdAt
-      );
+      ]
+    );
 
     return review;
   }
 
-  toggleLikeReview(
+  async toggleLikeReview(
     reviewId: string,
     userId: string
-  ): Review | null {
-    const review = this.getReview(reviewId);
+  ): Promise<Review | null> {
+    const review = await this.getReview(reviewId);
 
     if (!review) {
       return null;
@@ -1103,7 +936,7 @@ class GameDatabase {
       likes: Array.from(likes)
     };
 
-    this.saveReview(updatedReview);
+    await this.saveReview(updatedReview);
 
     return updatedReview;
   }
@@ -1112,79 +945,56 @@ class GameDatabase {
   // CUSTOM LISTS
   // ==================================================
 
-  getLists(userId?: string): CustomList[] {
-    if (userId) {
-      return this.db
-        .prepare(`
-          SELECT *
-          FROM customLists
-          WHERE userId = ?
-          ORDER BY datetime(createdAt) DESC
-        `)
-        .all(userId) as CustomList[];
-    }
-
-    return this.db
-      .prepare(`
-        SELECT *
-        FROM customLists
-        ORDER BY datetime(createdAt) DESC
-      `)
-      .all() as CustomList[];
-  }
-
-  getList(id: string): CustomList | null {
-    const list = this.db
-      .prepare(`
-        SELECT *
-        FROM customLists
-        WHERE id = ?
-      `)
-      .get(id) as CustomList | undefined;
-
-    return list ?? null;
-  }
-
-  createList(list: CustomList): CustomList {
-    this.db
-      .prepare(`
-        INSERT INTO customLists (
-          id,
-          userId,
-          name,
-          description,
-          createdAt
+  async getLists(userId?: string): Promise<CustomList[]> {
+    const { rows } = userId
+      ? await this.pool.query(
+          `SELECT * FROM "customLists" WHERE "userId" = $1 ORDER BY "createdAt" DESC`,
+          [userId]
         )
-        VALUES (?, ?, ?, ?, ?)
-      `)
-      .run(
-        list.id,
-        list.userId,
-        list.name,
-        list.description ?? '',
-        list.createdAt
-      );
+      : await this.pool.query(`SELECT * FROM "customLists" ORDER BY "createdAt" DESC`);
+
+    return rows as CustomList[];
+  }
+
+  async getList(id: string): Promise<CustomList | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM "customLists" WHERE id = $1`,
+      [id]
+    );
+
+    return (rows[0] as CustomList) ?? null;
+  }
+
+  async createList(list: CustomList): Promise<CustomList> {
+    await this.pool.query(
+      `
+        INSERT INTO "customLists" (id, "userId", name, description, "createdAt")
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [list.id, list.userId, list.name, list.description ?? '', list.createdAt]
+    );
 
     return list;
   }
 
-  updateList(
+  async updateList(
     id: string,
     updates: {
       name?: string;
       description?: string;
     }
-  ): CustomList | null {
+  ): Promise<CustomList | null> {
     const fields: string[] = [];
     const values: unknown[] = [];
+    let idx = 1;
 
     if (updates.name !== undefined) {
-      fields.push('name = ?');
+      fields.push(`name = $${idx++}`);
       values.push(updates.name);
     }
 
     if (updates.description !== undefined) {
-      fields.push('description = ?');
+      fields.push(`description = $${idx++}`);
       values.push(updates.description);
     }
 
@@ -1194,154 +1004,118 @@ class GameDatabase {
 
     values.push(id);
 
-    const result = this.db
-      .prepare(`
-        UPDATE customLists
-        SET ${fields.join(', ')}
-        WHERE id = ?
-      `)
-      .run(...values);
+    const result = await this.pool.query(
+      `UPDATE "customLists" SET ${fields.join(', ')} WHERE id = $${idx}`,
+      values
+    );
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return null;
     }
 
     return this.getList(id);
   }
 
-  deleteList(id: string): boolean {
-    const result = this.db
-      .prepare(`
-        DELETE FROM customLists
-        WHERE id = ?
-      `)
-      .run(id);
+  async deleteList(id: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `DELETE FROM "customLists" WHERE id = $1`,
+      [id]
+    );
 
-    return result.changes > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
-  getListItems(listId: string): number[] {
-    const rows = this.db
-      .prepare(`
-        SELECT gameId
-        FROM customListItems
-        WHERE listId = ?
-        ORDER BY rowid ASC
-      `)
-      .all(listId) as {
-        gameId: number;
-      }[];
+  async getListItems(listId: string): Promise<number[]> {
+    const { rows } = await this.pool.query(
+      `
+        SELECT "gameId" FROM "customListItems"
+        WHERE "listId" = $1
+        ORDER BY position ASC
+      `,
+      [listId]
+    );
 
-    return rows.map(row => Number(row.gameId));
+    return rows.map((row: any) => Number(row.gameId));
   }
 
-  saveListItems(
+  async saveListItems(
     listId: string,
     gameIds: number[]
-  ): void {
-    const transaction = this.db.transaction(() => {
-      this.db
-        .prepare(`
-          DELETE FROM customListItems
-          WHERE listId = ?
-        `)
-        .run(listId);
+  ): Promise<void> {
+    const client = await this.pool.connect();
 
-      const insert = this.db.prepare(`
-        INSERT INTO customListItems (
-          listId,
-          gameId
-        )
-        VALUES (?, ?)
-      `);
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        `DELETE FROM "customListItems" WHERE "listId" = $1`,
+        [listId]
+      );
 
       for (const gameId of gameIds) {
-        insert.run(listId, gameId);
+        await client.query(
+          `INSERT INTO "customListItems" ("listId", "gameId") VALUES ($1, $2)`,
+          [listId, gameId]
+        );
       }
-    });
 
-    transaction();
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   // ==================================================
   // FOLLOWS
   // ==================================================
 
-  getFollowers(userId: string): string[] {
-    const rows = this.db
-      .prepare(`
-        SELECT followerId
-        FROM follows
-        WHERE followingId = ?
-      `)
-      .all(userId) as {
-        followerId: string;
-      }[];
+  async getFollowers(userId: string): Promise<string[]> {
+    const { rows } = await this.pool.query(
+      `SELECT "followerId" FROM follows WHERE "followingId" = $1`,
+      [userId]
+    );
 
-    return rows.map(row => row.followerId);
+    return rows.map((row: any) => row.followerId);
   }
 
-  getFollowing(userId: string): string[] {
-    const rows = this.db
-      .prepare(`
-        SELECT followingId
-        FROM follows
-        WHERE followerId = ?
-      `)
-      .all(userId) as {
-        followingId: string;
-      }[];
+  async getFollowing(userId: string): Promise<string[]> {
+    const { rows } = await this.pool.query(
+      `SELECT "followingId" FROM follows WHERE "followerId" = $1`,
+      [userId]
+    );
 
-    return rows.map(row => row.followingId);
+    return rows.map((row: any) => row.followingId);
   }
 
-  toggleFollow(
+  async toggleFollow(
     followerId: string,
     followingId: string
-  ): boolean {
+  ): Promise<boolean> {
     if (followerId === followingId) {
       return false;
     }
 
-    const existing = this.db
-      .prepare(`
-        SELECT 1
-        FROM follows
-        WHERE followerId = ?
-          AND followingId = ?
-      `)
-      .get(
-        followerId,
-        followingId
-      );
+    const { rows } = await this.pool.query(
+      `SELECT 1 FROM follows WHERE "followerId" = $1 AND "followingId" = $2`,
+      [followerId, followingId]
+    );
 
-    if (existing) {
-      this.db
-        .prepare(`
-          DELETE FROM follows
-          WHERE followerId = ?
-            AND followingId = ?
-        `)
-        .run(
-          followerId,
-          followingId
-        );
+    if (rows.length > 0) {
+      await this.pool.query(
+        `DELETE FROM follows WHERE "followerId" = $1 AND "followingId" = $2`,
+        [followerId, followingId]
+      );
 
       return false;
     }
 
-    this.db
-      .prepare(`
-        INSERT INTO follows (
-          followerId,
-          followingId
-        )
-        VALUES (?, ?)
-      `)
-      .run(
-        followerId,
-        followingId
-      );
+    await this.pool.query(
+      `INSERT INTO follows ("followerId", "followingId") VALUES ($1, $2)`,
+      [followerId, followingId]
+    );
 
     return true;
   }
@@ -1350,22 +1124,76 @@ class GameDatabase {
   // STATISTICS
   // ==================================================
 
-  getUserStats(userId: string): UserStats {
-    const userGames = this.getUserGames(userId);
+  async getUserStats(userId: string): Promise<UserStats> {
+    const userGames = await this.getUserGames(userId);
 
-    const completedGames = userGames.filter(
-      ug => ug.status === 'PLAYED' || ug.status === 'COMPLETED'
+    // addedAt no forma parte del tipo UserGame público (solo se usa para
+    // analítica interna), así que se consulta aparte.
+    const { rows: addedAtRows } = await this.pool.query(
+      `SELECT "gameId", "addedAt" FROM "userGames" WHERE "userId" = $1`,
+      [userId]
     );
+
+    const addedAtByGameId = new Map<number, string>();
+    addedAtRows.forEach((row: any) => {
+      if (row.addedAt) {
+        addedAtByGameId.set(Number(row.gameId), row.addedAt);
+      }
+    });
+
+    const completedCount = userGames.filter(ug => ug.status === 'COMPLETED').length;
+    const playedCount = userGames.filter(ug => ug.status === 'PLAYED').length;
+    const playingCount = userGames.filter(ug => ug.status === 'PLAYING').length;
+    const abandonedCount = userGames.filter(ug => ug.status === 'ABANDONED').length;
+    const wishlistCount = userGames.filter(ug => ug.status === 'WISHLIST').length;
 
     const totalHours = userGames.reduce(
       (total, ug) => total + (ug.hoursPlayed || 0),
       0
     );
 
+    const gamesWithHours = userGames.filter(ug => ug.hoursPlayed > 0);
+    const averageHoursPerGame = gamesWithHours.length > 0
+      ? Math.round((totalHours / gamesWithHours.length) * 10) / 10
+      : 0;
+
+    // Juegos "empezados" = todo lo que no es solo wishlist. Sirve de base
+    // para calcular qué proporción se termina.
+    const startedCount = userGames.length - wishlistCount;
+    const completionRate = startedCount > 0
+      ? Math.round((completedCount / startedCount) * 100)
+      : 0;
+
+    const ratedGames = userGames.filter(ug => ug.rating > 0);
+    const averageRating = ratedGames.length > 0
+      ? Math.round(
+          (ratedGames.reduce((total, ug) => total + ug.rating, 0) / ratedGames.length) * 10
+        ) / 10
+      : 0;
+
+    const ratingsDistribution = [1, 2, 3, 4, 5].map(stars => ({
+      stars,
+      count: ratedGames.filter(ug => Math.round(ug.rating) === stars).length
+    }));
+
     // Obtener los juegos de la biblioteca del usuario
-    const gamesDetails = userGames
-      .map(ug => this.getGame(ug.gameId))
-      .filter((game): game is Game => game !== null);
+    const gamesDetails = (
+      await Promise.all(userGames.map(ug => this.getGame(ug.gameId)))
+    ).filter((game): game is Game => game !== null);
+
+    const toSummary = (ug: UserGame, game: Game): StatsGameSummary => ({
+      igdbId: game.igdbId,
+      name: game.name,
+      slug: game.slug,
+      cover: game.cover,
+      summary: game.summary,
+      genres: game.genres,
+      platforms: game.platforms,
+      releaseDate: game.releaseDate,
+      rating: game.rating,
+      myRating: ug.rating,
+      hoursPlayed: ug.hoursPlayed
+    });
 
     // ================================
     // GÉNEROS
@@ -1429,24 +1257,39 @@ class GameDatabase {
     // JUEGOS MEJOR VALORADOS
     // ================================
 
-    const topRatedGames = userGames
+    const topRatedGamesEntries = userGames
       .filter(ug => ug.rating > 0)
       .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5)
-      .map(ug => {
-        const game = this.getGame(ug.gameId);
+      .slice(0, 5);
 
-        if (!game) {
-          return null;
-        }
+    const topRatedGames = (
+      await Promise.all(
+        topRatedGamesEntries.map(async ug => {
+          const game = await this.getGame(ug.gameId);
+          return game ? toSummary(ug, game) : null;
+        })
+      )
+    ).filter((g): g is StatsGameSummary => g !== null);
 
-        return {
-          ...game,
-          myRating: ug.rating,
-          hoursPlayed: ug.hoursPlayed
-        };
-      })
-      .filter(Boolean);
+    // ================================
+    // JUEGOS MÁS JUGADOS
+    // ================================
+
+    const mostPlayedGamesEntries = userGames
+      .filter(ug => ug.hoursPlayed > 0)
+      .sort((a, b) => b.hoursPlayed - a.hoursPlayed)
+      .slice(0, 5);
+
+    const mostPlayedGames = (
+      await Promise.all(
+        mostPlayedGamesEntries.map(async ug => {
+          const game = await this.getGame(ug.gameId);
+          return game ? toSummary(ug, game) : null;
+        })
+      )
+    ).filter((g): g is StatsGameSummary => g !== null);
+
+    const mostPlayedGame = mostPlayedGames[0] ?? null;
 
     // ================================
     // ESTADÍSTICAS MENSUALES
@@ -1470,14 +1313,16 @@ class GameDatabase {
     const monthlyHistory: Record<
       string,
       {
+        label: string;
         completed: number;
         hours: number;
+        added: number;
       }
     > = {};
 
     const now = new Date();
 
-    // Últimos 12 meses
+    // Últimos 13 meses (incluye el actual)
     for (let i = 12; i >= 0; i--) {
       const date = new Date(
         now.getFullYear(),
@@ -1485,138 +1330,124 @@ class GameDatabase {
         1
       );
 
-      const key = `${months[date.getMonth()]} ${
-        date.getFullYear() % 100
-      }`;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      monthlyHistory[key] = {
+      monthlyHistory[monthKey] = {
+        label: `${months[date.getMonth()]} ${date.getFullYear() % 100}`,
         completed: 0,
-        hours: 0
+        hours: 0,
+        added: 0
       };
     }
 
+    const monthKeyFromDate = (value: string | null): string | null => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    };
+
     userGames.forEach(ug => {
-      if (!ug.updatedAt) return;
+      const updatedKey = monthKeyFromDate(ug.updatedAt);
 
-      const date = new Date(ug.updatedAt);
+      if (updatedKey && monthlyHistory[updatedKey]) {
+        monthlyHistory[updatedKey].hours += ug.hoursPlayed || 0;
 
-      if (Number.isNaN(date.getTime())) {
-        return;
+        if (ug.status === 'COMPLETED') {
+          monthlyHistory[updatedKey].completed += 1;
+        }
       }
 
-      const key = `${months[date.getMonth()]} ${
-        date.getFullYear() % 100
-      }`;
+      const addedKey = monthKeyFromDate(addedAtByGameId.get(ug.gameId) ?? null);
 
-      if (!monthlyHistory[key]) {
-        return;
-      }
-
-      monthlyHistory[key].hours +=
-        ug.hoursPlayed || 0;
-
-      if (ug.status === 'PLAYED' || ug.status === "COMPLETED") {
-        monthlyHistory[key].completed += 1;
+      if (addedKey && monthlyHistory[addedKey]) {
+        monthlyHistory[addedKey].added += 1;
       }
     });
 
-    const monthlyStats = Object.entries(
-      monthlyHistory
-    ).map(([month, data]) => ({
-      month,
+    const monthlyActivity = Object.entries(monthlyHistory).map(([monthKey, data]) => ({
+      monthKey,
+      label: data.label,
       completed: data.completed,
-      hours: data.hours
+      hours: Math.round(data.hours * 10) / 10,
+      added: data.added
     }));
 
     return {
-      totalHours,
-      completedCount: completedGames.length,
+      totalHours: Math.round(totalHours * 10) / 10,
+      totalGames: userGames.length,
+      completedCount,
+      playedCount,
+      playingCount,
+      abandonedCount,
+      wishlistCount,
+      averageRating,
+      ratedGamesCount: ratedGames.length,
+      averageHoursPerGame,
+      completionRate,
       favoriteGenre,
       favoritePlatform,
+      mostPlayedGame,
       topRatedGames,
-      monthlyStats,
+      mostPlayedGames,
+      ratingsDistribution,
+      monthlyActivity,
 
       platformsDistribution:
-        Object.entries(platformCounts).map(
-          ([name, value]) => ({
-            name,
-            value
-          })
-        ),
+        Object.entries(platformCounts)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a, b) => b.value - a.value),
 
       genresDistribution:
-        Object.entries(genreCounts).map(
-          ([name, value]) => ({
-            name,
-            value
-          })
-        )
+        Object.entries(genreCounts)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a, b) => b.value - a.value)
     };
   }
-
 
   // ==================================================
   // ACTIVITIES
   // ==================================================
 
-  getActivities(userIds?: string[]): Activity[] {
+  async getActivities(userIds?: string[]): Promise<Activity[]> {
     let rows: ActivityRow[];
 
     if (userIds && userIds.length > 0) {
-      const placeholders = userIds
-        .map(() => '?')
-        .join(', ');
+      const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
 
-      rows = this.db
-        .prepare(`
-          SELECT
-            id,
-            userId,
-            type,
-            gameId,
-            targetUserId,
-            details,
-            createdAt
+      const result = await this.pool.query(
+        `
+          SELECT id, "userId", type, "gameId", "targetUserId", details, "createdAt"
           FROM activities
-          WHERE userId IN (${placeholders})
-          ORDER BY datetime(createdAt) DESC
-        `)
-        .all(...userIds) as ActivityRow[];
+          WHERE "userId" IN (${placeholders})
+          ORDER BY "createdAt" DESC
+        `,
+        userIds
+      );
+
+      rows = result.rows as ActivityRow[];
     } else {
-      rows = this.db
-        .prepare(`
-          SELECT
-            id,
-            userId,
-            type,
-            gameId,
-            targetUserId,
-            details,
-            createdAt
-          FROM activities
-          ORDER BY datetime(createdAt) DESC
-        `)
-        .all() as ActivityRow[];
+      const result = await this.pool.query(`
+        SELECT id, "userId", type, "gameId", "targetUserId", details, "createdAt"
+        FROM activities
+        ORDER BY "createdAt" DESC
+      `);
+
+      rows = result.rows as ActivityRow[];
     }
 
     return rows.map(hydrateActivity);
   }
 
-  addActivity(activity: Activity): void {
-    this.db
-      .prepare(`
+  async addActivity(activity: Activity): Promise<void> {
+    await this.pool.query(
+      `
         INSERT INTO activities (
-          id,
-          userId,
-          type,
-          gameId,
-          targetUserId,
-          details,
-          createdAt
+          id, "userId", type, "gameId", "targetUserId", details, "createdAt"
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `)
-      .run(
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
         activity.id,
         activity.userId,
         activity.type,
@@ -1624,20 +1455,16 @@ class GameDatabase {
         activity.targetUserId ?? null,
         activity.details ?? null,
         activity.createdAt
-      );
+      ]
+    );
 
-    this.db
-      .prepare(`
-        DELETE FROM activities
-        WHERE id NOT IN (
-          SELECT id
-          FROM activities
-          ORDER BY datetime(createdAt) DESC
-          LIMIT 200
-        )
-      `)
-      .run();
+    await this.pool.query(`
+      DELETE FROM activities
+      WHERE id NOT IN (
+        SELECT id FROM activities ORDER BY "createdAt" DESC LIMIT 200
+      )
+    `);
   }
 }
 
-export const db = new GameDatabase(sqlite)
+export const db = new GameDatabase(pool);

@@ -277,9 +277,9 @@ function rankGamesForDiscover(
 // LOCAL FALLBACK
 // ==================================================
 
-function getLocalPopularFallback(limit: number): Game[] {
-  const localGames = db
-    .getGames()
+async function getLocalPopularFallback(limit: number): Promise<Game[]> {
+  const allGames = await db.getGames();
+  const localGames = allGames
     .filter(
       (game) =>
         Boolean(game?.name) &&
@@ -546,7 +546,9 @@ export class IgdbService {
           : [];
 
       mapped.forEach((game) =>
-        db.createGame(game)
+        db.createGame(game).catch((error) =>
+          console.error('❌ Error guardando juego en caché local:', error)
+        )
       );
 
       cacheSet(
@@ -711,7 +713,9 @@ export class IgdbService {
           );
 
         mapped.forEach((game) =>
-          db.createGame(game)
+          db.createGame(game).catch((error) =>
+            console.error('❌ Error guardando juego en caché local:', error)
+          )
         );
 
         cacheSet(
@@ -813,7 +817,9 @@ export class IgdbService {
           );
 
         fallbackMapped.forEach((game) =>
-          db.createGame(game)
+          db.createGame(game).catch((error) =>
+            console.error('❌ Error guardando juego en caché local:', error)
+          )
         );
 
         cacheSet(
@@ -830,10 +836,10 @@ export class IgdbService {
       );
     }
 
-    // IGDB falla → usar SQLite / fallback absoluto.
+    // IGDB falla → usar Postgres / fallback absoluto.
     // Importante: NO cacheamos este resultado para
     // poder recuperar IGDB en la siguiente petición.
-    return getLocalPopularFallback(
+    return await getLocalPopularFallback(
       normalizedLimit
     );
   }
@@ -1015,7 +1021,9 @@ export class IgdbService {
 
           if (mapped.length > 0) {
             mapped.forEach((game) =>
-              db.createGame(game)
+              db.createGame(game).catch((error) =>
+                console.error('❌ Error guardando juego en caché local:', error)
+              )
             );
 
             cacheSet(
@@ -1035,7 +1043,7 @@ export class IgdbService {
         error
       );
 
-      return getLocalPopularFallback(
+      return await getLocalPopularFallback(
         normalizedLimit
       );
     }
@@ -1151,7 +1159,7 @@ export class IgdbService {
       const genreSet =
         new Set<string>();
 
-      for (const game of db.getGames()) {
+      for (const game of await db.getGames()) {
         if (!Array.isArray(game.genres)) {
           continue;
         }
@@ -1211,7 +1219,7 @@ export class IgdbService {
     }
 
     const local =
-      db.getGame(id);
+      await db.getGame(id);
 
     if (
       local &&
@@ -1287,7 +1295,7 @@ export class IgdbService {
       mapped.averagePlaytimeHours =
         mapped.timeToBeat?.normally;
 
-      db.createGame(mapped);
+      await db.createGame(mapped);
 
       cacheSet(
         cacheKey,

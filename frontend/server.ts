@@ -4,9 +4,9 @@ import express from 'express';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { db } from './server/db.ts';
+import { db, initDb } from './server/db.ts';
 import { IgdbService } from './server/igdb.ts';
-import { Activity, User, UserGame, CustomList, Review } from './src/types.ts';
+import { Activity, ActivityType, User, UserGame, CustomList, Review } from './src/types.ts';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../backend/.env') });
 dotenv.config();
@@ -75,12 +75,15 @@ const recordSecurityEvent = (
   details: string,
   userId?: string | null
 ) => {
+  // Fire-and-forget: no bloqueamos la respuesta por el registro de auditoría.
   db.addSecurityEvent({
     eventType,
     userId: userId ?? null,
     ipAddress: getRequestIp(req),
     userAgent: req.get('user-agent') || null,
     details
+  }).catch((err) => {
+    console.error('Error registrando evento de seguridad:', err);
   });
 };
 
@@ -173,10 +176,10 @@ const verifyPassword = (password: string, passwordHash?: string, passwordSalt?: 
   return crypto.timingSafeEqual(Buffer.from(computedHash, 'hex'), Buffer.from(passwordHash, 'hex'));
 };
 
-const createSessionToken = (userId: string) => {
+const createSessionToken = async (userId: string) => {
   const token = crypto.randomBytes(32).toString('hex');
-  db.createSession(userId, token, new Date(Date.now() + SESSION_TTL_MS).toISOString());
-  db.revokeOldestSessionsForUser(userId, MAX_ACTIVE_SESSIONS_PER_USER);
+  await db.createSession(userId, token, new Date(Date.now() + SESSION_TTL_MS).toISOString());
+  await db.revokeOldestSessionsForUser(userId, MAX_ACTIVE_SESSIONS_PER_USER);
   return token;
 };
 
@@ -266,7 +269,7 @@ const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken
   };
 };
 
-const authenticate = (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+const authenticate = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
   const token = getCookie(req, SESSION_COOKIE_NAME) || bearerToken;
@@ -274,7 +277,7 @@ const authenticate = (req: AuthenticatedRequest, res: express.Response, next: ex
     return res.status(401).json({ error: 'Falta token de autorización' });
   }
 
-  const user = db.getUserBySessionToken(token);
+  const user = await db.getUserBySessionToken(token);
   if (!user) {
     return res.status(401).json({ error: 'Sesión inválida o expirada.' });
   }
@@ -286,7 +289,7 @@ const authenticate = (req: AuthenticatedRequest, res: express.Response, next: ex
 
 // --- ENDPOINTS DE AUTENTICACIÓN ---
 
-app.post('/api/auth/register', registerRateLimit, (req, res) => {
+app.post('/api/auth/register', registerRateLimit, async (req, res) => {
   const { username, email, password, bio, avatar } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
@@ -298,12 +301,12 @@ app.post('/api/auth/register', registerRateLimit, (req, res) => {
 
   const normalizedEmail = String(email).trim().toLowerCase();
   const normalizedUsername = String(username).trim();
-  const existingEmail = db.getUserByEmail(normalizedEmail);
+  const existingEmail = await db.getUserByEmail(normalizedEmail);
   if (existingEmail) {
     return res.status(400).json({ error: 'El email ya está registrado.' });
   }
 
-  const existingUser = db.getUserByUsername(normalizedUsername);
+  const existingUser = await db.getUserByUsername(normalizedUsername);
   if (existingUser) {
     return res.status(400).json({ error: 'El nombre de usuario ya está en uso.' });
   }
@@ -319,9 +322,9 @@ app.post('/api/auth/register', registerRateLimit, (req, res) => {
   };
 
   const passwordData = hashPassword(password);
-  db.createUser(newUser, passwordData);
+  await db.createUser(newUser, passwordData);
 
-  db.addActivity({
+  await db.addActivity({
     id: `act_${Date.now()}`,
     userId: id,
     type: 'FOLLOWED',
@@ -329,26 +332,26 @@ app.post('/api/auth/register', registerRateLimit, (req, res) => {
     createdAt: new Date().toISOString()
   });
 
-  const token = createSessionToken(id);
+  const token = await createSessionToken(id);
   setSessionCookie(res, token);
   recordSecurityEvent(req, 'REGISTRATION_SUCCESS', 'account_created', id);
   res.status(201).json({ user: newUser });
 });
 
-app.post('/api/auth/login', loginRateLimit, (req, res) => {
+app.post('/api/auth/login', loginRateLimit, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'El email y la contraseña son obligatorios.' });
   }
 
-  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  const authUser = await db.getAuthUserByEmail(String(email).trim().toLowerCase());
   if (!authUser || !verifyPassword(password, authUser.passwordHash, authUser.passwordSalt)) {
     recordSecurityEvent(req, 'LOGIN_FAILED', 'invalid_credentials');
     return res.status(401).json({ error: 'Email o contraseña incorrectos.' });
   }
 
-  const user = db.getUser(authUser.id)!;
-  const token = createSessionToken(authUser.id);
+  const user = (await db.getUser(authUser.id))!;
+  const token = await createSessionToken(authUser.id);
   setSessionCookie(res, token);
   recordSecurityEvent(req, 'LOGIN_SUCCESS', 'session_created', authUser.id);
   res.json({ user });
@@ -364,20 +367,21 @@ app.post('/api/auth/forgot-password', forgotPasswordRateLimit, async (req, res) 
     message: 'Si existe una cuenta con ese email, recibirás un enlace para restablecer la contraseña.'
   };
 
-  const authUser = db.getAuthUserByEmail(String(email).trim().toLowerCase());
+  const authUser = await db.getAuthUserByEmail(String(email).trim().toLowerCase());
   if (!authUser) {
     return res.json(genericResponse);
   }
 
   try {
     const rawToken = crypto.randomBytes(32).toString('hex');
-    db.savePasswordResetToken(
+    await db.savePasswordResetToken(
       authUser.id,
       hashResetToken(rawToken),
       new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString()
     );
 
-    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, db.getUser(authUser.id)!, rawToken);
+    const authUserForEmail = (await db.getUser(authUser.id))!;
+    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, authUserForEmail, rawToken);
     recordSecurityEvent(req, 'PASSWORD_RESET_REQUESTED', 'email_sent', authUser.id);
     res.json({
       ...genericResponse,
@@ -389,7 +393,7 @@ app.post('/api/auth/forgot-password', forgotPasswordRateLimit, async (req, res) 
   }
 });
 
-app.post('/api/auth/reset-password', resetPasswordRateLimit, (req, res) => {
+app.post('/api/auth/reset-password', resetPasswordRateLimit, async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) {
     return res.status(400).json({ error: 'El token y la nueva contraseña son obligatorios.' });
@@ -399,17 +403,17 @@ app.post('/api/auth/reset-password', resetPasswordRateLimit, (req, res) => {
     return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` });
   }
 
-  const authUser = db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
+  const authUser = await db.getAuthUserByPasswordResetTokenHash(hashResetToken(String(token)));
   if (!authUser) {
     recordSecurityEvent(req, 'PASSWORD_RESET_FAILED', 'invalid_or_expired_token');
     return res.status(400).json({ error: 'El enlace de recuperación es inválido o ha caducado.' });
   }
 
   const passwordData = hashPassword(password);
-  db.setUserPassword(authUser.id, passwordData.passwordHash, passwordData.passwordSalt);
-  db.revokeSessionsForUser(authUser.id);
-  const sessionToken = createSessionToken(authUser.id);
-  const user = db.getUser(authUser.id)!;
+  await db.setUserPassword(authUser.id, passwordData.passwordHash, passwordData.passwordSalt);
+  await db.revokeSessionsForUser(authUser.id);
+  const sessionToken = await createSessionToken(authUser.id);
+  const user = (await db.getUser(authUser.id))!;
   setSessionCookie(res, sessionToken);
   recordSecurityEvent(req, 'PASSWORD_RESET_COMPLETED', 'password_updated', authUser.id);
 
@@ -419,9 +423,9 @@ app.post('/api/auth/reset-password', resetPasswordRateLimit, (req, res) => {
   });
 });
 
-app.post('/api/auth/logout', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/auth/logout', authenticate, async (req: AuthenticatedRequest, res) => {
   if (req.authToken) {
-    db.revokeSession(req.authToken);
+    await db.revokeSession(req.authToken);
   }
   if (req.currUser) {
     recordSecurityEvent(req, 'LOGOUT', 'session_revoked', req.currUser.id);
@@ -438,36 +442,36 @@ app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
 // --- ENDPOINTS DE USUARIOS ---
 
 // Obtener perfiles públicos
-app.get('/api/users', (req, res) => {
+app.get('/api/users', async (req, res) => {
   const query = typeof req.query.search === 'string' ? req.query.search.trim() : '';
   if (!query) return res.json([]);
 
-  res.json(db.searchUsersByUsername(query));
+  res.json(await db.searchUsersByUsername(query));
 });
 
-app.get('/api/users/:id', (req, res) => {
-  const user = db.getUser(req.params.id);
+app.get('/api/users/:id', async (req, res) => {
+  const user = await db.getUser(req.params.id);
   if (!user) {
     return res.status(404).json({ error: 'Usuario no encontrado.' });
   }
-  const followersCount = db.getFollowers(user.id).length;
-  const followingCount = db.getFollowing(user.id).length;
+  const followersCount = (await db.getFollowers(user.id)).length;
+  const followingCount = (await db.getFollowing(user.id)).length;
   res.json({ ...user, followersCount, followingCount });
 });
 
 // Modificar perfil de usuario
-app.put('/api/users/profile', authenticate, (req: AuthenticatedRequest, res) => {
+app.put('/api/users/profile', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const { username, bio, avatar } = req.body;
 
   if (username && username.toLowerCase() !== user.username.toLowerCase()) {
-    const existing = db.getUserByUsername(username);
+    const existing = await db.getUserByUsername(username);
     if (existing) {
       return res.status(400).json({ error: 'El nombre de usuario ya está tomado.' });
     }
   }
 
-  const updated = db.updateUser(user.id, {
+  const updated = await db.updateUser(user.id, {
     username: username || user.username,
     bio: bio !== undefined ? bio : user.bio,
     avatar: avatar || user.avatar
@@ -479,32 +483,32 @@ app.put('/api/users/profile', authenticate, (req: AuthenticatedRequest, res) => 
 // --- ENDPOINTS DE SOCIAL ---
 
 // Feed de actividad (público o seguido)
-app.get('/api/social/feed', (req, res) => {
+app.get('/api/social/feed', async (req, res) => {
   const userId = req.query.userId as string;
   const scope = req.query.scope as string; // 'all' or 'following'
 
-  const withUsers = (activities: Activity[]) => activities.map((activity) => ({
+  const withUsers = async (activities: Activity[]) => Promise.all(activities.map(async (activity) => ({
     ...activity,
-    author: db.getUser(activity.userId),
-    targetUser: activity.targetUserId ? db.getUser(activity.targetUserId) : null
-  }));
+    author: await db.getUser(activity.userId),
+    targetUser: activity.targetUserId ? await db.getUser(activity.targetUserId) : null
+  })));
 
   if (scope === 'following' && userId) {
-    const following = db.getFollowing(userId);
+    const following = await db.getFollowing(userId);
     // Include user's own activity as well
-    const feed = db.getActivities([...following, userId]);
-    return res.json(withUsers(feed));
+    const feed = await db.getActivities([...following, userId]);
+    return res.json(await withUsers(feed));
   }
 
-  const feed = db.getActivities();
-  res.json(withUsers(feed));
+  const feed = await db.getActivities();
+  res.json(await withUsers(feed));
 });
 
   app.post('/api/games/import/:id', async (req, res) => {
     const id = parseInt(req.params.id);
 
     try {
-      const existing = db.getGame(id);
+      const existing = await db.getGame(id);
 
       if (existing) {
         return res.json(existing);
@@ -518,7 +522,7 @@ app.get('/api/social/feed', (req, res) => {
         });
       }
 
-      db.saveGame(game);
+      await db.saveGame(game);
 
       res.json(game);
     } catch (err: any) {
@@ -529,7 +533,7 @@ app.get('/api/social/feed', (req, res) => {
   });
 
 // Seguir/Dejar de seguir a un usuario
-app.post('/api/social/follow/:userId', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/social/follow/:userId', authenticate, async (req: AuthenticatedRequest, res) => {
   const me = req.currUser!;
   const targetId = req.params.userId;
 
@@ -537,16 +541,16 @@ app.post('/api/social/follow/:userId', authenticate, (req: AuthenticatedRequest,
     return res.status(400).json({ error: 'No puedes seguirte a ti mismo.' });
   }
 
-  const target = db.getUser(targetId);
+  const target = await db.getUser(targetId);
   if (!target) {
     return res.status(404).json({ error: 'Usuario no encontrado.' });
   }
 
-  const isFollowingNow = db.toggleFollow(me.id, target.id);
+  const isFollowingNow = await db.toggleFollow(me.id, target.id);
 
   if (isFollowingNow) {
     // Register activity
-    db.addActivity({
+    await db.addActivity({
       id: `act_${Date.now()}`,
       userId: me.id,
       type: 'FOLLOWED',
@@ -560,15 +564,15 @@ app.post('/api/social/follow/:userId', authenticate, (req: AuthenticatedRequest,
 });
 
 // Listas de seguidores/seguidos
-app.get('/api/social/followers/:userId', (req, res) => {
-  const ids = db.getFollowers(req.params.userId);
-  const users = ids.map(id => db.getUser(id)).filter(Boolean);
+app.get('/api/social/followers/:userId', async (req, res) => {
+  const ids = await db.getFollowers(req.params.userId);
+  const users = (await Promise.all(ids.map(id => db.getUser(id)))).filter(Boolean);
   res.json(users);
 });
 
-app.get('/api/social/following/:userId', (req, res) => {
-  const ids = db.getFollowing(req.params.userId);
-  const users = ids.map(id => db.getUser(id)).filter(Boolean);
+app.get('/api/social/following/:userId', async (req, res) => {
+  const ids = await db.getFollowing(req.params.userId);
+  const users = (await Promise.all(ids.map(id => db.getUser(id)))).filter(Boolean);
   res.json(users);
 });
 
@@ -675,15 +679,15 @@ app.get('/api/games/:id', async (req, res) => {
 // Biblioteca de un usuario
 app.get('/api/users/:id/library', async (req, res) => {
   const userId = req.params.id;
-  const userGames = db.getUserGames(userId);
+  const userGames = await db.getUserGames(userId);
 
   try {
     const completeLibrary = await Promise.all(userGames.map(async (ug) => {
-      let game = db.getGame(ug.gameId);
+      let game = await db.getGame(ug.gameId);
       if (!game) {
         game = await IgdbService.getGameDetails(ug.gameId);
         if (game) {
-          db.saveGame(game);
+          await db.saveGame(game);
         }
       }
 
@@ -710,7 +714,7 @@ app.get('/api/users/:id/library', async (req, res) => {
 });
 
 // Guardar o cambiar estado de progreso/puntuación
-app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const { gameId, status, rating, hoursPlayed, notes, startedAt, completedAt } = req.body;
 
@@ -719,12 +723,12 @@ app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
   }
 
   // Verify game details exist
-  const game = db.getGame(gameId);
+  const game = await db.getGame(gameId);
   if (!game) {
     return res.status(404).json({ error: 'Videojuego no encontrado en el sistema. Búscalo en IGDB primero.' });
   }
 
-  const existing = db.getUserGame(user.id, gameId);
+  const existing = await db.getUserGame(user.id, gameId);
   const userGame: UserGame = {
     userId: user.id,
     gameId: parseInt(gameId),
@@ -737,7 +741,7 @@ app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
     updatedAt: new Date().toISOString()
   };
 
-  const saved = db.saveUserGame(userGame);
+  const saved = await db.saveUserGame(userGame);
 
   // Register social Activity if status changed
   if (!existing || existing.status !== status) {
@@ -748,10 +752,10 @@ app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
     else if (status === 'ABANDONED') actionTxt = 'abandonó ❌';
     else if (status === 'PLAYED') actionTxt = 'jugó a';
 
-    db.addActivity({
+    await db.addActivity({
       id: `act_${Date.now()}`,
       userId: user.id,
-      type: status === 'COMPLETED' ? 'COMPLETED' : (status === 'WISHLIST' ? 'WISHLIST' : 'PLAYING'),
+      type: status as ActivityType,
       gameId: game.igdbId,
       details: `${actionTxt} ${game.name}`,
       createdAt: new Date().toISOString()
@@ -762,40 +766,40 @@ app.post('/api/library', authenticate, (req: AuthenticatedRequest, res) => {
 });
 
 // Eliminar de biblioteca
-app.delete('/api/library/:id', authenticate, (req: AuthenticatedRequest, res) => {
+app.delete('/api/library/:id', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const gameId = parseInt(req.params.id);
   if (isNaN(gameId)) {
     return res.status(400).json({ error: 'ID de juego inválido' });
   }
 
-  const success = db.deleteUserGame(user.id, gameId);
+  const success = await db.deleteUserGame(user.id, gameId);
   res.json({ success });
 });
 
 // --- ENDPOINTS DE RESEÑAS ---
 
 // Obtener reseñas de un juego
-app.get('/api/reviews/:gameId', (req, res) => {
+app.get('/api/reviews/:gameId', async (req, res) => {
   const gameId = parseInt(req.params.gameId);
-  const reviews = db.getReviews(gameId);
-  
+  const reviews = await db.getReviews(gameId);
+
   // Decorar con perfiles de usuarios
-  const fullReviews = reviews.map(r => {
-    const author = db.getUser(r.userId);
-    const tracking = db.getUserGame(r.userId, r.gameId);
+  const fullReviews = await Promise.all(reviews.map(async r => {
+    const author = await db.getUser(r.userId);
+    const tracking = await db.getUserGame(r.userId, r.gameId);
     return {
       ...r,
       rating: tracking?.rating ?? 0,
       author: author || { username: 'desconocido', avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=unknown' }
     };
-  });
+  }));
 
   res.json(fullReviews);
 });
 
 // Escribir reseña
-app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/reviews', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const { gameId, title, content, rating } = req.body;
 
@@ -803,7 +807,7 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
     return res.status(400).json({ error: 'Campos gameId, title y content son obligatorios.' });
   }
 
-  const game = db.getGame(parseInt(gameId));
+  const game = await db.getGame(parseInt(gameId));
   if (!game) {
     return res.status(444).json({ error: 'El juego debe existir.' });
   }
@@ -818,17 +822,17 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
     createdAt: new Date().toISOString()
   };
 
-  db.saveReview(review);
+  await db.saveReview(review);
 
   // Single source of truth for rating: always persist/read from UserGame.
-  const existingUg = db.getUserGame(user.id, game.igdbId);
+  const existingUg = await db.getUserGame(user.id, game.igdbId);
   const parsedRating = Number.parseInt(String(rating), 10);
   const normalizedRating =
     Number.isInteger(parsedRating) && parsedRating >= 1 && parsedRating <= 5
       ? parsedRating
       : (existingUg?.rating ?? 0);
 
-  const syncedUserGame = db.saveUserGame({
+  const syncedUserGame = await db.saveUserGame({
     userId: user.id,
     gameId: game.igdbId,
     status: existingUg ? existingUg.status : 'PLAYED',
@@ -841,7 +845,7 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
   });
 
   // Register social activity
-  db.addActivity({
+  await db.addActivity({
     id: `act_${Date.now()}`,
     userId: user.id,
     type: 'REVIEWED',
@@ -854,9 +858,9 @@ app.post('/api/reviews', authenticate, (req: AuthenticatedRequest, res) => {
 });
 
 // Dar like/Quitar like a reseña
-app.post('/api/reviews/:id/like', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/reviews/:id/like', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
-  const updatedReview = db.toggleLikeReview(req.params.id, user.id);
+  const updatedReview = await db.toggleLikeReview(req.params.id, user.id);
   if (!updatedReview) {
     return res.status(404).json({ error: 'Reseña no encontrada.' });
   }
@@ -871,23 +875,23 @@ app.get(
   async (req, res) => {
     try {
       const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
-      const lists = db.getLists(userId);
+      const lists = await db.getLists(userId);
 
       const fullLists = await Promise.all(
         lists.map(async (list) => {
-          const author = db.getUser(list.userId);
-          const gameIds = db.getListItems(list.id);
+          const author = await db.getUser(list.userId);
+          const gameIds = await db.getListItems(list.id);
 
           const games = (
             await Promise.all(
               gameIds.map(async (gameId) => {
-                let game = db.getGame(gameId);
+                let game = await db.getGame(gameId);
 
                 if (!game) {
                   game = await IgdbService.getGameDetails(gameId);
 
                   if (game) {
-                    db.saveGame(game);
+                    await db.saveGame(game);
                   }
                 }
 
@@ -916,12 +920,12 @@ app.get(
 );
 
 // Actualizar lista
-app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
+app.put('/api/lists/:id', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const listId = req.params.id;
   const { name, description, gameIds } = req.body;
 
-  const list = db.getList(listId);
+  const list = await db.getList(listId);
 
   if (!list) {
     return res.status(404).json({ error: 'Lista no encontrada.' });
@@ -933,7 +937,7 @@ app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
     });
   }
 
-  const updatedList = db.updateList(listId, {
+  const updatedList = await db.updateList(listId, {
     name: name !== undefined ? name : list.name,
     description: description !== undefined
       ? description
@@ -941,7 +945,7 @@ app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
   });
 
   if (gameIds && Array.isArray(gameIds)) {
-    db.saveListItems(
+    await db.saveListItems(
       listId,
       gameIds.map(id => parseInt(id))
     );
@@ -952,16 +956,16 @@ app.put('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
 
 // Detalle público de lista.
 app.get('/api/lists/:id', async (req, res) => {
-  const list = db.getList(req.params.id);
+  const list = await db.getList(req.params.id);
   if (!list) return res.status(404).json({ error: 'Lista no encontrada' });
-  const author = db.getUser(list.userId);
-  const gameIds = db.getListItems(list.id);
+  const author = await db.getUser(list.userId);
+  const gameIds = await db.getListItems(list.id);
   const games = (await Promise.all(gameIds.map(async (gId) => {
-    let game = db.getGame(gId);
+    let game = await db.getGame(gId);
     if (!game) {
       game = await IgdbService.getGameDetails(gId);
       if (game) {
-        db.saveGame(game);
+        await db.saveGame(game);
       }
     }
     return game;
@@ -975,7 +979,7 @@ app.get('/api/lists/:id', async (req, res) => {
 });
 
 // Crear lista
-app.post('/api/lists', authenticate, (req: AuthenticatedRequest, res) => {
+app.post('/api/lists', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
   const { name, description, gameIds } = req.body;
 
@@ -992,14 +996,14 @@ app.post('/api/lists', authenticate, (req: AuthenticatedRequest, res) => {
     createdAt: new Date().toISOString()
   };
 
-  db.createList(newList);
+  await db.createList(newList);
 
   if (gameIds && Array.isArray(gameIds)) {
-    db.saveListItems(listId, gameIds.map(id => parseInt(id)));
+    await db.saveListItems(listId, gameIds.map(id => parseInt(id)));
   }
 
   // Register activity
-  db.addActivity({
+  await db.addActivity({
     id: `act_${Date.now()}`,
     userId: user.id,
     type: 'LIST_CREATED',
@@ -1011,23 +1015,23 @@ app.post('/api/lists', authenticate, (req: AuthenticatedRequest, res) => {
 });
 
 // Eliminar lista
-app.delete('/api/lists/:id', authenticate, (req: AuthenticatedRequest, res) => {
+app.delete('/api/lists/:id', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
-  const list = db.getList(req.params.id);
+  const list = await db.getList(req.params.id);
   if (!list) return res.status(404).json({ error: 'Lista no encontrada.' });
 
   if (list.userId !== user.id) {
     return res.status(403).json({ error: 'No tienes permiso para borrar esta lista.' });
   }
 
-  db.deleteList(list.id);
+  await db.deleteList(list.id);
   res.json({ success: true });
 });
 
 // --- ENDPOINTS DE ESTADÍSTICAS ---
-app.get('/api/users/:id/stats', (req, res) => {
+app.get('/api/users/:id/stats', async (req, res) => {
   try {
-    const stats = db.getUserStats(req.params.id);
+    const stats = await db.getUserStats(req.params.id);
     res.json(stats);
   } catch (error) {
     console.error(
@@ -1043,6 +1047,8 @@ app.get('/api/users/:id/stats', (req, res) => {
 
 // --- VITE EXPRES INTERFACE ---
 async function startServer() {
+  await initDb();
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1064,4 +1070,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('❌ No se pudo iniciar el servidor:', err);
+  process.exit(1);
+});
