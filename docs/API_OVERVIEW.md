@@ -207,9 +207,51 @@ Lista usuarios seguidos por el usuario.
 
 ## 1.4 Juegos
 
+### `GET /api/discover/home`
+
+Devuelve las secciones de Descubrir desde IGDB:
+
+- `newReleases`: lanzamientos relevantes de los últimos 90 días
+- `upcoming`: juegos previstos para los próximos 120 días
+- `popular`: juegos populares
+- `topRated`: juegos bien valorados publicados en los últimos 12 meses
+
+Las secciones se puntúan y cachean en el servidor; los resultados del catálogo no se guardan en PostgreSQL hasta que se importa o abre el detalle de un juego.
+
+### `GET /api/games/search`
+
+Busca en IGDB y pagina los resultados.
+
+#### Query params
+
+- `q`: texto libre
+- `genres`: IDs de género separados por comas
+- `platforms`: IDs de plataforma separados por comas
+- `yearFrom`, `yearTo`: rango inclusivo de años
+- `minRating`: valoración IGDB mínima entre 0 y 100
+- `sort=relevance|newest|rating|popularity`
+- `page`: página empezando en 0
+- `limit`: resultados por página (máximo 60)
+
+#### Respuesta
+
+```json
+{
+  "items": [],
+  "page": 0,
+  "hasMore": false
+}
+```
+
+La respuesta se normaliza al tipo `Game` compartido por la aplicación. La búsqueda y sus filtros se ejecutan en Express contra IGDB, no contra la lista local de juegos.
+
+### `GET /api/igdb/genres` y `GET /api/igdb/platforms`
+
+Devuelven opciones normalizadas `{ id, name, slug }` cacheadas en el servidor. Las plataformas se limitan a una lista curada de plataformas principales.
+
 ### `GET /api/games`
 
-Catálogo general de juegos desde IGDB.
+Ruta de compatibilidad para el catálogo general de juegos desde IGDB.
 
 #### Query params opcionales
 
@@ -222,7 +264,7 @@ Catálogo general de juegos desde IGDB.
 
 ### `GET /api/games/igdb/search`
 
-Busqueda en IGDB.
+Ruta de compatibilidad para búsqueda directa en IGDB.
 
 #### Query params
 
@@ -238,11 +280,11 @@ Obtiene detalle de un juego por `igdbId`.
 
 ### `POST /api/games/import/:id`
 
-Importa un juego a la cache/base local del servidor Express.
+Importa un juego a la tabla `games` de PostgreSQL.
 
 #### Notas
 
-- si el juego ya existe localmente, devuelve el existente
+- si el juego ya existe en PostgreSQL, devuelve el existente
 - si no existe, lo carga desde IGDB y lo guarda
 
 ---

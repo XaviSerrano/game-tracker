@@ -16,6 +16,7 @@ interface GameCardProps {
 
   // Modo visual
   variant?: 'default' | 'feed';
+  showDiscoverMeta?: boolean;
 
   // Callbacks
   onSelectGame: (gameId: number) => void;
@@ -37,6 +38,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   userGameNotes,
   isInWishlist,
   variant = 'default',
+  showDiscoverMeta = false,
   onSelectGame,
   onToggleWishlist,
   togglingWishlistId,
@@ -101,6 +103,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         <img
           src={game.cover}
           alt={game.name}
+          loading="lazy"
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover"
         />
@@ -109,6 +112,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         {onToggleWishlist && !isFeedCard && (
           <button
             type="button"
+            aria-label={bookmarkActive ? `Quitar ${game.name} de la wishlist` : `Añadir ${game.name} a la wishlist`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleWishlist(game.igdbId, e);
@@ -243,9 +247,18 @@ export const GameCard: React.FC<GameCardProps> = ({
                 </p>
               )
             ) : (
-              <p className="text-[10px] text-slate-500 mt-1 truncate">
-                {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
-              </p>
+              <div className="mt-1 space-y-0.5">
+                <p className="truncate text-[10px] text-slate-500">
+                  {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
+                </p>
+                {showDiscoverMeta && (
+                  <p className="truncate text-[9px] text-slate-600">
+                    {[game.releaseDate !== 'Unknown' ? game.releaseDate?.slice(0, 4) : '', game.platforms.slice(0, 2).join(', ')]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                )}
+              </div>
             )}
           </>
         )}

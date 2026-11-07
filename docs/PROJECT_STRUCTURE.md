@@ -150,9 +150,9 @@ Componentes principales de interfaz:
 
 #### `frontend/server/db.ts`
 
-- capa de persistencia local del servidor Node
-- gestiona usuarios, juegos, reviews, listas, follows, actividad y recomendaciones
-- actualmente usa almacenamiento local tipo JSON
+- capa de persistencia PostgreSQL del servidor Node, mediante `DATABASE_URL`
+- inicializa el esquema y gestiona usuarios, juegos, reviews, listas, follows, actividad y recomendaciones
+- el entorno local carga `DATABASE_URL` desde `backend/.env`
 
 #### `frontend/server/igdb.ts`
 
@@ -169,8 +169,7 @@ Componentes principales de interfaz:
 
 ### `frontend/appdata.json`
 
-- almacenamiento local de datos del servidor Express
-- debe tratarse como dato de entorno/desarrollo, no como fuente de verdad de produccion
+- archivo auxiliar heredado; la persistencia activa de Express está en PostgreSQL
 
 ### `frontend/dist/`
 
@@ -417,6 +416,7 @@ Hoy GameTracker tiene:
 - un servidor Node/Express en `frontend/server.ts`
 - un backend FastAPI en `backend/app`
 - integracion con IGDB
-- persistencia local/prototipo en distintos puntos
+- PostgreSQL como fuente de verdad del servidor Express
+- SQLite como persistencia secundaria del backend FastAPI
 
 Este documento debe mantenerse sincronizado con la estructura real del proyecto mientras la arquitectura evoluciona.

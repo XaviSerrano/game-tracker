@@ -37,6 +37,17 @@ El formato es simple y humano: agrupado por fecha, con resumen funcional y tecni
 - Se elimino la opcion de alternar cuenta desde el sidebar
 - La documentacion ya no vive en la raiz, sino en `docs/`
 
+### Corregido
+
+- La busqueda y exploracion de juegos vuelve a devolver resultados de IGDB usando el campo vigente `game_type`
+- Los filtros de Descubrir consultan los IDs de género y plataforma de IGDB en vez de comparar nombres locales
+
+### Mejorado
+
+- Descubrir muestra lanzamientos relevantes, próximos juegos, populares y mejor valorados
+- La búsqueda admite filtros combinables, paginación y enlaces compartibles mediante parámetros de URL
+- Las consultas IGDB se cachean y se serializan para respetar el límite de peticiones del proveedor
+
 ---
 
 ## Guia de uso

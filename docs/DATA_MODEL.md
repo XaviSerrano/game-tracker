@@ -12,7 +12,7 @@ Este documento describe las entidades de GameTracker, sus relaciones y donde se 
 
 Hoy el proyecto tiene **dos modelos de datos convivientes**:
 
-1. **Modelo principal del prototipo** en `frontend/server/db.ts`
+1. **Modelo principal de Express + PostgreSQL** en `frontend/server/db.ts`
 2. **Modelo parcial SQLite** en `backend/app/models.py`
 
 Esto significa que la fuente de verdad depende de la capa backend que se use.
@@ -21,10 +21,10 @@ Esto significa que la fuente de verdad depende de la capa backend que se use.
 
 # 1. Modelo principal del servidor Express
 
-El servidor Node usa una estructura en memoria + persistencia JSON en:
+El servidor Node usa PostgreSQL mediante `DATABASE_URL`, configurada para desarrollo local en `backend/.env`.
 
 - `frontend/server/db.ts`
-- archivo de datos: `frontend/appdata.json`
+- esquema idempotente inicializado por `initDb()`
 
 ## 1.1 Entidad `User`
 
@@ -299,7 +299,7 @@ User
 La fuente de verdad mas completa del producto actual es:
 
 - `frontend/server/db.ts`
-- `frontend/appdata.json`
+- PostgreSQL (`DATABASE_URL`)
 
 ## En transicion / secundario
 
@@ -336,10 +336,10 @@ pero no tienen los mismos campos ni el mismo alcance.
 
 La persistencia actual depende de:
 
-- JSON local en el servidor Express
-- SQLite local en el backend Python
+- PostgreSQL para el servidor Express, también en desarrollo local
+- SQLite en el backend Python secundario
 
-Esto es util para desarrollo, pero no es aun una estrategia final de produccion.
+Express/PostgreSQL es la fuente de verdad usada por la aplicación principal. FastAPI/SQLite sigue siendo una implementación secundaria y no comparte todavía toda la persistencia del producto.
 
 ---
 
@@ -347,15 +347,15 @@ Esto es util para desarrollo, pero no es aun una estrategia final de produccion.
 
 ## Corto plazo
 
-- consolidar una unica fuente de verdad
+- consolidar una unica fuente de verdad entre Express/PostgreSQL y FastAPI/SQLite
 - normalizar usuarios, juegos, tracking, reviews y follows
 
 ## Medio plazo
 
-Migrar a base de datos relacional de produccion, idealmente:
+Mantener una base de datos relacional compartida por los servicios, idealmente:
 
-- PostgreSQL en produccion
-- SQLite solo para local/dev si se desea
+- PostgreSQL en desarrollo y producción
+- retirar o integrar la persistencia SQLite del backend secundario
 
 ## Modelo objetivo recomendado
 

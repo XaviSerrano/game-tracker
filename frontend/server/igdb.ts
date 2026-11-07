@@ -10,8 +10,46 @@ interface CacheEntry<T> {
   expiry: number;
 }
 
+export interface IgdbCatalogOption {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface GameSearchOptions {
+  query: string;
+  genreIds: number[];
+  platformIds: number[];
+  yearFrom?: number;
+  yearTo?: number;
+  minRating?: number;
+  sort: 'relevance' | 'newest' | 'rating' | 'popularity' | 'name';
+  page: number;
+  limit: number;
+}
+
+export interface GameSearchResult {
+  items: Game[];
+  page: number;
+  hasMore: boolean;
+}
+
+export interface DiscoverHome {
+  newReleases: Game[];
+  upcoming: Game[];
+  popular: Game[];
+  topRated: Game[];
+}
+
 const cacheStore = new Map<string, CacheEntry<any>>();
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const TAXONOMY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CORE_GAME_TYPES = '(0,4,8,9,10)';
+const IGDB_REQUEST_INTERVAL_MS = 250;
+const igdbInFlight = new Map<string, Promise<Response>>();
+let igdbRequestQueue: Promise<void> = Promise.resolve();
+let lastIgdbRequestAt = 0;
 
 function cacheGet<T>(key: string): T | null {
   const entry = cacheStore.get(key);
@@ -28,11 +66,56 @@ function cacheGet<T>(key: string): T | null {
   return entry.data;
 }
 
-function cacheSet<T>(key: string, data: T): void {
+function cacheSet<T>(key: string, data: T, ttl = CACHE_TTL_MS): void {
   cacheStore.set(key, {
     data,
-    expiry: Date.now() + CACHE_TTL_MS
+    expiry: Date.now() + ttl
   });
+}
+
+function fetchIgdb(url: string, init: RequestInit): Promise<Response> {
+  const body = typeof init.body === 'string' ? init.body : '';
+  const key = `${url}:${body}`;
+  const existing = igdbInFlight.get(key);
+  // Cada llamante recibe un clon: un Response solo puede leerse una vez.
+  if (existing) return existing.then(response => response.clone());
+
+  const request = igdbRequestQueue.then(async () => {
+    const wait = IGDB_REQUEST_INTERVAL_MS - (Date.now() - lastIgdbRequestAt);
+    if (wait > 0) {
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+
+    lastIgdbRequestAt = Date.now();
+    return fetch(url, {
+      ...init,
+      signal: AbortSignal.timeout(20_000)
+    });
+  });
+
+  igdbRequestQueue = request.then(() => undefined, () => undefined);
+  igdbInFlight.set(key, request);
+  request.finally(() => igdbInFlight.delete(key)).catch(() => undefined);
+  return request.then(response => response.clone());
+}
+
+function escapeIgdbString(value: string): string {
+  return value
+    .replace(/[;\r\n]/g, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .trim();
+}
+
+function normalizeSearchText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function makeSlug(value: string): string {
+  return normalizeSearchText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 // ==================================================
@@ -41,6 +124,7 @@ function cacheSet<T>(key: string, data: T): void {
 
 let twitchAccessToken: string | null = null;
 let twitchTokenExpiry = 0;
+let twitchTokenRequest: Promise<string> | null = null;
 
 function getIgdbCredentials() {
   const clientId =
@@ -417,40 +501,47 @@ async function getTwitchToken(): Promise<string> {
     return twitchAccessToken;
   }
 
-  try {
-    const response = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(
-        clientId
-      )}&client_secret=${encodeURIComponent(
-        clientSecret
-      )}&grant_type=client_credentials`,
-      {
-        method: 'POST'
-      }
-    );
+  if (twitchTokenRequest) return twitchTokenRequest;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      throw new Error(
-        `Twitch OAuth error (${response.status}): ${errorText}`
+  twitchTokenRequest = (async () => {
+    try {
+      const response = await fetch(
+        `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(
+          clientId
+        )}&client_secret=${encodeURIComponent(
+          clientSecret
+        )}&grant_type=client_credentials`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(20_000)
+        }
       );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Twitch OAuth error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (typeof data.access_token !== 'string' || typeof data.expires_in !== 'number') {
+        throw new Error('Twitch OAuth returned an invalid token response.');
+      }
+
+      twitchAccessToken = data.access_token;
+      twitchTokenExpiry = Date.now() + data.expires_in * 1000 - 60_000;
+      return twitchAccessToken;
+    } catch (error) {
+      throw new Error(`IGDB: error obteniendo token de Twitch: ${error}`);
+    } finally {
+      twitchTokenRequest = null;
     }
+  })();
 
-    const data = await response.json();
-
-    twitchAccessToken = data.access_token;
-
-    twitchTokenExpiry =
-      Date.now() +
-      data.expires_in * 1000 -
-      60000;
-
-    return twitchAccessToken;
+  try {
+    return await twitchTokenRequest;
   } catch (error) {
-    throw new Error(
-      `IGDB: error obteniendo token de Twitch: ${error}`
-    );
+    if (error instanceof Error && error.message.startsWith('IGDB:')) throw error;
+    throw new Error(`IGDB: error obteniendo token de Twitch: ${error}`);
   }
 }
 
@@ -467,101 +558,145 @@ export class IgdbService {
     query: string,
     limit = 20
   ): Promise<Game[]> {
-    const trimmedQuery = query.trim().toLowerCase();
+    const result = await this.searchCatalog({
+      query,
+      genreIds: [],
+      platformIds: [],
+      sort: 'relevance',
+      page: 0,
+      limit: Math.max(1, Math.min(limit, 500))
+    });
+    return result.items;
+  }
 
-    if (!trimmedQuery) {
-      return this.getPopularGames(limit);
+  static async searchCatalog(options: GameSearchOptions): Promise<GameSearchResult> {
+    const query = options.query.trim();
+    const page = Math.max(0, Math.floor(options.page));
+    const limit = Math.max(1, Math.min(options.limit, 60));
+    const candidateLimit = Math.min(500, 150 + page * limit);
+    const normalizedQuery = normalizeSearchText(query).toLowerCase();
+    const cacheKey = `catalog:${JSON.stringify({
+      ...options,
+      query: normalizedQuery,
+      page,
+      limit
+    })}`;
+    const cached = cacheGet<GameSearchResult>(cacheKey);
+    if (cached) return cached;
+
+    const filters = [
+      `game_type = ${CORE_GAME_TYPES}`,
+      'version_parent = null',
+      'cover != null'
+    ];
+
+    const genreIds = [...new Set(options.genreIds.filter(id => Number.isSafeInteger(id) && id > 0))];
+    const platformIds = [...new Set(options.platformIds.filter(id => Number.isSafeInteger(id) && id > 0))];
+    if (genreIds.length) filters.push(`genres = (${genreIds.join(',')})`);
+    if (platformIds.length) filters.push(`platforms = (${platformIds.join(',')})`);
+
+    if (options.yearFrom && Number.isInteger(options.yearFrom)) {
+      filters.push(`first_release_date >= ${Date.UTC(options.yearFrom, 0, 1) / 1000}`);
+    }
+    if (options.yearTo && Number.isInteger(options.yearTo)) {
+      filters.push(`first_release_date < ${Date.UTC(options.yearTo + 1, 0, 1) / 1000}`);
+    }
+    if (typeof options.minRating === 'number' && options.minRating > 0) {
+      filters.push(`total_rating >= ${Math.min(100, Math.max(0, options.minRating))}`);
     }
 
-    const normalizedLimit = Math.max(
-      1,
-      Math.min(limit, 500)
-    );
+    const where = `where ${filters.join(' & ')};`;
+    const fields = `
+      fields
+        id,
+        name,
+        slug,
+        summary,
+        cover.url,
+        genres.name,
+        platforms.name,
+        first_release_date,
+        total_rating,
+        total_rating_count,
+        hypes,
+        follows,
+        game_type,
+        version_parent,
+        screenshots.url;
+    `;
 
-    const cacheKey =
-      `search:${trimmedQuery}:${normalizedLimit}`;
+    const token = await getTwitchToken();
+    const { clientId } = getIgdbCredentials();
+    const headers = {
+      'Client-ID': clientId,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'text/plain'
+    };
+    const escapedQuery = escapeIgdbString(query);
+    const primaryBody = `${query ? `search "${escapedQuery}";` : ''}${fields}${where}limit ${candidateLimit};`;
+    const primaryResponse = await fetchIgdb('https://api.igdb.com/v4/games', {
+      method: 'POST',
+      headers,
+      body: primaryBody
+    });
 
-    const cached =
-      cacheGet<Game[]>(cacheKey);
-
-    if (cached) {
-      return cached;
+    if (!primaryResponse.ok) {
+      throw new Error(`IGDB search failed (${primaryResponse.status}): ${await primaryResponse.text()}`);
     }
 
-    try {
-      const token =
-        await getTwitchToken();
-
-      const { clientId } =
-        getIgdbCredentials();
-
-      const response = await fetch(
-        'https://api.igdb.com/v4/games',
-        {
-          method: 'POST',
-          headers: {
-            'Client-ID': clientId,
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'text/plain'
-          },
-          body: `
-            search "${query}";
-            fields
-              id,
-              name,
-              slug,
-              summary,
-              cover.url,
-              genres.name,
-              platforms.name,
-              first_release_date,
-              total_rating,
-              total_rating_count,
-              screenshots.url;
-            where
-              category = 0 &
-              cover != null;
-            limit ${normalizedLimit};
-          `
-        }
-      );
-
-      if (!response.ok) {
-        const errorText =
-          await response.text();
-
-        throw new Error(
-          `IGDB search failed (${response.status}): ${errorText}`
-        );
+    const primaryData: unknown = await primaryResponse.json();
+    const candidates = new Map<number, any>();
+    if (Array.isArray(primaryData)) {
+      for (const item of primaryData) {
+        if (typeof item?.id === 'number') candidates.set(item.id, item);
       }
-
-      const apiData =
-        await response.json();
-
-      const mapped: Game[] =
-        Array.isArray(apiData)
-          ? apiData.map((item: any) =>
-              mapIgdbGame(item)
-            )
-          : [];
-
-      mapped.forEach((game) =>
-        db.createGame(game).catch((error) =>
-          console.error('❌ Error guardando juego en caché local:', error)
-        )
-      );
-
-      cacheSet(
-        cacheKey,
-        mapped
-      );
-
-      return mapped;
-    } catch (error) {
-      throw new Error(
-        `IGDB search request failed: ${error}`
-      );
     }
+
+    if (query && candidates.size < 30) {
+      const fallbackTerms = [...new Set([query, normalizeSearchText(query)])];
+      for (const term of fallbackTerms) {
+        const partialQuery = escapeIgdbString(term);
+        const fallbackBody = `${fields}where ${filters.join(' & ')} & name ~ *"${partialQuery}"*;limit ${candidateLimit};`;
+        const fallbackResponse = await fetchIgdb('https://api.igdb.com/v4/games', {
+          method: 'POST',
+          headers,
+          body: fallbackBody
+        });
+
+        if (!fallbackResponse.ok) {
+          throw new Error(`IGDB partial search failed (${fallbackResponse.status}): ${await fallbackResponse.text()}`);
+        }
+
+        const fallbackData: unknown = await fallbackResponse.json();
+        if (Array.isArray(fallbackData)) {
+          for (const item of fallbackData) {
+            if (typeof item?.id === 'number') candidates.set(item.id, item);
+          }
+        }
+      }
+    }
+
+    let games = [...candidates.values()].map((item) => mapIgdbGame(item));
+    if (options.sort === 'newest') {
+      games.sort((a, b) => Date.parse(b.releaseDate || '') - Date.parse(a.releaseDate || ''));
+    } else if (options.sort === 'rating') {
+      games.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.popularity || 0) - (a.popularity || 0));
+    } else if (options.sort === 'popularity') {
+      games.sort((a, b) => (b.popularity || 0) - (a.popularity || 0) || (b.rating || 0) - (a.rating || 0));
+    } else if (options.sort === 'name') {
+      games.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    } else if (!query) {
+      games.sort((a, b) => (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0));
+    }
+
+    const start = page * limit;
+    const result: GameSearchResult = {
+      items: games.slice(start, start + limit),
+      page,
+      hasMore: games.length > start + limit || (candidateLimit < 500 && candidates.size >= candidateLimit)
+    };
+    cacheSet(cacheKey, result, SEARCH_CACHE_TTL_MS);
+    return result;
   }
 
   // ==================================================
@@ -613,7 +748,8 @@ export class IgdbService {
             total_rating_count,
             screenshots.url;
           where
-            category = 0 &
+            game_type = ${CORE_GAME_TYPES} &
+            version_parent = null &
             total_rating != null &
             total_rating_count > 25 &
             total_rating >= 65 &
@@ -635,7 +771,8 @@ export class IgdbService {
             total_rating_count,
             screenshots.url;
           where
-            category = 0 &
+            game_type = ${CORE_GAME_TYPES} &
+            version_parent = null &
             total_rating != null &
             total_rating_count > 25 &
             cover != null;
@@ -656,7 +793,8 @@ export class IgdbService {
             total_rating_count,
             screenshots.url;
           where
-            category = 0 &
+            game_type = ${CORE_GAME_TYPES} &
+            version_parent = null &
             total_rating != null &
             total_rating_count > 25 &
             cover != null;
@@ -669,7 +807,7 @@ export class IgdbService {
       let lastError = '';
 
       for (const query of candidateQueries) {
-        const response = await fetch(
+        const response = await fetchIgdb(
           'https://api.igdb.com/v4/games',
           {
             method: 'POST',
@@ -712,12 +850,6 @@ export class IgdbService {
             normalizedLimit
           );
 
-        mapped.forEach((game) =>
-          db.createGame(game).catch((error) =>
-            console.error('❌ Error guardando juego en caché local:', error)
-          )
-        );
-
         cacheSet(
           cacheKey,
           mapped
@@ -741,7 +873,7 @@ export class IgdbService {
         new Map<number, any>();
 
       for (const term of fallbackSearchQueries) {
-        const response = await fetch(
+        const response = await fetchIgdb(
           'https://api.igdb.com/v4/games',
           {
             method: 'POST',
@@ -764,7 +896,8 @@ export class IgdbService {
                 total_rating,
                 total_rating_count;
               where
-                category = 0 &
+                game_type = ${CORE_GAME_TYPES} &
+                version_parent = null &
                 total_rating != null &
                 total_rating_count > 25 &
                 cover != null;
@@ -815,12 +948,6 @@ export class IgdbService {
             ),
             normalizedLimit
           );
-
-        fallbackMapped.forEach((game) =>
-          db.createGame(game).catch((error) =>
-            console.error('❌ Error guardando juego en caché local:', error)
-          )
-        );
 
         cacheSet(
           cacheKey,
@@ -906,7 +1033,8 @@ export class IgdbService {
             total_rating_count,
             screenshots.url;
           where
-            category = 0 &
+            game_type = ${CORE_GAME_TYPES} &
+            version_parent = null &
             first_release_date != null &
             first_release_date >= ${recentWindowUnix} &
             first_release_date <= ${nowUnix} &
@@ -928,7 +1056,8 @@ export class IgdbService {
             total_rating_count,
             screenshots.url;
           where
-            category = 0 &
+            game_type = ${CORE_GAME_TYPES} &
+            version_parent = null &
             first_release_date != null &
             first_release_date >= ${recentWindowUnix} &
             first_release_date <= ${nowUnix} &
@@ -992,7 +1121,7 @@ export class IgdbService {
       };
 
       for (const query of candidateQueries) {
-        const response = await fetch(
+        const response = await fetchIgdb(
           'https://api.igdb.com/v4/games',
           {
             method: 'POST',
@@ -1020,12 +1149,6 @@ export class IgdbService {
             normalizeRecentResults(data);
 
           if (mapped.length > 0) {
-            mapped.forEach((game) =>
-              db.createGame(game).catch((error) =>
-                console.error('❌ Error guardando juego en caché local:', error)
-              )
-            );
-
             cacheSet(
               cacheKey,
               mapped
@@ -1047,6 +1170,316 @@ export class IgdbService {
         normalizedLimit
       );
     }
+  }
+
+  static async getPopularNow(limit = 30): Promise<Game[]> {
+    const cacheKey = `popular-now:${limit}`;
+    const cached = cacheGet<Game[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const token = await getTwitchToken();
+      const { clientId } = getIgdbCredentials();
+      const headers = {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain'
+      };
+
+      let popularityTypes = cacheGet<IgdbCatalogOption[]>('igdb:popularity-types');
+      if (!popularityTypes) {
+        const typeResponse = await fetchIgdb('https://api.igdb.com/v4/popularity_types', {
+          method: 'POST',
+          headers,
+          body: 'fields id,name; limit 100;'
+        });
+        if (!typeResponse.ok) {
+          throw new Error(`IGDB popularity types failed (${typeResponse.status}): ${await typeResponse.text()}`);
+        }
+        const typeData: unknown = await typeResponse.json();
+        if (!Array.isArray(typeData)) throw new Error('IGDB popularity types response was not a list.');
+        popularityTypes = typeData
+          .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string')
+          .map(item => ({ id: item.id as number, name: item.name, slug: makeSlug(item.name) }));
+        cacheSet('igdb:popularity-types', popularityTypes, TAXONOMY_CACHE_TTL_MS);
+      }
+
+      const relevantTypes = popularityTypes.filter(type =>
+        ['visits', 'want-to-play', 'playing'].includes(type.slug)
+      );
+      if (!relevantTypes.length) return this.getPopularGames(limit);
+
+      const since = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+      const primitiveResponse = await fetchIgdb('https://api.igdb.com/v4/popularity_primitives', {
+        method: 'POST',
+        headers,
+        body: `
+          fields game_id, popularity_type, value, calculated_at;
+          where popularity_type = (${relevantTypes.map(type => type.id).join(',')})
+            & calculated_at >= ${since};
+          sort value desc;
+          limit 500;
+        `
+      });
+      if (!primitiveResponse.ok) {
+        throw new Error(`IGDB popularity primitives failed (${primitiveResponse.status}): ${await primitiveResponse.text()}`);
+      }
+
+      const primitiveData: unknown = await primitiveResponse.json();
+      if (!Array.isArray(primitiveData)) throw new Error('IGDB popularity response was not a list.');
+      const scores = new Map<number, Map<number, number>>();
+      for (const primitive of primitiveData) {
+        if (!Number.isSafeInteger(primitive?.game_id) || !Number.isSafeInteger(primitive?.popularity_type)
+          || typeof primitive?.value !== 'number') continue;
+        const gameTypes = scores.get(primitive.game_id) || new Map<number, number>();
+        gameTypes.set(
+          primitive.popularity_type,
+          Math.max(gameTypes.get(primitive.popularity_type) || 0, primitive.value)
+        );
+        scores.set(primitive.game_id, gameTypes);
+      }
+
+      const gameIds = [...scores.keys()];
+      if (!gameIds.length) return this.getPopularGames(limit);
+      const gamesResponse = await fetchIgdb('https://api.igdb.com/v4/games', {
+        method: 'POST',
+        headers,
+        body: `
+          fields
+            id, name, slug, summary, cover.url, genres.name, platforms.name,
+            first_release_date, total_rating, total_rating_count, game_type,
+            version_parent, screenshots.url;
+          where id = (${gameIds.join(',')})
+            & game_type = ${CORE_GAME_TYPES}
+            & version_parent = null
+            & cover != null;
+          limit 500;
+        `
+      });
+      if (!gamesResponse.ok) {
+        throw new Error(`IGDB popular games failed (${gamesResponse.status}): ${await gamesResponse.text()}`);
+      }
+
+      const gamesData: unknown = await gamesResponse.json();
+      if (!Array.isArray(gamesData)) throw new Error('IGDB popular games response was not a list.');
+      const games = gamesData
+        .map((item) => ({
+          game: mapIgdbGame(item),
+          score: [...(scores.get(item.id)?.values() || [])].reduce((total, value) => total + value, 0)
+        }))
+        .sort((a, b) => b.score - a.score || (b.game.rating || 0) - (a.game.rating || 0))
+        .slice(0, limit)
+        .map(({ game }) => game);
+
+      cacheSet(cacheKey, games, 2 * 60 * 60 * 1000);
+      return games.length ? games : this.getPopularGames(limit);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('(429)')) throw error;
+      console.error('IGDB popularity primitives unavailable; using rating-count ranking:', error);
+      return this.getPopularGames(limit);
+    }
+  }
+
+  static async getDiscoverHome(): Promise<DiscoverHome> {
+    const cacheKey = 'discover:home';
+    const cached = cacheGet<DiscoverHome>(cacheKey);
+    if (cached) return cached;
+
+    const token = await getTwitchToken();
+    const { clientId } = getIgdbCredentials();
+    const headers = {
+      'Client-ID': clientId,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'text/plain'
+    };
+    const now = Math.floor(Date.now() / 1000);
+    const day = 60 * 60 * 24;
+    const commonFields = `
+      fields
+        id,
+        name,
+        slug,
+        summary,
+        cover.url,
+        genres.name,
+        platforms.name,
+        first_release_date,
+        total_rating,
+        total_rating_count,
+        hypes,
+        follows,
+        game_type,
+        version_parent,
+        screenshots.url;
+    `;
+    const commonWhere = `game_type = ${CORE_GAME_TYPES} & version_parent = null & cover != null`;
+
+    const requestGames = async (key: string, body: string): Promise<any[]> => {
+      const requestCacheKey = `discover:${key}`;
+      const requestCached = cacheGet<any[]>(requestCacheKey);
+      if (requestCached) return requestCached;
+
+      const response = await fetchIgdb('https://api.igdb.com/v4/games', {
+        method: 'POST',
+        headers,
+        body
+      });
+      if (!response.ok) {
+        throw new Error(`IGDB ${key} request failed (${response.status}): ${await response.text()}`);
+      }
+
+      const data: unknown = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error(`IGDB ${key} response was not a list.`);
+      }
+      cacheSet(requestCacheKey, data, 2 * 60 * 60 * 1000);
+      return data;
+    };
+
+    const [releaseData, upcomingData, popular, topRatedData] = await Promise.all([
+      requestGames('releases', `
+        ${commonFields}
+        where ${commonWhere}
+          & first_release_date >= ${now - 90 * day}
+          & first_release_date <= ${now};
+        sort first_release_date desc;
+        limit 120;
+      `),
+      requestGames('upcoming', `
+        ${commonFields}
+        where ${commonWhere}
+          & first_release_date > ${now}
+          & first_release_date <= ${now + 120 * day};
+        sort first_release_date asc;
+        limit 120;
+      `),
+      this.getPopularNow(30),
+      requestGames('top-rated', `
+        ${commonFields}
+        where ${commonWhere}
+          & first_release_date >= ${now - 365 * day}
+          & first_release_date <= ${now}
+          & total_rating >= 70
+          & total_rating_count >= 10;
+        sort total_rating desc;
+        limit 120;
+      `)
+    ]);
+
+    const scoreInterest = (item: any, upcoming: boolean): number => {
+      const ratingCount = toFiniteNumber(item.total_rating_count);
+      const hypes = toFiniteNumber(item.hypes);
+      const follows = toFiniteNumber(item.follows);
+      const rating = toFiniteNumber(item.total_rating);
+      const releaseDate = toFiniteNumber(item.first_release_date);
+      const daysFromNow = (releaseDate - now) / day;
+      const recency = upcoming
+        ? Math.max(0, 1 - daysFromNow / 120)
+        : Math.max(0, 1 - Math.abs(daysFromNow) / 90);
+
+      return Math.log1p(ratingCount) * 2
+        + Math.log1p(hypes + follows) * 4
+        + rating / 25
+        + recency * 5;
+    };
+    const rank = (items: any[], upcoming: boolean): Game[] => items
+      .filter(item => toFiniteNumber(item.total_rating_count) >= 5
+        || toFiniteNumber(item.hypes) > 0
+        || toFiniteNumber(item.follows) > 0)
+      .sort((a, b) => scoreInterest(b, upcoming) - scoreInterest(a, upcoming))
+      .slice(0, 24)
+      .map(mapIgdbGame);
+
+    const home: DiscoverHome = {
+      newReleases: rank(releaseData, false),
+      upcoming: rank(upcomingData, true),
+      popular,
+      topRated: topRatedData.map(mapIgdbGame).slice(0, 24)
+    };
+    cacheSet(cacheKey, home, 2 * 60 * 60 * 1000);
+    return home;
+  }
+
+  static async getGenreOptions(): Promise<IgdbCatalogOption[]> {
+    const cacheKey = 'igdb:genres';
+    const cached = cacheGet<IgdbCatalogOption[]>(cacheKey);
+    if (cached) return cached;
+
+    const token = await getTwitchToken();
+    const { clientId } = getIgdbCredentials();
+    const response = await fetchIgdb('https://api.igdb.com/v4/genres', {
+      method: 'POST',
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain'
+      },
+      body: 'fields id,name; sort name asc; limit 500;'
+    });
+    if (!response.ok) {
+      throw new Error(`IGDB genres request failed (${response.status}): ${await response.text()}`);
+    }
+
+    const data: unknown = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('IGDB genres response was not a list.');
+    }
+    const options = data
+      .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string')
+      .map(item => ({ id: item.id as number, name: item.name.trim(), slug: item.slug || makeSlug(item.name) }))
+      .filter(item => item.name)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    cacheSet(cacheKey, options, TAXONOMY_CACHE_TTL_MS);
+    return options;
+  }
+
+  static async getPlatformOptions(): Promise<IgdbCatalogOption[]> {
+    const cacheKey = 'igdb:platforms';
+    const cached = cacheGet<IgdbCatalogOption[]>(cacheKey);
+    if (cached) return cached;
+
+    const token = await getTwitchToken();
+    const { clientId } = getIgdbCredentials();
+    const response = await fetchIgdb('https://api.igdb.com/v4/platforms', {
+      method: 'POST',
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain'
+      },
+      body: 'fields id,name,slug; sort name asc; limit 500;'
+    });
+    if (!response.ok) {
+      throw new Error(`IGDB platforms request failed (${response.status}): ${await response.text()}`);
+    }
+
+    const data: unknown = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('IGDB platforms response was not a list.');
+    }
+    const platforms = data
+      .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string')
+      .map(item => ({ id: item.id as number, name: item.name.trim(), slug: item.slug || makeSlug(item.name) }));
+    const normalize = (value: string) => normalizeSearchText(value).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const curated: Array<{ name: string; aliases: string[] }> = [
+      { name: 'PC', aliases: ['pc', 'pc microsoft windows', 'windows'] },
+      { name: 'Mac', aliases: ['mac', 'macintosh', 'macos'] },
+      { name: 'PlayStation 5', aliases: ['playstation 5', 'ps5'] },
+      { name: 'PlayStation 4', aliases: ['playstation 4', 'ps4'] },
+      { name: 'Xbox Series X|S', aliases: ['xbox series x s', 'xbox series x|s', 'xbox series x'] },
+      { name: 'Xbox One', aliases: ['xbox one'] },
+      { name: 'Nintendo Switch', aliases: ['nintendo switch', 'switch'] },
+      { name: 'iOS', aliases: ['ios'] },
+      { name: 'Android', aliases: ['android'] }
+    ];
+    const options = curated.flatMap(({ name, aliases }) => {
+      const match = platforms.find(platform => aliases.some(alias =>
+        normalize(platform.name) === normalize(alias) || normalize(platform.slug) === normalize(alias)
+      ));
+      return match ? [{ ...match, name }] : [];
+    });
+    cacheSet(cacheKey, options, TAXONOMY_CACHE_TTL_MS);
+    return options;
   }
 
   // ==================================================
@@ -1078,7 +1511,7 @@ export class IgdbService {
       const { clientId } =
         getIgdbCredentials();
 
-      const response = await fetch(
+      const response = await fetchIgdb(
         'https://api.igdb.com/v4/genres',
         {
           method: 'POST',
@@ -1236,7 +1669,7 @@ export class IgdbService {
       const { clientId } =
         getIgdbCredentials();
 
-      const response = await fetch(
+      const response = await fetchIgdb(
         'https://api.igdb.com/v4/games',
         {
           method: 'POST',
@@ -1339,7 +1772,7 @@ async function getGameTimeToBeat(
   clientId: string
 ): Promise<Game['timeToBeat']> {
   try {
-    const response = await fetch(
+    const response = await fetchIgdb(
       'https://api.igdb.com/v4/game_time_to_beats',
       {
         method: 'POST',

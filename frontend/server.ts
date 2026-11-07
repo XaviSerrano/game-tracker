@@ -575,60 +575,101 @@ app.get('/api/social/following/:userId', async (req, res) => {
 
 // --- ENDPOINTS DE VIDEOJUEGOS ---
 
-// Descubrimiento de juegos desde IGDB
-app.get('/api/games', async (req, res) => {
+const parseIdList = (value: unknown): number[] | null => {
+  if (typeof value !== 'string' || !value.trim()) return [];
+  const ids = value.split(',').map(part => Number.parseInt(part, 10));
+  return ids.every(id => Number.isSafeInteger(id) && id > 0) ? [...new Set(ids)] : null;
+};
+
+app.get('/api/discover/home', async (_req, res) => {
   try {
-    const search = (req.query.search as string) || '';
-    const genre = (req.query.genre as string) || '';
-    const platform = (req.query.platform as string) || '';
-    const sort = (req.query.sort as string) || 'popularity'; // rating | popularity | name | newest
-    const requestedLimit = Number.parseInt((req.query.limit as string) || '20', 10);
-    const requestedOffset = Number.parseInt((req.query.offset as string) || '0', 10);
-    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 60) : 20;
-    const offset = Number.isFinite(requestedOffset) && requestedOffset >= 0 ? requestedOffset : 0;
-    const hasSearch = search.trim().length > 0;
-
-    const fetchLimit = Math.max(limit + offset + 20, hasSearch ? 50 : 80);
-    let games = hasSearch
-      ? await IgdbService.searchGames(search, fetchLimit)
-      : (sort === 'newest'
-        ? await IgdbService.getRecentGames(fetchLimit)
-        : await IgdbService.getPopularGames(fetchLimit));
-
-    if (genre) {
-      games = games.filter(g => g.genres.some(gen => gen.toLowerCase() === genre.toLowerCase()));
-    }
-    if (platform) {
-      games = games.filter(g => g.platforms.some(p => p.toLowerCase() === platform.toLowerCase()));
-    }
-
-    if (sort === 'rating') {
-      games = [...games].sort((a, b) => {
-        const ratingDifference = (b.rating || 0) - (a.rating || 0);
-        if (ratingDifference !== 0) return ratingDifference;
-
-        return (b.popularity || 0) - (a.popularity || 0);
-      });
-    } else if (sort === 'popularity' && hasSearch) {
-      games = [...games].sort((a, b) => (b.popularity || b.rating || 0) - (a.popularity || a.rating || 0));
-    } else if (sort === 'name') {
-      games = [...games].sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sort === 'newest') {
-      games = [...games].sort((a, b) => {
-        const bTime = Date.parse(b.releaseDate);
-        const aTime = Date.parse(a.releaseDate);
-        return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
-      });
-    }
-
-    const page = games.slice(offset, offset + limit);
-    res.json(page);
+    res.json(await IgdbService.getDiscoverHome());
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('Error loading Discover home:', err);
+    const limited = typeof err?.message === 'string' && err.message.includes('(429)');
+    res.status(limited ? 429 : 502).json({
+      error: limited ? 'IGDB está temporalmente saturada. Inténtalo de nuevo en unos segundos.' : 'No se pudo cargar el catálogo de IGDB.'
+    });
   }
 });
 
-// Buscar en IGDB (con fallback a local)
+app.get('/api/games/search', async (req, res) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const genreIds = parseIdList(req.query.genres);
+  const platformIds = parseIdList(req.query.platforms);
+  const sort = typeof req.query.sort === 'string' ? req.query.sort : 'relevance';
+  const page = Number.parseInt(typeof req.query.page === 'string' ? req.query.page : '0', 10);
+  const limit = Number.parseInt(typeof req.query.limit === 'string' ? req.query.limit : '20', 10);
+  const yearFrom = req.query.yearFrom === undefined ? undefined : Number.parseInt(String(req.query.yearFrom), 10);
+  const yearTo = req.query.yearTo === undefined ? undefined : Number.parseInt(String(req.query.yearTo), 10);
+  const minRating = req.query.minRating === undefined ? undefined : Number.parseFloat(String(req.query.minRating));
+  const allowedSorts = ['relevance', 'newest', 'rating', 'popularity'];
+
+  if (!genreIds || !platformIds) {
+    return res.status(400).json({ error: 'Los filtros de género y plataforma deben ser IDs numéricos.' });
+  }
+  if (!allowedSorts.includes(sort)) {
+    return res.status(400).json({ error: 'Orden de búsqueda no válido.' });
+  }
+  if (!Number.isInteger(page) || page < 0 || !Number.isInteger(limit) || limit < 1 || limit > 60) {
+    return res.status(400).json({ error: 'La página o el límite de resultados no son válidos.' });
+  }
+  if ((yearFrom !== undefined && (!Number.isInteger(yearFrom) || yearFrom < 1950 || yearFrom > 2100))
+    || (yearTo !== undefined && (!Number.isInteger(yearTo) || yearTo < 1950 || yearTo > 2100))
+    || (yearFrom !== undefined && yearTo !== undefined && yearFrom > yearTo)) {
+    return res.status(400).json({ error: 'El rango de años no es válido.' });
+  }
+  if (minRating !== undefined && (!Number.isFinite(minRating) || minRating < 0 || minRating > 100)) {
+    return res.status(400).json({ error: 'La valoración mínima debe estar entre 0 y 100.' });
+  }
+
+  try {
+    const result = await IgdbService.searchCatalog({
+      query,
+      genreIds,
+      platformIds,
+      yearFrom,
+      yearTo,
+      minRating,
+      sort: sort as 'relevance' | 'newest' | 'rating' | 'popularity',
+      page,
+      limit
+    });
+    res.json(result);
+  } catch (err: any) {
+    console.error('Error searching IGDB catalog:', err);
+    const limited = typeof err?.message === 'string' && err.message.includes('(429)');
+    res.status(limited ? 429 : 502).json({
+      error: limited ? 'IGDB está temporalmente saturada. Inténtalo de nuevo en unos segundos.' : 'No se pudo consultar el catálogo de IGDB.'
+    });
+  }
+});
+
+app.get('/api/games', async (req, res) => {
+  const search = typeof req.query.search === 'string' ? req.query.search : '';
+  const genreIds = parseIdList(req.query.genre);
+  const platformIds = parseIdList(req.query.platform);
+  const limit = Math.min(60, Math.max(1, Number.parseInt(String(req.query.limit || '20'), 10) || 20));
+  const offset = Math.max(0, Number.parseInt(String(req.query.offset || '0'), 10) || 0);
+  try {
+    const result = await IgdbService.searchCatalog({
+      query: search,
+      genreIds: genreIds || [],
+      platformIds: platformIds || [],
+      sort: req.query.sort === 'newest' ? 'newest'
+        : req.query.sort === 'rating' ? 'rating'
+          : req.query.sort === 'name' ? 'name'
+            : 'popularity',
+      page: Math.floor(offset / limit),
+      limit
+    });
+    res.json(result.items);
+  } catch (err: any) {
+    console.error('Error loading game catalog:', err);
+    res.status(502).json({ error: 'No se pudo consultar el catálogo de IGDB.' });
+  }
+});
+
 app.get('/api/games/igdb/search', async (req, res) => {
   const q = (req.query.q as string) || '';
   try {
@@ -639,7 +680,24 @@ app.get('/api/games/igdb/search', async (req, res) => {
   }
 });
 
-// Backend: Obtener todos los géneros únicos
+app.get('/api/igdb/genres', async (_req, res) => {
+  try {
+    res.json(await IgdbService.getGenreOptions());
+  } catch (err) {
+    console.error('Error loading IGDB genres:', err);
+    res.status(502).json({ error: 'No se pudieron cargar los géneros de IGDB.' });
+  }
+});
+
+app.get('/api/igdb/platforms', async (_req, res) => {
+  try {
+    res.json(await IgdbService.getPlatformOptions());
+  } catch (err) {
+    console.error('Error loading IGDB platforms:', err);
+    res.status(502).json({ error: 'No se pudieron cargar las plataformas de IGDB.' });
+  }
+});
+
 app.get('/api/games/genres', async (req, res) => {
   try {
     const genres = await IgdbService.getGenres();
