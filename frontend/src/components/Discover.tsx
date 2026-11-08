@@ -73,7 +73,7 @@ const makeSearchParams = (filters: DiscoverFilters) => {
 };
 
 const GameSkeletons: React.FC<{ count?: number }> = ({ count = 8 }) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+  <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
     {Array.from({ length: count }, (_, index) => (
       <div key={index} className="animate-pulse rounded-xl border border-slate-850 bg-[#0f121d] p-2.5">
         <div className="aspect-[3/4] rounded-lg bg-slate-800" />
@@ -554,7 +554,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           </div>
           {loadingHome && <GameSkeletons count={15} />}
           {popularGames.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+            <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {popularGames.map(renderGameCard)}
             </div>
           )}
@@ -619,7 +619,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           ) : games.length > 0 ? (
             <>
               <p aria-live="polite" className="text-xs text-slate-500">{games.length} resultados cargados</p>
-              <div className={`grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 ${loading ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 transition-opacity sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ${loading ? 'opacity-60' : 'opacity-100'}`}>
                 {games.map(renderGameCard)}
               </div>
               {hasMore && (

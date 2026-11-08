@@ -168,7 +168,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
         <button
           key={tab.value}
           onClick={() => setActiveTab(tab.value)}
-          className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition border ${
+          className={`flex-shrink-0 px-4 py-2 mr-4 rounded-xl text-xs font-semibold cursor-pointer transition border ${
             activeTab === tab.value
               ? 'bg-blue-600 text-white border-blue-500Shadow'
               : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'
@@ -182,7 +182,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
                 : 'text-slate-600'
             }`}
           >
-            ({getStatusCount(tab.value)})
+            {/* ({getStatusCount(tab.value)}) */}
           </span>
         </button>
       ))}
@@ -257,7 +257,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
       {/* Grid listing */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="animate-pulse bg-[#0f121d]/40 border border-slate-850 p-3 rounded-xl space-y-2">
               <div className="aspect-[3/4] bg-slate-800 rounded-lg w-full"></div>
@@ -282,7 +282,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filteredLib.map(item => (
             <GameCard
               key={item.gameId}

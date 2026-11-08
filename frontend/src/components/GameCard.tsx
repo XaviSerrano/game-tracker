@@ -33,7 +33,6 @@ interface GameCardProps {
 export const GameCard: React.FC<GameCardProps> = ({
   game,
   userGameStatus,
-  userGameRating,
   userGameHours,
   userGameNotes,
   isInWishlist,
@@ -150,33 +149,12 @@ export const GameCard: React.FC<GameCardProps> = ({
         )}
 
         {/* Rating */}
-        {(game.rating || userGameRating) && (
+        {game.rating ? (
           <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-            {userGameRating && userGameRating > 0 ? (
-              <>
-                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-
-                <span className="text-yellow-400">
-                  {userGameRating}
-                </span>
-
-                <span className="text-slate-500">/</span>
-
-                <span className="text-slate-400">
-                  {game.rating}
-                </span>
-              </>
-            ) : game.rating ? (
-              <>
-                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-
-                <span className="text-yellow-400">
-                  {game.rating}
-                </span>
-              </>
-            ) : null}
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-yellow-400">{game.rating}</span>
           </div>
-        )}
+        ) : null}
 
         {/* Library status */}
         {showFullLibraryCard && (

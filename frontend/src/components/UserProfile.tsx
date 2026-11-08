@@ -363,7 +363,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             Esta lista todavía no contiene juegos.
           </p>
         ) : (
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="mx-auto mt-6 grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {selectedList.games.map((game) => (
               <button
                 key={game.igdbId}

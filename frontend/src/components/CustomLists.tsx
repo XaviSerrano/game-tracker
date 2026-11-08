@@ -200,7 +200,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">Selecciona juegos ({selectedGameIds.length})</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 bg-[#07090e] border border-slate-800 rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 bg-[#07090e] border border-slate-800 rounded-xl">
                 {catalogGames.map(game => {
                   const active = selectedGameIds.includes(game.igdbId);
                   return (
@@ -284,7 +284,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                 <p className="text-xs">Usa "Detalles de juego" para agregar títulos a esta lista.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {selectedList.games.map(game => (
                 <div
                   key={game.igdbId}

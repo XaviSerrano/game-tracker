@@ -18,6 +18,10 @@ El formato es simple y humano: agrupado por fecha, con resumen funcional y tecni
 
 ### Cambiado
 
+- Las cuadrículas de juegos se adaptan progresivamente al ancho de pantalla y
+  muestran una tarjeta centrada y más compacta por fila en móviles.
+- Las tarjetas muestran solo la valoración de IGDB; la valoración personal
+  sigue disponible en el detalle del juego.
 - Las tarjetas de Descubrir permiten añadir y quitar juegos de la wishlist
   con el marcador, sin abrir el detalle.
 - Los filtros de Descubrir ofrecen todos los géneros y plataformas de IGDB
