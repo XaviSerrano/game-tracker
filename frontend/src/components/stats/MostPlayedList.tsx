@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, Flame } from 'lucide-react';
 import { StatsGameSummary } from './types.ts';
+import { useLanguage } from '../../i18n.tsx';
 
 interface MostPlayedListProps {
   games: StatsGameSummary[];
@@ -8,17 +9,18 @@ interface MostPlayedListProps {
 }
 
 export const MostPlayedList: React.FC<MostPlayedListProps> = ({ games, onSelectGame }) => {
+  const { t } = useLanguage();
   const maxHours = games.length > 0 ? games[0].hoursPlayed : 0;
 
   return (
     <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
       <h3 className="font-semibold text-slate-300 font-display text-sm mb-4 flex items-center gap-1.5">
-        <Flame className="w-4.5 h-4.5 text-orange-400" /> Mis juegos más jugados
+        <Flame className="w-4.5 h-4.5 text-orange-400" /> {t('Mis juegos más jugados')}
       </h3>
 
       {games.length === 0 ? (
         <p className="text-xs text-slate-500 text-center py-6">
-          Registra horas de juego en tu biblioteca para ver aquí tu ranking personal.
+          {t('Registra horas de juego en tu biblioteca para ver aquí tu ranking personal.')}
         </p>
       ) : (
         <div className="space-y-2.5">

@@ -30,6 +30,7 @@ import {
   BookmarkPlus
 } from 'lucide-react';
 import { Breadcrumbs } from './Breadcrumbs.tsx';
+import { useLanguage } from '../i18n.tsx';
 
 interface GameDetailsProps {
   gameId: number;
@@ -213,6 +214,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   breadcrumbParentLabel,
   onGoBackToParent
 }) => {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'en' ? 'en-US' : 'es-ES';
   const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [userGame, setUserGame] = useState<UserGame | null>(null);
@@ -241,7 +244,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
-  const selectedProgressOption = PROGRESS_PHASE_OPTIONS.find(option => option.value === status) || PROGRESS_PHASE_OPTIONS[0];
+  const progressPhaseOptions = PROGRESS_PHASE_OPTIONS.map(option => ({
+    ...option,
+    label: t(option.label),
+    helper: t(option.helper)
+  }));
+  const selectedProgressOption = progressPhaseOptions.find(option => option.value === status) || progressPhaseOptions[0];
   // Screenshot gallery
   const [selectedScreenshot, setSelectedScreenshot] = useState(0);
   const [fullscreenScreenshot, setFullscreenScreenshot] = useState<number | null>(null);
@@ -270,7 +278,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       const gameRes = await fetch(`/api/games/${gameId}`);
       if (!gameRes.ok) {
         if (gameRes.status === 404) {
-          setErrorMessage('Este juego no existe o ya no está disponible.');
+          setErrorMessage(t('Este juego no existe o ya no está disponible.'));
         }
         throw new Error(`Failed to load game (${gameRes.status})`);
       }
@@ -366,7 +374,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   }, [fullscreenScreenshot, screenshots.length]);
 
 
-  const saveTracking = async (nextStatus: GameStatus, successMessage = '¡Biblioteca actualizada con éxito!') => {
+  const saveTracking = async (nextStatus: GameStatus, successMessage = t('¡Biblioteca actualizada con éxito!')) => {
     if (requireSession()) return;
     setMessage('');
     try {
@@ -394,7 +402,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       setMessage(successMessage);
       setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
+      setMessage(`Error: ${t(err.message)}`);
     }
   };
 
@@ -427,7 +435,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           setNotes('');
           setStartedAt('');
           setCompletedAt('');
-          setMessage('Juego removido de tu wishlist.');
+          setMessage(t('Juego removido de tu wishlist.'));
           setTimeout(() => setMessage(''), 3000);
         }
       } else {
@@ -454,18 +462,18 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         setIsInWishlist(true);
         setUserGame(saveData);
         setStatus(saveData.status);
-        setMessage('¡Juego añadido a tu wishlist!');
+        setMessage(t('¡Juego añadido a tu wishlist!'));
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err: any) {
-      setMessage(`Error: ${err.message}`);
+      setMessage(`Error: ${t(err.message)}`);
     } finally {
       setSavingWishlist(false);
     }
   };
 
   const handleDeleteTracking = async () => {
-    if (!window.confirm('¿Seguro que deseas eliminar este juego de tu biblioteca?')) return;
+    if (!window.confirm(t('¿Seguro que deseas eliminar este juego de tu biblioteca?'))) return;
     try {
       const res = await fetch(`/api/library/${gameId}`, {
         method: 'DELETE',
@@ -482,7 +490,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         setNotes('');
         setStartedAt('');
         setCompletedAt('');
-        setMessage('Juego eliminado de tu biblioteca.');
+        setMessage(t('Juego eliminado de tu biblioteca.'));
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
@@ -710,11 +718,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     return (
       <div className="text-center py-12 space-y-4 selection:bg-blue-600 selection:text-white">
         <p className="text-lg font-semibold text-white">
-          {errorMessage || 'No pudimos recopilar los datos de este videojuego.'}
+          {t(errorMessage || 'No pudimos recopilar los datos de este videojuego.')}
         </p>
-        <p className="text-sm text-slate-500">Comprueba la dirección o vuelve a descubrir otros juegos.</p>
+        <p className="text-sm text-slate-500">{t('Comprueba la dirección o vuelve a descubrir otros juegos.')}</p>
         <button onClick={onBack} className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white">
-          Volver al inicio
+          {t('Volver al inicio')}
         </button>
       </div>
     );
@@ -724,10 +732,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
       <Breadcrumbs
         items={
-          breadcrumbParentLabel === 'Inicio'
+          breadcrumbParentLabel === t('Inicio')
             ? [
                 {
-                  label: 'Inicio',
+                  label: t('Inicio'),
                   onClick: onGoHome
                 },
                 {
@@ -736,7 +744,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               ]
             : [
                 {
-                  label: 'Inicio',
+                  label: t('Inicio'),
                   onClick: onGoHome
                 },
                 {
@@ -756,7 +764,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white mb-2 transition cursor-pointer group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition" />
-        Volver a {breadcrumbParentLabel}
+        {t('Volver a')} {breadcrumbParentLabel}
       </button>
 
       {/* Game Header panel */}
@@ -773,7 +781,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           <div className="flex-1 min-w-0 space-y-4 text-center md:text-left">
             <div>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-1 text-slate-500 text-xs">
-                <span>{game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Desconocido'}</span>
+                <span>{game.releaseDate ? new Date(game.releaseDate).getFullYear() : t('Desconocido')}</span>
               </div>
               <h1 className="text-2xl md:text-4xl font-bold font-display text-white tracking-tight mt-1.5">
                 {game.name}
@@ -799,22 +807,22 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>
-                  <p className="mt-1 text-[11px] text-slate-500">Estimación orientativa de IGDB</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">{t('Tiempo de juego')}</p>
+                  <p className="mt-1 text-[11px] text-slate-500">{t('Estimación orientativa de IGDB')}</p>
                 </div>
                 <Clock className="h-5 w-5 text-cyan-300/80" />
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.07] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Historia</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{t('Historia')}</p>
                   <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.hastily ?? '--'}{game.timeToBeat?.hastily != null && <span className="ml-1 text-xs font-semibold text-blue-200/70">h</span>}</p>
                 </div>
                 <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Normal</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">{t('Normal')}</p>
                   <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.normally ?? '--'}{game.timeToBeat?.normally != null && <span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span>}</p>
                 </div>
                 <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.09] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Completista</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">{t('Completista')}</p>
                   <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.completely ?? '--'}{game.timeToBeat?.completely != null && <span className="ml-1 text-xs font-semibold text-violet-200/70">h</span>}</p>
                 </div>
               </div>
@@ -822,7 +830,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
             {game.platforms.length > 0 && (
               <div className="space-y-2 pt-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Plataformas</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Plataformas')}</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2">
                   {game.platforms.map(platform => {
                     const style = getPlatformStyle(platform);
@@ -867,14 +875,14 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-blue-400" />
-                Tú diario de Juego (Track)
+                {t('Tú diario de Juego (Track)')}
               </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   type="button"
                   onClick={handleToggleWishlist}
                   disabled={savingWishlist}
-                  title={isInWishlist ? 'Remover de Wishlist' : 'Añadir a Wishlist'}
+                  title={isInWishlist ? t('Remover de Wishlist') : t('Añadir a Wishlist')}
                   className={`p-2 rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
                     isInWishlist
                       ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-sm shadow-indigo-500/10'
@@ -890,7 +898,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     setListModalOpen(true);
                     await loadListMembership();
                   }}
-                  title="Añadir a lista personalizada"
+                  title={t('Añadir a lista personalizada')}
                   className="p-2 rounded-xl border border-slate-800 bg-[#07090e] text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-all cursor-pointer flex items-center justify-center"
                 >
                   <BookmarkPlus className="w-4 h-4" />
@@ -907,7 +915,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
             <form onSubmit={handleSaveTracking} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Fase de Progreso</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Fase de Progreso')}</label>
                 <div className="relative" ref={progressMenuRef}>
                   <button
                     type="button"
@@ -926,7 +934,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
                   {progressMenuOpen && (
                     <div className="absolute z-20 mt-2 w-full bg-[#07090e] border border-slate-800 rounded-xl p-1.5 shadow-2xl space-y-1">
-                      {PROGRESS_PHASE_OPTIONS.map(option => {
+                      {progressPhaseOptions.map(option => {
                         const active = status === option.value;
                         return (
                           <button
@@ -960,7 +968,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Mi rating (Puntuación)</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Mi rating (Puntuación)')}</label>
                 <div className="flex bg-[#07090e] border border-slate-800 rounded-xl p-1.5 items-center justify-between">
                   <div className="flex gap-1 pl-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -975,14 +983,14 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     ))}
                   </div>
                   <span className="text-xs font-bold text-slate-400 pr-2">
-                    {rating > 0 ? `${rating}/5 estrellas` : 'Sin puntuar'}
+                    {rating > 0 ? `${rating}/5 ${t('estrellas')}` : t('Sin puntuar')}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-600" /> Horas Jugadas
+                  <Clock className="w-3.5 h-3.5 text-slate-600" /> {t('Horas Jugadas')}
                 </label>
                 <input
                   type="number"
@@ -997,27 +1005,27 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div className="space-y-1.5 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-600" /> Empezado el
+                    <Calendar className="w-3.5 h-3.5 text-slate-600" /> {t('Empezado el')}
                   </label>
-                  <DatePicker value={startedAt} onChange={setStartedAt} placeholder="Selecciona inicio" />
+                  <DatePicker value={startedAt} onChange={setStartedAt} placeholder={t('Selecciona inicio')} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-600" /> Completado el
+                    <Calendar className="w-3.5 h-3.5 text-slate-600" /> {t('Completado el')}
                   </label>
                   <DatePicker
                     value={completedAt}
                     onChange={setCompletedAt}
-                    placeholder="Selecciona fin"
+                    placeholder={t('Selecciona fin')}
                     disabled={status !== 'COMPLETED' && status !== 'PLAYED'}
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5 col-span-1 md:col-span-2">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Notas privadas de juego</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Notas privadas de juego')}</label>
                 <textarea
-                  placeholder="Escribe anotaciones de tus progresos actuales, builds preferidas, jefes difíciles, o recordatorios..."
+                  placeholder={t('Escribe anotaciones de tus progresos actuales, builds preferidas, jefes difíciles, o recordatorios...')}
                   value={notes}
                   rows={2}
                   onChange={(e) => setNotes(e.target.value)}
@@ -1029,7 +1037,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 type="submit"
                 className="col-span-1 md:col-span-2 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl cursor-pointer text-xs mt-2 transition"
               >
-                Guardar Diario de Juego
+                {t('Guardar Diario de Juego')}
               </button>
             </form>
           </div>
@@ -1041,11 +1049,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 <div>
                   <h2 className="font-semibold text-slate-300 font-display flex items-center gap-2">
                     <span className="w-1 h-5 rounded-full bg-blue-500"></span>
-                    Imágenes del juego
+                    {t('Imágenes del juego')}
                   </h2>
 
                   <p className="text-[10px] text-slate-500 mt-1 ml-3">
-                    Explora capturas de {game.name}
+                    {t('Explora capturas de')} {game.name}
                   </p>
                 </div>
 
@@ -1084,7 +1092,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   <button
                     type="button"
                     onClick={goToPreviousScreenshot}
-                    aria-label="Imagen anterior"
+                    aria-label={t('Imagen anterior')}
                     className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition cursor-pointer"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -1096,7 +1104,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   <button
                     type="button"
                     onClick={goToNextScreenshot}
-                    aria-label="Siguiente imagen"
+                    aria-label={t('Siguiente imagen')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition cursor-pointer"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -1123,7 +1131,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                       >
                         <img
                           src={screenshot}
-                          alt={`Miniatura ${index + 1}`}
+                          alt={`${t('Miniatura')} ${index + 1}`}
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
                         />
@@ -1143,13 +1151,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
               <MessageSquare className="w-4 h-4 text-indigo-400" />
-              Reseñas de la Comunidad ({reviews.length})
+              {t('Reseñas de la Comunidad')} ({reviews.length})
             </h3>
 
             {reviews.length === 0 ? (
               <div className="p-8 bg-[#0f121d]/50 border border-slate-850 rounded-xl text-center space-y-1 text-slate-500">
                 <MessageSquare className="w-6 h-6 mx-auto text-slate-700" />
-                <p className="text-xs">No hay reseñas para este juego todavía. ¡Comparte tu opinión tú mismo!</p>
+                <p className="text-xs">{t('No hay reseñas para este juego todavía. ¡Comparte tu opinión tú mismo!')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1174,7 +1182,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                             @{rev.author.username}
                           </p>
                           <p className="text-[10px] text-slate-500">
-                            {new Date(rev.createdAt).toLocaleDateString()}
+                            {new Date(rev.createdAt).toLocaleDateString(dateLocale)}
                           </p>
                         </div>
                       </button>
@@ -1217,11 +1225,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           
           {/* Write custom review section */}
           <div onClickCapture={handlePrivateButtonClick} className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
-            <h3 className="font-bold text-slate-300 font-display text-sm">Reseñar este juego</h3>
+            <h3 className="font-bold text-slate-300 font-display text-sm">{t('Reseñar este juego')}</h3>
             <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
               <div>
                 <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
-                  Rating general (mismo del tracking)
+                  {t('Rating general (mismo del tracking)')}
                 </label>
                 <div className="flex gap-1.5 bg-[#07090e] p-2 border border-slate-800 rounded-xl justify-center">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1236,14 +1244,14 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   ))}
                 </div>
                 <p className="text-[10px] text-slate-500 mt-1 text-center">
-                  Este valor es único y se comparte entre tu diario y tu reseña.
+                  {t('Este valor es único y se comparte entre tu diario y tu reseña.')}
                 </p>
               </div>
 
               <div>
                 <input
                   type="text"
-                  placeholder="Título corto de la reseña..."
+                  placeholder={t('Título corto de la reseña...')}
                   value={reviewTitle}
                   required
                   onChange={(e) => setReviewTitle(e.target.value)}
@@ -1253,7 +1261,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
               <div>
                 <textarea
-                  placeholder="Escribe tu opinión crítica detallada del videojuego..."
+                  placeholder={t('Escribe tu opinión crítica detallada del videojuego...')}
                   value={reviewContent}
                   required
                   rows={4}
@@ -1266,7 +1274,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 type="submit"
                 className="w-full bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/20 text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
               >
-                <Send className="w-3.5 h-3.5" /> Publicar Reseña
+                <Send className="w-3.5 h-3.5" /> {t('Publicar Reseña')}
               </button>
             </form>
           </div>
@@ -1285,7 +1293,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           >
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-slate-300 font-display text-sm flex items-center gap-1.5">
-                <ListPlus className="w-4 h-4 text-blue-400" /> Añadir a lista personalizada
+                <ListPlus className="w-4 h-4 text-blue-400" /> {t('Añadir a lista personalizada')}
               </h4>
               <button
                 type="button"
@@ -1298,12 +1306,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
             {myLists.length === 0 ? (
               <p className="text-xs text-slate-500 py-4 text-center">
-                Todavía no tienes listas personalizadas creadas.
+                {t('Todavía no tienes listas personalizadas creadas.')}
               </p>
             ) : (
               <>
                 <p className="text-[11px] text-slate-500">
-                  Agrega esta gema a una de tus listas personalizadas existentes:
+                  {t('Agrega este juego a una de tus listas personalizadas existentes:')}
                 </p>
                 <div className="space-y-1.5 pt-1 max-h-64 overflow-y-auto">
                 {myLists.map(list => {
@@ -1329,10 +1337,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                         }`}
                       >
                         {isUpdating
-                          ? 'Actualizando...'
+                          ? t('Actualizando...')
                           : isInList
-                            ? '✓ Añadido'
-                            : 'Añadir +'}
+                            ? `✓ ${t('Añadido')}`
+                            : `${t('Añadir')} +`}
                       </span>
                     </button>
                   );
@@ -1352,7 +1360,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             <button
               type="button"
               onClick={() => setFullscreenScreenshot(null)}
-              aria-label="Cerrar galería"
+              aria-label={t('Cerrar galería')}
               className="absolute top-5 right-5 z-20 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -1371,7 +1379,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   event.stopPropagation();
                   goToPreviousFullscreenScreenshot();
                 }}
-                aria-label="Imagen anterior"
+                aria-label={t('Imagen anterior')}
                 className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -1395,7 +1403,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   event.stopPropagation();
                   goToNextFullscreenScreenshot();
                 }}
-                aria-label="Siguiente imagen"
+                aria-label={t('Siguiente imagen')}
                 className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition cursor-pointer"
               >
                 <ChevronRight className="w-6 h-6" />

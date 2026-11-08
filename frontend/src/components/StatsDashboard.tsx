@@ -13,6 +13,7 @@ import { RecentActivityTimeline } from './stats/RecentActivityTimeline.tsx';
 import { StatsSkeleton } from './stats/StatsSkeleton.tsx';
 import { StatsEmptyState } from './stats/EmptyState.tsx';
 import { StatsData, TimeRange, RecentActivityItem } from './stats/types.ts';
+import { useLanguage } from '../i18n.tsx';
 
 interface StatsDashboardProps {
   userId: string;
@@ -27,6 +28,7 @@ const TIME_RANGE_OPTIONS: { label: string; value: TimeRange }[] = [
 ];
 
 export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, onSelectGame }) => {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,9 +103,9 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold font-display text-white tracking-tight">Tus estadísticas</h2>
+          <h2 className="text-2xl font-bold font-display text-white tracking-tight">{t('Tus estadísticas')}</h2>
           <p className="text-slate-400 text-xs mt-1">
-            Análisis visual de tus hábitos, plataformas y horas dedicadas de juego
+            {t('Análisis visual de tus hábitos, plataformas y horas dedicadas de juego')}
           </p>
         </div>
 
@@ -119,7 +121,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
                   : 'text-slate-500 hover:text-slate-300 border border-transparent'
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           ))}
         </div>
@@ -129,33 +131,33 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           icon={Clock}
-          label="Horas jugadas"
+          label={t('Horas jugadas')}
           value={`${stats.totalHours.toLocaleString()}h`}
-          secondary={stats.averageHoursPerGame > 0 ? `~${stats.averageHoursPerGame}h de media por juego` : undefined}
+          secondary={stats.averageHoursPerGame > 0 ? `~${stats.averageHoursPerGame}h ${t('de media por juego')}` : undefined}
           accent="blue"
         />
 
         <KpiCard
           icon={Trophy}
-          label="Juegos completados"
+          label={t('Juegos completados')}
           value={`${stats.completedCount}`}
-          secondary={`${stats.completionRate}% de ratio de finalización`}
+          secondary={`${stats.completionRate}% ${t('de ratio de finalización')}`}
           accent="emerald"
         />
 
         <KpiCard
           icon={Star}
-          label="Rating medio"
+          label={t('Rating medio')}
           value={stats.ratedGamesCount > 0 ? `${stats.averageRating.toFixed(1)}/5` : '—'}
-          secondary={stats.ratedGamesCount > 0 ? `Basado en ${stats.ratedGamesCount} juegos` : 'Aún sin valoraciones'}
+          secondary={stats.ratedGamesCount > 0 ? `${t('Basado en')} ${stats.ratedGamesCount} ${t('juegos')}` : t('Aún sin valoraciones')}
           accent="amber"
         />
 
         <KpiCard
           icon={Flame}
-          label="Juego más jugado"
+          label={t('Juego más jugado')}
           value={stats.mostPlayedGame ? stats.mostPlayedGame.name : '—'}
-          secondary={stats.mostPlayedGame ? `${stats.mostPlayedGame.hoursPlayed}h jugadas` : 'Registra horas de juego'}
+          secondary={stats.mostPlayedGame ? `${stats.mostPlayedGame.hoursPlayed}h ${t('jugadas')}` : t('Registra horas de juego')}
           accent="violet"
         />
       </div>

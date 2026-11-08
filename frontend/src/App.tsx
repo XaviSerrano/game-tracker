@@ -28,6 +28,8 @@ import { StatsDashboard } from './components/StatsDashboard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 
 import { Analytics } from '@vercel/analytics/react';
+import { useLanguage } from './i18n.tsx';
+import { LanguageSelector } from './components/LanguageSelector.tsx';
 
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
 const SECTION_PATHS: Record<MainTab, string> = {
@@ -40,6 +42,7 @@ const SECTION_PATHS: Record<MainTab, string> = {
 };
 
 export default function App() {
+  const { t } = useLanguage();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MainTab>('feed');
@@ -191,19 +194,19 @@ export default function App() {
   const getGameParentLabel = (path: string) => {
     switch (path) {
       case '/':
-        return 'Inicio';
+        return t('Inicio');
       case '/discover':
-        return 'Descubrir';
+        return t('Descubrir');
       case '/library':
-        return 'Biblioteca';
+        return t('Biblioteca');
       case '/lists':
-        return 'Listas';
+        return t('Listas');
       case '/stats':
-        return 'Estadísticas';
+        return t('Estadísticas');
       case '/profile':
-        return 'Mi Perfil';
+        return t('Mi Perfil');
       default:
-        return 'Descubrir';
+        return t('Descubrir');
     }
   };
 
@@ -245,7 +248,7 @@ export default function App() {
       <div className="min-h-screen bg-[#07090e] flex items-center justify-center">
         <div className="text-center space-y-3">
           <Gamepad2 className="w-10 h-10 text-blue-500 animate-bounce mx-auto" />
-          <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">CARGANDO GAMETRACKER...</p>
+          <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">{t('CARGANDO GAMETRACKER...')}</p>
         </div>
       </div>
     );
@@ -259,9 +262,12 @@ export default function App() {
             <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
             <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
           </div>
-          <button onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
-            Iniciar sesión / Registrarse
-          </button>
+          <div className="flex items-center gap-3">
+            <LanguageSelector compact />
+            <button onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
+              {t('Iniciar sesión / Registrarse')}
+            </button>
+          </div>
         </header>
         <main className="mx-auto max-w-6xl px-3 py-5 md:px-5 md:py-7">
           {isKnownGamePath ? (
@@ -273,7 +279,7 @@ export default function App() {
               onBack={handleBackFromGame}
               onSelectUser={() => setAuthModalOpen(true)}
               onAuthRequired={() => {
-                setAuthNotice('Inicia sesión o regístrate para realizar esta acción.');
+                setAuthNotice(t('Inicia sesión o regístrate para realizar esta acción.'));
                 setAuthModalOpen(true);
               }}
               onGoHome={handleGoHome}
@@ -291,7 +297,7 @@ export default function App() {
         {authModalOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm">
             <button onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed right-5 top-5 z-[60] rounded-full border border-slate-700 bg-[#0f121d] px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
-              Cerrar
+              {t('Cerrar')}
             </button>
             <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} notice={authNotice} />
           </div>
@@ -388,12 +394,12 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'feed', label: 'Inicio', icon: Compass },
-    { id: 'discover', label: 'Descubrir', icon: Search },
-    { id: 'library', label: 'Biblioteca', icon: LibIcon },
-    { id: 'lists', label: 'Listas', icon: List },
-    { id: 'stats', label: 'Estadísticas', icon: BarChart2 },
-    { id: 'profile', label: 'Mi Perfil', icon: UserIcon },
+    { id: 'feed', label: t('Inicio'), icon: Compass },
+    { id: 'discover', label: t('Descubrir'), icon: Search },
+    { id: 'library', label: t('Biblioteca'), icon: LibIcon },
+    { id: 'lists', label: t('Listas'), icon: List },
+    { id: 'stats', label: t('Estadísticas'), icon: BarChart2 },
+    { id: 'profile', label: t('Mi Perfil'), icon: UserIcon },
   ] as const;
 
   return (
@@ -405,7 +411,7 @@ export default function App() {
           type="button"
           onClick={() => setSidebarOpen(true)}
           className="hidden md:flex fixed top-5 left-5 z-30 p-2.5 bg-[#0f121d] border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-slate-700 transition cursor-pointer"
-          aria-label="Abrir menú de navegación"
+          aria-label={t('Abrir menú de navegación')}
         >
           <PanelLeftClose className="w-4.5 h-4.5 rotate-180" />
         </button>
@@ -441,7 +447,7 @@ export default function App() {
                     type="button"
                     onClick={() => setSidebarOpen(false)}
                     className="p-1 text-slate-500 hover:text-white transition cursor-pointer"
-                    aria-label="Cerrar menú de navegación"
+                    aria-label={t('Cerrar menú de navegación')}
                   >
                     <PanelLeftClose className="w-4 h-4" />
                   </button>
@@ -463,7 +469,7 @@ export default function App() {
                       </p>
 
                       <p className="text-[10px] text-slate-500 truncate">
-                        Miembro activo
+                        {t('Miembro activo')}
                       </p>
                     </div>
                   </div>
@@ -508,14 +514,17 @@ export default function App() {
               </div>
 
               {/* Logout */}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
-              >
-                <LogOut className="w-4.5 h-4.5" />
-                Cerrar Sesión
-              </button>
+              <div className="space-y-3">
+                <LanguageSelector />
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
+                >
+                  <LogOut className="w-4.5 h-4.5" />
+                  {t('Cerrar Sesión')}
+                </button>
+              </div>
             </motion.aside>
           )}
         </AnimatePresence>
@@ -531,13 +540,14 @@ export default function App() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <LanguageSelector compact />
           {/* Profile */}
           <button
             type="button"
             onClick={() => handleNavigation('profile')}
             className="p-1 rounded-full border border-slate-800"
-            aria-label="Mi perfil"
+            aria-label={t('Mi perfil')}
           >
             <img
               src={currentUser.avatar}
@@ -552,7 +562,7 @@ export default function App() {
             type="button"
             onClick={handleLogout}
             className="p-1.5 text-red-400"
-            aria-label="Cerrar sesión"
+            aria-label={t('Cerrar sesión')}
           >
             <LogOut className="w-4.5 h-4.5" />
           </button>

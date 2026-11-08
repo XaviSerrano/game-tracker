@@ -2,6 +2,7 @@ import React from 'react';
 import { Library } from 'lucide-react';
 import { GameStatus } from '../../types.ts';
 import { STATUS_META } from './statusMeta.ts';
+import { useLanguage } from '../../i18n.tsx';
 
 interface LibrarySummaryProps {
   counts: Record<GameStatus, number>;
@@ -10,22 +11,24 @@ interface LibrarySummaryProps {
 const ORDER: GameStatus[] = ['PLAYING', 'PLAYED', 'COMPLETED', 'ABANDONED', 'WISHLIST'];
 
 export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
+  const { t } = useLanguage();
   const total = ORDER.reduce((sum, status) => sum + counts[status], 0);
 
   return (
     <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
       <h3 className="font-semibold text-slate-300 font-display text-sm mb-4 flex items-center gap-1.5">
-        <Library className="w-4.5 h-4.5 text-blue-400" /> Biblioteca
+        <Library className="w-4.5 h-4.5 text-blue-400" /> {t('Biblioteca')}
       </h3>
 
       {total === 0 ? (
         <p className="text-xs text-slate-500 text-center py-6">
-          Tu biblioteca está vacía. Añade juegos para ver aquí su desglose.
+          {t('Tu biblioteca está vacía. Añade juegos para ver aquí su desglose.')}
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {ORDER.map(status => {
             const meta = STATUS_META[status];
+            const label = status === 'WISHLIST' ? t('Pendiente') : t(meta.label);
             return (
               <div
                 key={status}
@@ -34,10 +37,10 @@ export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
                 <meta.icon className={`w-4 h-4 ${meta.text}`} />
                 <span className="text-lg font-black text-white font-display leading-none">{counts[status]}</span>
                 <span
-                  title={meta.label}
+                  title={label}
                   className="w-full truncate text-[9px] font-bold uppercase tracking-tight text-slate-400"
                 >
-                  {meta.label}
+                  {label}
                 </span>
               </div>
             );

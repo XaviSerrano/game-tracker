@@ -11,6 +11,7 @@ import {
 import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
+import { useLanguage } from '../i18n.tsx';
 
 interface HomeFeedProps {
   currentUser: User;
@@ -33,6 +34,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
   users,
   onDiscover
 }) => {
+  const { t, language } = useLanguage();
   const [feedScope, setFeedScope] =
     useState<'all' | 'following'>('all');
 
@@ -128,7 +130,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       resolvedUser ||
       users.find((u) => u.id === uid) || {
         id: uid,
-        username: 'usuario',
+        username: t('usuario'),
         avatar:
           'https://api.dicebear.com/7.x/pixel-art/svg?seed=user',
         bio: ''
@@ -145,24 +147,24 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
     const diffHours = Math.floor(diffMinutes / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMinutes < 1) return 'Ahora mismo';
+    if (diffMinutes < 1) return t('Ahora mismo');
     if (diffMinutes < 60) {
-      return `Hace ${diffMinutes} min`;
+      return language === 'en' ? `${diffMinutes} min ago` : `Hace ${diffMinutes} min`;
     }
 
     if (diffHours < 24) {
-      return `Hace ${diffHours} ${
-        diffHours === 1 ? 'hora' : 'horas'
-      }`;
+      return language === 'en'
+        ? `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
+        : `Hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
     }
 
     if (diffDays < 7) {
-      return `Hace ${diffDays} ${
-        diffDays === 1 ? 'día' : 'días'
-      }`;
+      return language === 'en'
+        ? `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`
+        : `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
     }
 
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
       day: 'numeric',
       month: 'short'
     });
@@ -196,7 +198,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       return (
         <div className="text-sm text-slate-300 leading-relaxed">
           {username}{' '}
-          <span>comenzó a seguir a</span>{' '}
+          <span>{t('comenzó a seguir a')}</span>{' '}
           <button
             type="button"
             onClick={() =>
@@ -215,7 +217,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <div className="space-y-3">
           <div className="text-sm text-slate-300 leading-relaxed">
             {username}{' '}
-            <span>ha publicado una reseña</span>
+            <span>{t('ha publicado una reseña')}</span>
           </div>
 
           {act.details && (
@@ -224,7 +226,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                 <Star className="w-3.5 h-3.5 text-[#e2ad52] fill-[#e2ad52]" />
 
                 <span className="text-[9px] uppercase tracking-widest font-bold text-slate-500">
-                  Reseña
+                  {t('Reseña')}
                 </span>
               </div>
 
@@ -243,7 +245,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
           {username}{' '}
           <span>
             {act.details ||
-              'actualizó su biblioteca'}
+              t('actualizó su biblioteca')}
           </span>
         </div>
       );
@@ -254,7 +256,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         {username}{' '}
         <span>
           {act.details ||
-            'realizó una acción social'}
+            t('realizó una acción social')}
         </span>
       </div>
     );
@@ -275,18 +277,17 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div>
             <span className="inline-flex text-[9px] font-bold text-[#e1b35e] uppercase tracking-widest bg-[#dca94f]/10 px-2.5 py-1 rounded-full border border-[#dca94f]/20">
-              Activo hoy
+              {t('Activo hoy')}
             </span>
 
             <h2 className="text-2xl md:text-3xl font-bold font-display text-white mt-3 tracking-tight">
-              ¡Hola de{' '}
-              <ShimmerText>nuevo</ShimmerText>
+              {language === 'en' ? 'Welcome' : '¡Hola de'}{' '}
+              <ShimmerText>{language === 'en' ? 'back' : 'nuevo'}</ShimmerText>
               , @{currentUser.username}!
             </h2>
 
             <p className="text-slate-400 text-xs mt-1 md:max-w-lg">
-              Echa un vistazo a la actividad reciente de
-              tus compañeros y descubre nuevos videojuegos.
+              {t('Echa un vistazo a la actividad reciente de')} {t('tus compañeros y descubre nuevos videojuegos.')}
             </p>
           </div>
 
@@ -297,7 +298,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#dca84f] px-4 py-2.5 text-xs font-semibold text-[#17120a] transition hover:bg-[#e8b967] cursor-pointer"
             >
               <Search className="w-3.5 h-3.5" />
-              Explorar juegos
+              {t('Explorar juegos')}
             </button>
 
             <button
@@ -310,7 +311,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
-              General
+              {t('General')}
             </button>
 
             <button
@@ -325,7 +326,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              Siguiendo
+              {t('Siguiendo')}
             </button>
           </div>
         </div>
@@ -339,8 +340,8 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             <span className="h-2 w-2 rounded-full bg-[#dca84f]" />
 
             {feedScope === 'all'
-              ? 'Actividad de la Comunidad'
-              : 'Actividad de tus Seguidos'}
+              ? t('Actividad de la Comunidad')
+              : t('Actividad de tus Seguidos')}
           </h3>
 
           <button
@@ -349,7 +350,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             className="text-xs text-slate-500 hover:text-[#dca84f] transition flex items-center gap-1.5 cursor-pointer"
           >
             <RefreshCw className="w-3 h-3" />
-            Actualizar
+            {t('Actualizar')}
           </button>
         </div>
 
@@ -389,13 +390,13 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             <Users className="w-8 h-8 text-slate-600 mx-auto" />
 
             <p className="text-slate-400 text-sm font-semibold">
-              No hay actividad reciente
+              {t('No hay actividad reciente')}
             </p>
 
             <p className="text-slate-500 text-xs text-center max-w-xs mx-auto">
               {feedScope === 'following'
-                ? 'Aún no sigues a ningún gamer o no han compartido aventuras de juego todavía. ¡Prueba a cambiar a General!'
-                : 'Registra tus primeros progresos o sigue a otros gamers para ver actividad.'}
+                ? t('Aún no sigues a ningún gamer o no han compartido aventuras de juego todavía. ¡Prueba a cambiar a General!')
+                : t('Registra tus primeros progresos o sigue a otros gamers para ver actividad.')}
             </p>
 
             {feedScope === 'following' && (
@@ -404,7 +405,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                 onClick={() => setFeedScope('all')}
                 className="px-4 py-2 mt-2 bg-[#dca84f] text-[#17120a] text-xs font-semibold rounded-xl hover:bg-[#e8b967] transition cursor-pointer"
               >
-                Ver Actividad General
+                {t('Ver Actividad General')}
               </button>
             )}
           </div>
@@ -482,7 +483,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
 
                         {hasGame && (
                           <p className="text-[10px] text-slate-500 mt-2">
-                            Actividad en{' '}
+                            {t('Actividad en')}{' '}
                             <span className="text-slate-400 font-semibold">
                               {relatedGame.name}
                             </span>
@@ -567,7 +568,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                               }
                               className="text-[10px] text-slate-500 hover:text-[#dfad55] transition mt-3 text-left cursor-pointer"
                             >
-                              Ver detalles →
+                              {t('Ver detalles')} →
                             </button>
                           </div>
                         </div>
@@ -612,12 +613,12 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                               </p>
                             ) : (
                               <p className="text-[10px] text-slate-500 mt-2">
-                                Descubre su perfil y actividad.
+                                {t('Descubre su perfil y actividad.')}
                               </p>
                             )}
 
                             <div className="flex items-center gap-1 mt-3 text-[10px] text-slate-500 group-hover:text-[#dfad55] transition">
-                              Ver perfil
+                              {t('Ver perfil')}
                               <ChevronRight className="w-3 h-3" />
                             </div>
                           </div>

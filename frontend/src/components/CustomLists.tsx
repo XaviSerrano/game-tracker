@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CustomList, Game, User } from '../types.ts';
 import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet } from 'lucide-react';
+import { useLanguage } from '../i18n.tsx';
 
 interface CustomListsProps {
   currentUser: User;
@@ -10,6 +11,7 @@ interface CustomListsProps {
 }
 
 export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectGame, onSelectUser, token }) => {
+  const { t } = useLanguage();
   const [lists, setLists] = useState<(CustomList & { author: User, games: Game[] })[]>([]);
   const [selectedList, setSelectedList] = useState<(CustomList & { author: User, games: Game[] }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +84,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   };
 
   const handleDeleteList = async (listId: string) => {
-    if (!window.confirm('¿Seguro de que deseas eliminar esta lista personalizada? This action is irreversible.')) return;
+    if (!window.confirm(t('¿Seguro de que deseas eliminar esta lista personalizada? This action is irreversible.'))) return;
 
     try {
       const res = await fetch(`/api/lists/${listId}`, {
@@ -103,7 +105,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   const handleRemoveGameFromList = async (gameId: number) => {
     if (!selectedList) return;
 
-    if (!window.confirm('¿Seguro que quieres eliminar este juego de la lista?')) {
+    if (!window.confirm(t('¿Seguro que quieres eliminar este juego de la lista?'))) {
       return;
     }
 
@@ -170,17 +172,17 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
       {isCreating ? (
         <div className="bg-[#0f121d] border border-slate-800 p-6 rounded-2xl space-y-5 animate-fade-in">
           <div>
-            <h3 className="text-xl font-bold font-display text-white">Crear Nueva Lista Personalizada</h3>
-            <p className="text-slate-400 text-xs">Agrupa y comparte tus aventuras, RPGs o sagas preferidas</p>
+            <h3 className="text-xl font-bold font-display text-white">{t('Crear Nueva Lista Personalizada')}</h3>
+            <p className="text-slate-400 text-xs">{t('Agrupa y comparte tus aventuras, RPGs o sagas preferidas')}</p>
           </div>
 
           <form onSubmit={handleCreateList} className="space-y-4">
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Nombre de la lista</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">{t('Nombre de la lista')}</label>
               <input
                 type="text"
                 required
-                placeholder="ej. Mejores RPGs por Turnos, Joyas Ocultas, Indispensables de Switch..."
+                placeholder={t('ej. Mejores RPGs por Turnos, Joyas Ocultas, Indispensables de Switch...')}
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
                 className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-2.5 px-4 text-xs text-white placeholder-slate-600 transition outline-none"
@@ -188,9 +190,9 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Descripción pública o temática</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">{t('Descripción pública o temática')}</label>
               <textarea
-                placeholder="Describe el contexto, objetivos o por qué estos juegos son los indicados para esta lista corporativa..."
+                placeholder={t('Describe el contexto, objetivos o por qué estos juegos son los indicados para esta lista corporativa...')}
                 value={newListDesc}
                 rows={3}
                 onChange={(e) => setNewListDesc(e.target.value)}
@@ -199,7 +201,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">Selecciona juegos ({selectedGameIds.length})</label>
+              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">{t('Selecciona juegos')} ({selectedGameIds.length})</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 bg-[#07090e] border border-slate-800 rounded-xl">
                 {catalogGames.map(game => {
                   const active = selectedGameIds.includes(game.igdbId);
@@ -226,13 +228,13 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                 onClick={() => setIsCreating(false)}
                 className="px-4 py-2 hover:bg-slate-850 text-slate-400 font-semibold rounded-xl text-xs transition cursor-pointer"
               >
-                Cancelar
+                {t('Cancelar')}
               </button>
               <button
                 type="submit"
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition cursor-pointer"
               >
-                Crear Lista
+                {t('Crear Lista')}
               </button>
             </div>
           </form>
@@ -244,7 +246,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             onClick={() => setSelectedList(null)}
             className="text-xs text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1.5"
           >
-            ← Volver a todas las listas
+            {t('← Volver a todas las listas')}
           </button>
 
           <div className="bg-[#0f121d] border border-slate-800 p-6 rounded-2xl relative overflow-hidden">
@@ -254,12 +256,12 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                   onClick={() => onSelectUser(selectedList.userId)}
                   className="inline-flex items-center gap-1.5 p-1 px-2.5 bg-[#07090e] text-slate-400 hover:text-white rounded-full border border-slate-800 text-[10px]"
                 >
-                  creada por <span className="font-bold text-white hover:text-blue-400">@{selectedList.author?.username}</span>
+                  {t('creada por')} <span className="font-bold text-white hover:text-blue-400">@{selectedList.author?.username}</span>
                 </button>
                 <h1 className="text-2xl md:text-3xl font-bold font-display text-white tracking-tight">
                   {selectedList.name}
                 </h1>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedList.description || 'Sin descripción publicada.'}</p>
+                <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedList.description || t('Sin descripción publicada.')}</p>
               </div>
 
               {selectedList.userId === currentUser.id && (
@@ -276,12 +278,12 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
               <Library className="w-4 h-4 text-blue-500" />
-              Catálogo de esta lista ({selectedList.games.length} juegos)
+              {t('Catálogo de esta lista')} ({selectedList.games.length} {t('juegos')})
             </h3>
 
             {selectedList.games.length === 0 ? (
               <div className="p-8 bg-slate-900/30 border border-slate-800 rounded-xl text-center text-slate-500">
-                <p className="text-xs">Usa "Detalles de juego" para agregar títulos a esta lista.</p>
+                <p className="text-xs">{t('Usa "Detalles de juego" para agregar títulos a esta lista.')}</p>
               </div>
             ) : (
               <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -306,7 +308,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                     </h4>
 
                     <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                      {game.genres.slice(0, 1).join(', ') || 'Videojuego'}
+                      {game.genres.slice(0, 1).join(', ') || t('Videojuego')}
                     </p>
                   </button>
 
@@ -315,7 +317,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       type="button"
                       onClick={() => handleRemoveGameFromList(game.igdbId)}
                       className="absolute top-4 right-4 p-1.5 rounded-lg bg-black/75 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                      title="Eliminar de la lista"
+                      title={t('Eliminar de la lista')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -331,14 +333,14 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold font-display text-white tracking-tight">Listas Personalizadas</h2>
-              <p className="text-slate-400 text-xs">Explora listados seleccionados o crea colecciones temáticas propias</p>
+              <h2 className="text-2xl font-bold font-display text-white tracking-tight">{t('Listas Personalizadas')}</h2>
+              <p className="text-slate-400 text-xs">{t('Explora listados seleccionados o crea colecciones temáticas propias')}</p>
             </div>
             <button
               onClick={() => setIsCreating(true)}
               className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer transition flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> Crear Lista
+              <Plus className="w-4 h-4" /> {t('Crear Lista')}
             </button>
           </div>
 
@@ -351,8 +353,8 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
           ) : lists.length === 0 ? (
             <div className="p-12 bg-[#0f121d] border border-slate-800 text-center rounded-2xl space-y-2">
               <FileSpreadsheet className="w-8 h-8 text-slate-700 mx-auto" />
-              <p className="text-slate-400 text-sm font-semibold">No hay listas creadas todavía</p>
-              <p className="text-slate-500 text-xs">¡Sé el primero e inicia tu rincón personalizado temático!</p>
+              <p className="text-slate-400 text-sm font-semibold">{t('No hay listas creadas todavía')}</p>
+              <p className="text-slate-500 text-xs">{t('¡Sé el primero e inicia tu rincón personalizado temático!')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -370,7 +372,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                         @{list.author?.username || 'usuario'}
                       </button>
                       <span className="text-[10px] text-slate-600 uppercase font-mono font-bold bg-[#07090e] border border-slate-800 px-2 py-0.5 rounded-full">
-                        {list.games.length} juegos
+                        {list.games.length} {t('juegos')}
                       </span>
                     </div>
                     <button
@@ -380,7 +382,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       <h3 className="font-bold text-white group-hover:text-blue-450 transition tracking-tight">
                         {list.name}
                       </h3>
-                      <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2">{list.description || 'Sin descripción.'}</p>
+                      <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2">{list.description || t('Sin descripción.')}</p>
                     </button>
                   </div>
 
@@ -396,7 +398,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       />
                     ))}
                     {list.games.length === 0 && (
-                      <span className="text-[10px] text-slate-600 italic py-2 px-2">Lista vacía.</span>
+                      <span className="text-[10px] text-slate-600 italic py-2 px-2">{t('Lista vacía.')}</span>
                     )}
                   </div>
                 </div>

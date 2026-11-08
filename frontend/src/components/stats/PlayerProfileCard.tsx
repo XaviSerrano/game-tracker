@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, Gamepad2, Star, Hourglass, Percent, LucideIcon } from 'lucide-react';
+import { useLanguage } from '../../i18n.tsx';
 
 interface ProfileRow {
   icon: LucideIcon;
@@ -24,25 +25,26 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
   averageHoursPerGame,
   completionRate
 }) => {
+  const { t } = useLanguage();
   const rows: ProfileRow[] = [
-    { icon: Sparkles, label: 'Género más jugado', value: favoriteGenre || 'Sin datos todavía' },
-    { icon: Gamepad2, label: 'Plataforma principal', value: favoritePlatform || 'Sin datos todavía' },
+    { icon: Sparkles, label: t('Género más jugado'), value: favoriteGenre || t('Sin datos todavía') },
+    { icon: Gamepad2, label: t('Plataforma principal'), value: favoritePlatform || t('Sin datos todavía') },
     {
       icon: Star,
-      label: 'Rating medio',
-      value: ratedGamesCount > 0 ? `${averageRating.toFixed(1)} / 5` : 'Sin valoraciones'
+      label: t('Rating medio'),
+      value: ratedGamesCount > 0 ? `${averageRating.toFixed(1)} / 5` : t('Sin valoraciones')
     },
     {
       icon: Hourglass,
-      label: 'Duración media por juego',
-      value: averageHoursPerGame > 0 ? `${averageHoursPerGame}h` : 'Sin horas registradas'
+      label: t('Duración media por juego'),
+      value: averageHoursPerGame > 0 ? `${averageHoursPerGame}h` : t('Sin horas registradas')
     },
-    { icon: Percent, label: 'Ratio de finalización', value: `${completionRate}%` }
+    { icon: Percent, label: t('Ratio de finalización'), value: `${completionRate}%` }
   ];
 
   return (
     <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
-      <h3 className="font-semibold text-slate-300 font-display text-sm mb-4">Perfil de jugador</h3>
+      <h3 className="font-semibold text-slate-300 font-display text-sm mb-4">{t('Perfil de jugador')}</h3>
 
       <div className="space-y-3">
         {rows.map(row => (

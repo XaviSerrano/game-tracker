@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useLanguage } from '../i18n.tsx';
 
 interface DatePickerProps {
   value: string;
@@ -7,8 +8,6 @@ interface DatePickerProps {
   placeholder?: string;
   disabled?: boolean;
 }
-
-const WEEKDAYS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 const parseIsoDate = (isoDate: string): Date | null => {
   if (!isoDate) return null;
@@ -24,11 +23,11 @@ const toIsoDate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-const formatDisplayDate = (date: Date): string => {
-  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const formatDisplayDate = (date: Date, language: 'en' | 'es'): string => {
+  return date.toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const parseManualDate = (raw: string): Date | null => {
+const parseManualDate = (raw: string, language: 'en' | 'es'): Date | null => {
   const value = raw.trim();
   if (!value) return null;
 
@@ -44,11 +43,13 @@ const parseManualDate = (raw: string): Date | null => {
     return null;
   }
 
-  const esMatch = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-  if (esMatch) {
-    const day = Number(esMatch[1]);
-    const month = Number(esMatch[2]);
-    const year = Number(esMatch[3]);
+  const localizedMatch = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (localizedMatch) {
+    const first = Number(localizedMatch[1]);
+    const second = Number(localizedMatch[2]);
+    const month = language === 'en' ? first : second;
+    const day = language === 'en' ? second : first;
+    const year = Number(localizedMatch[3]);
     const date = new Date(year, month - 1, day);
     if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
       return date;
@@ -66,13 +67,14 @@ const sameDay = (a: Date, b: Date): boolean => {
   );
 };
 
-export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeholder = 'Seleccionar fecha', disabled = false }) => {
+export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeholder, disabled = false }) => {
+  const { t, language } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedDate = parseIsoDate(value);
   const today = new Date();
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => selectedDate || new Date());
-  const [inputValue, setInputValue] = useState<string>(() => selectedDate ? formatDisplayDate(selectedDate) : '');
+  const [inputValue, setInputValue] = useState<string>(() => selectedDate ? formatDisplayDate(selectedDate, language) : '');
 
   useEffect(() => {
     if (disabled && open) {
@@ -98,16 +100,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
   useEffect(() => {
     if (selectedDate) {
       setViewDate(selectedDate);
-      setInputValue(formatDisplayDate(selectedDate));
+      setInputValue(formatDisplayDate(selectedDate, language));
     } else {
       setInputValue('');
     }
-  }, [value]);
+  }, [value, language]);
 
   const monthLabel = useMemo(
-    () => viewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-    [viewDate]
+    () => viewDate.toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' }),
+    [viewDate, language]
   );
+  const weekdays = language === 'en' ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'] : ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -133,15 +136,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
       return;
     }
 
-    const parsed = parseManualDate(trimmed);
+    const parsed = parseManualDate(trimmed, language);
     if (!parsed) {
-      setInputValue(selectedDate ? formatDisplayDate(selectedDate) : '');
+      setInputValue(selectedDate ? formatDisplayDate(selectedDate, language) : '');
       return;
     }
 
     onChange(toIsoDate(parsed));
     setViewDate(parsed);
-    setInputValue(formatDisplayDate(parsed));
+    setInputValue(formatDisplayDate(parsed, language));
   };
 
   return (
@@ -159,7 +162,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
               commitManualInput();
             }
           }}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('Seleccionar fecha')}
           className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 outline-none disabled:cursor-not-allowed"
         />
         <button
@@ -167,7 +170,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
           disabled={disabled}
           onClick={() => setOpen(prev => !prev)}
           className="p-1 rounded-md hover:bg-slate-800 transition text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Abrir calendario"
+          aria-label={t('Abrir calendario')}
         >
           <Calendar className="w-3.5 h-3.5" />
         </button>
@@ -180,7 +183,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
               type="button"
               onClick={() => setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
               className="p-1 rounded-md hover:bg-slate-800 transition text-slate-400"
-              aria-label="Mes anterior"
+              aria-label={t('Mes anterior')}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -189,15 +192,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
               type="button"
               onClick={() => setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
               className="p-1 rounded-md hover:bg-slate-800 transition text-slate-400"
-              aria-label="Mes siguiente"
+              aria-label={t('Mes siguiente')}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {WEEKDAYS.map(day => (
-              <span key={day} className="text-[10px] text-slate-500 text-center font-semibold py-1">
+            {weekdays.map((day, index) => (
+              <span key={`${day}-${index}`} className="text-[10px] text-slate-500 text-center font-semibold py-1">
                 {day}
               </span>
             ))}
@@ -217,7 +220,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                   type="button"
                   onClick={() => {
                     onChange(toIsoDate(dateCell));
-                    setInputValue(formatDisplayDate(dateCell));
+                    setInputValue(formatDisplayDate(dateCell, language));
                     setOpen(false);
                   }}
                   className={`h-8 rounded-lg text-xs font-medium transition ${
@@ -240,12 +243,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
               onClick={() => {
                 onChange(toIsoDate(today));
                 setViewDate(today);
-                setInputValue(formatDisplayDate(today));
+                setInputValue(formatDisplayDate(today, language));
                 setOpen(false);
               }}
               className="text-[11px] text-blue-400 hover:text-blue-300 transition font-semibold"
             >
-              Hoy
+              {t('Hoy')}
             </button>
 
             {selectedDate ? (
@@ -258,7 +261,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                 }}
                 className="text-[11px] text-slate-400 hover:text-white transition font-semibold flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Limpiar
+                <X className="w-3 h-3" /> {t('Limpiar')}
               </button>
             ) : <span />}
           </div>

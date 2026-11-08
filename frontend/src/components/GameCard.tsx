@@ -1,6 +1,7 @@
 import React from 'react';
 import { Game, GameStatus } from '../types.ts';
 import { Bookmark, Star } from 'lucide-react';
+import { useLanguage } from '../i18n.tsx';
 
 interface GameCardProps {
   game: Game;
@@ -43,6 +44,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   togglingWishlistId,
   savingWishlistGameId,
 }) => {
+  const { t } = useLanguage();
   const isLoadingWishlist =
     togglingWishlistId === game.igdbId ||
     savingWishlistGameId === game.igdbId;
@@ -53,6 +55,13 @@ export const GameCard: React.FC<GameCardProps> = ({
   const bookmarkActive = showFullLibraryCard
     ? userGameStatus === 'WISHLIST'
     : isInWishlist;
+  const statusLabels: Record<GameStatus, string> = {
+    WISHLIST: t('Pendiente'),
+    PLAYING: t('Jugando'),
+    PLAYED: t('Jugado'),
+    COMPLETED: t('Completado'),
+    ABANDONED: t('Abandonado')
+  };
 
   const handleCardClick = () => {
     onSelectGame(game.igdbId);
@@ -70,7 +79,7 @@ export const GameCard: React.FC<GameCardProps> = ({
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Ver detalles de ${game.name}`}
+      aria-label={`${t('Ver detalles de')} ${game.name}`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       className={`
@@ -112,7 +121,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         {onToggleWishlist && !isFeedCard && (
           <button
             type="button"
-            aria-label={bookmarkActive ? `Quitar ${game.name} de la wishlist` : `Añadir ${game.name} a la wishlist`}
+            aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleWishlist(game.igdbId, e);
@@ -120,8 +129,8 @@ export const GameCard: React.FC<GameCardProps> = ({
             disabled={isLoadingWishlist}
             title={
               bookmarkActive
-                ? 'Remover de Wishlist'
-                : 'Añadir a Wishlist'
+                ? t('Remover de Wishlist')
+                : t('Añadir a Wishlist')
             }
             className={`
               absolute top-2 left-2
@@ -180,7 +189,7 @@ export const GameCard: React.FC<GameCardProps> = ({
                 }
               `}
             >
-              {userGameStatus}
+              {statusLabels[userGameStatus]}
             </span>
 
             {userGameHours && userGameHours > 0 && (

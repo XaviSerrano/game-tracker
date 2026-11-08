@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserGame, Game, GameStatus } from '../types.ts';
 import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
 import { GameCard } from './GameCard.tsx';
+import { useLanguage } from '../i18n.tsx';
 
 interface LibraryProps {
   userId: string;
@@ -10,6 +11,7 @@ interface LibraryProps {
 }
 
 export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token }) => {
+  const { t } = useLanguage();
   const [completeLib, setCompleteLib] = useState<(UserGame & { game: Game })[]>([]);
   const [filteredLib, setFilteredLib] = useState<(UserGame & { game: Game })[]>([]);
   const [activeTab, setActiveTab] = useState<GameStatus | 'ALL'>('ALL');
@@ -143,12 +145,12 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     label: string;
     value: GameStatus | 'ALL';
   }[] = [
-    { label: 'Todo', value: 'ALL' },
-    { label: 'Pendiente (Wishlist) ⭐️', value: 'WISHLIST' },
-    { label: 'Jugando 🎮', value: 'PLAYING' },
-    { label: 'Jugados', value: 'PLAYED' },
-    { label: 'Completado 🏆', value: 'COMPLETED' },
-    { label: 'Abandonado ❌', value: 'ABANDONED' },
+    { label: t('Todo'), value: 'ALL' },
+    { label: t('Pendiente (Wishlist) ⭐️'), value: 'WISHLIST' },
+    { label: t('Jugando 🎮'), value: 'PLAYING' },
+    { label: t('Jugados'), value: 'PLAYED' },
+    { label: t('Completado 🏆'), value: 'COMPLETED' },
+    { label: t('Abandonado ❌'), value: 'ABANDONED' },
   ];
 
   return (
@@ -156,10 +158,10 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       {/* Title Header */}
       <div>
         <h2 className="text-2xl font-bold font-display text-white tracking-tight">
-          Mi Biblioteca Gamer
+          {t('Mi Biblioteca Gamer')}
         </h2>
         <p className="text-slate-400 text-xs">
-          Organiza, filtra y analiza el estado actual y horas dedicadas de todos tus progresos de juego
+          {t('Organiza, filtra y analiza el estado actual y horas dedicadas de todos tus progresos de juego')}
         </p>
       </div>
 
@@ -192,7 +194,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Filtra por título o categoría dentro de tu biblioteca..."
+            placeholder={t('Filtra por título o categoría dentro de tu biblioteca...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl px-4 py-2.5 pl-11 text-xs focus:ring-1 focus:ring-blue-500 transition outline-none"
@@ -202,13 +204,13 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
         <div className="flex items-center gap-2 bg-[#07090e] p-1 rounded-xl border border-slate-800">
           <span className="text-[10px] uppercase font-bold text-slate-500 px-2 tracking-wider flex items-center gap-1">
-            <SortAsc className="w-3.5 h-3.5" /> Ordenar:
+            <SortAsc className="w-3.5 h-3.5" /> {t('Ordenar:')}
           </span>
           <button
             onClick={() => setSortBy('date')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'date' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
-            Fecha
+            {t('Fecha')}
           </button>
           <button
             onClick={() => setSortBy('rating')}
@@ -220,7 +222,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             onClick={() => setSortBy('hours')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'hours' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
-            Horas
+            {t('Horas')}
           </button>
           <button
             onClick={() => setSortBy('name')}
@@ -236,7 +238,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
 
           <p className="text-[11px] uppercase tracking-widest font-semibold text-slate-500">
-            Biblioteca
+            {t('Biblioteca')}
           </p>
 
           <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-400">
@@ -244,13 +246,13 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           </span>
 
           <span className="text-[11px] text-slate-600">
-            {filteredLib.length === 1 ? 'juego' : 'juegos'}
+            {filteredLib.length === 1 ? t('juego') : t('juegos')}
           </span>
         </div>
 
         {searchQuery && (
           <span className="text-[10px] text-slate-600">
-            Filtrado por "{searchQuery}"
+            {t('Filtrado por')} "{searchQuery}"
           </span>
         )}
       </div>
@@ -268,16 +270,16 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       ) : filteredLib.length === 0 ? (
         <div className="py-12 bg-[#0f121d] border border-slate-800 p-8 rounded-2xl text-center space-y-2">
           <Clock className="w-8 h-8 text-slate-700 mx-auto" />
-          <p className="text-slate-400 text-sm font-semibold">Biblioteca vacía</p>
+          <p className="text-slate-400 text-sm font-semibold">{t('Biblioteca vacía')}</p>
           <p className="text-slate-500 text-xs max-w-sm mx-auto">
-            Ninguno de tus registros coincide con el término de búsqueda o categoría actual. ¡Explora el catálogo y añade tu primer tracker!
+            {t('Ninguno de tus registros coincide con el término de búsqueda o categoría actual. ¡Explora el catálogo y añade tu primer tracker!')}
           </p>
           {searchQuery && (
             <button
               onClick={() => { setSearchQuery(''); setActiveTab('ALL'); }}
               className="px-4 py-2 bg-slate-800 hover:text-white transition text-xs font-semibold rounded-xl text-slate-350 cursor-pointer flex items-center gap-1.5 mx-auto"
             >
-              Reestablecer filtros
+              {t('Reestablecer filtros')}
             </button>
           )}
         </div>

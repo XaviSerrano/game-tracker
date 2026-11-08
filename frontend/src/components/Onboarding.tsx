@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Compass, Gamepad2, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
 import { User } from '../types.ts';
+import { useLanguage } from '../i18n.tsx';
+import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface OnboardingProps {
   onLogin: (user: User) => void;
@@ -13,6 +15,7 @@ type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers, notice }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -31,7 +34,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
     if (tokenFromUrl) {
       setMode('reset');
       setResetToken(tokenFromUrl);
-      setInfoMessage('Introduce tu nueva contraseña para completar la recuperación.');
+      setInfoMessage(t('Introduce tu nueva contraseña para completar la recuperación.'));
     }
   }, []);
 
@@ -58,7 +61,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
     setEmail(user.email);
     setPassword(DEMO_ACCOUNT_PASSWORD);
     clearMessages();
-    setInfoMessage(`Cuenta demo seleccionada. Usa la contraseña ${DEMO_ACCOUNT_PASSWORD}.`);
+    setInfoMessage(`${t('Cuenta demo seleccionada. Usa la contraseña')} ${DEMO_ACCOUNT_PASSWORD}.`);
   };
 
   const handleSignIn = async (userEmail: string, userPassword: string) => {
@@ -87,11 +90,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !email.trim() || !password) {
-      setError('Por favor rellena los campos necesarios.');
+      setError(t('Por favor rellena los campos necesarios.'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      setError(t('Las contraseñas no coinciden.'));
       return;
     }
 
@@ -121,7 +124,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      setError('Introduce tu email para recuperar la contraseña.');
+      setError(t('Introduce tu email para recuperar la contraseña.'));
       return;
     }
 
@@ -141,7 +144,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
         throw new Error(data.error || 'No se pudo iniciar la recuperación.');
       }
 
-      setInfoMessage(data.message || 'Te hemos enviado instrucciones para restablecer la contraseña.');
+      setInfoMessage(t(data.message || 'Te hemos enviado instrucciones para restablecer la contraseña.'));
       setDebugResetUrl(typeof data.debugResetUrl === 'string' ? data.debugResetUrl : null);
     } catch (err: any) {
       setError(err.message);
@@ -153,15 +156,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password || !confirmPassword) {
-      setError('Completa la nueva contraseña y su confirmación.');
+      setError(t('Completa la nueva contraseña y su confirmación.'));
       return;
     }
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      setError(t('Las contraseñas no coinciden.'));
       return;
     }
     if (!resetToken) {
-      setError('Falta el token de recuperación. Vuelve a solicitar el enlace.');
+      setError(t('Falta el token de recuperación. Vuelve a solicitar el enlace.'));
       return;
     }
 
@@ -197,7 +200,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const isReset = mode === 'reset';
 
   return (
-    <div className="min-h-screen bg-[#07090e] flex flex-col items-center justify-center p-4 selection:bg-blue-600 selection:text-white">
+    <div className="relative min-h-screen bg-[#07090e] flex flex-col items-center justify-center p-4 selection:bg-blue-600 selection:text-white">
+      <div className="absolute right-4 top-4">
+        <LanguageSelector compact />
+      </div>
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -210,7 +216,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
             GameTracker
           </h1>
           <p className="text-slate-400 text-sm text-center">
-            Organiza tus videojuegos, sigue tus progresos y descubre recomendaciones con tus amigos
+            {t('Organiza tus videojuegos, sigue tus progresos y descubre recomendaciones con tus amigos')}
           </p>
         </div>
 
@@ -222,19 +228,19 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
         {error && (
           <div className="mb-4 p-3 bg-red-950/40 border border-red-500/30 text-red-400 text-xs rounded-xl">
-            {error}
+            {t(error)}
           </div>
         )}
 
         {infoMessage && (
           <div className="mb-4 p-3 bg-blue-950/30 border border-blue-500/20 text-blue-300 text-xs rounded-xl space-y-2">
-            <p>{infoMessage}</p>
+            <p>{t(infoMessage)}</p>
             {debugResetUrl && (
               <a
                 href={debugResetUrl}
                 className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 underline break-all"
               >
-                <Mail className="w-3.5 h-3.5" /> Abrir enlace de recuperación (modo local)
+                <Mail className="w-3.5 h-3.5" /> {t('Abrir enlace de recuperación (modo local)')}
               </a>
             )}
           </div>
@@ -247,14 +253,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               onClick={() => switchMode('login')}
               className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${!isRegister ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              <Compass className="w-3.5 h-3.5" /> Iniciar sesión
+              <Compass className="w-3.5 h-3.5" /> {t('Iniciar sesión')}
             </button>
             <button
               type="button"
               onClick={() => switchMode('register')}
               className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${isRegister ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
             >
-              <UserPlus className="w-3.5 h-3.5" /> Crear cuenta
+              <UserPlus className="w-3.5 h-3.5" /> {t('Crear cuenta')}
             </button>
           </div>
         )}
@@ -269,11 +275,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
             <form onSubmit={(e) => { e.preventDefault(); handleSignIn(email, password); }} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                  Correo Electrónico
+                  {t('Correo Electrónico')}
                 </label>
                 <input
                   type="email"
-                  placeholder="ejemplo@correo.com"
+                  placeholder={t('ejemplo@correo.com')}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -283,11 +289,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                  Contraseña
+                  {t('Contraseña')}
                 </label>
                 <input
                   type="password"
-                  placeholder="Tu contraseña"
+                  placeholder={t('Tu contraseña')}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -300,7 +306,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
                 onClick={() => switchMode('forgot')}
                 className="text-xs text-blue-400 hover:text-blue-300 transition cursor-pointer"
               >
-                ¿Has olvidado tu contraseña?
+                {t('¿Has olvidado tu contraseña?')}
               </button>
 
               <button
@@ -309,7 +315,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <LogIn className="w-4 h-4" />
-                {loading ? 'Entrando...' : 'Iniciar Sesión'}
+                {loading ? t('Entrando...') : t('Iniciar Sesión')}
               </button>
             </form>
           </div>
@@ -319,7 +325,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Nombre de Usuario
+                {t('Nombre de Usuario')}
               </label>
               <input
                 type="text"
@@ -333,11 +339,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Correo Electrónico
+                {t('Correo Electrónico')}
               </label>
               <input
                 type="email"
-                placeholder="ejemplo@correo.com"
+                placeholder={t('ejemplo@correo.com')}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -347,11 +353,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Contraseña
+                {t('Contraseña')}
               </label>
               <input
                 type="password"
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('Mínimo 8 caracteres')}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -361,11 +367,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Confirmar Contraseña
+                {t('Confirmar Contraseña')}
               </label>
               <input
                 type="password"
-                placeholder="Repite tu contraseña"
+                placeholder={t('Repite tu contraseña')}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -375,10 +381,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Biografía
+                {t('Biografía')}
               </label>
               <textarea
-                placeholder="Cuéntanos un poco sobre tus gustos gamer..."
+                placeholder={t('Cuéntanos un poco sobre tus gustos gamer...')}
                 value={bio}
                 rows={2}
                 onChange={(e) => setBio(e.target.value)}
@@ -388,7 +394,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Elige tu Pixel Avatar
+                {t('Elige tu Pixel Avatar')}
               </label>
               <div className="flex gap-3 overflow-x-auto pb-1">
                 {['merlin', 'snickers', 'shadow', 'mittens', 'king', 'coco', 'leo'].map(seed => {
@@ -418,7 +424,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <UserPlus className="w-4 h-4" />
-              {loading ? 'Registrando...' : 'Crear mi Diario Gamer'}
+              {loading ? t('Registrando...') : t('Crear mi Diario Gamer')}
             </button>
           </form>
         )}
@@ -430,16 +436,16 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               onClick={() => switchMode('login')}
               className="text-xs text-slate-400 hover:text-slate-200 transition flex items-center gap-1"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Volver al login
+              <ArrowLeft className="w-3.5 h-3.5" /> {t('Volver al login')}
             </button>
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Correo Electrónico
+                {t('Correo Electrónico')}
               </label>
               <input
                 type="email"
-                placeholder="ejemplo@correo.com"
+                placeholder={t('ejemplo@correo.com')}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -453,7 +459,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Mail className="w-4 h-4" />
-              {loading ? 'Enviando enlace...' : 'Enviar enlace de recuperación'}
+              {loading ? t('Enviando enlace...') : t('Enviar enlace de recuperación')}
             </button>
           </form>
         )}
@@ -462,16 +468,16 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="flex items-center gap-2 text-blue-300 text-xs bg-blue-950/20 border border-blue-500/20 rounded-xl p-3">
               <KeyRound className="w-4 h-4" />
-              <span>El enlace de recuperación está activo. Define tu nueva contraseña.</span>
+              <span>{t('El enlace de recuperación está activo. Define tu nueva contraseña.')}</span>
             </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Nueva Contraseña
+                {t('Nueva Contraseña')}
               </label>
               <input
                 type="password"
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('Mínimo 8 caracteres')}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -481,11 +487,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                Confirmar Nueva Contraseña
+                {t('Confirmar Nueva Contraseña')}
               </label>
               <input
                 type="password"
-                placeholder="Repite la nueva contraseña"
+                placeholder={t('Repite la nueva contraseña')}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -499,7 +505,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <KeyRound className="w-4 h-4" />
-              {loading ? 'Actualizando...' : 'Guardar nueva contraseña'}
+              {loading ? t('Actualizando...') : t('Guardar nueva contraseña')}
             </button>
           </form>
         )}

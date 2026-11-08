@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Review, Game, CustomList } from '../types.ts';
 import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { useLanguage } from '../i18n.tsx';
 
 interface UserProfileProps {
   userId: string;
@@ -23,6 +24,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   onSelectGame,
   onSelectUser,
 }) => {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<
     | (User & {
         followersCount: number;
@@ -82,8 +84,8 @@ try {
         userId,
         gameId: lib.gameId,
         rating: lib.rating,
-        title: lib.notes ? 'Anotación de Diario' : 'Valoración',
-        content: lib.notes || 'Añadido con nota rápida.',
+        title: lib.notes ? t('Anotación de Diario') : t('Valoración'),
+        content: lib.notes || t('Añadido con nota rápida.'),
         likes: [],
         createdAt: lib.updatedAt ?? new Date().toISOString(),
         game: lib.game,
@@ -297,14 +299,14 @@ try {
   );
 
   setIsEditing(false);
-  setEditMessage('¡Perfil guardado!');
+  setEditMessage(t('¡Perfil guardado!'));
 
   setTimeout(
     () => setEditMessage(''),
     3000
   );
 } catch (err: any) {
-  setEditMessage(`Error: ${err.message}`);
+  setEditMessage(`Error: ${t(err.message)}`);
 }
 
 };
@@ -322,7 +324,7 @@ return ( <div className="space-y-6 pb-20 animate-pulse"> <div className="h-44 bg
 }
 
 if (!profile) {
-return ( <div className="text-center py-12 text-slate-500"> <p>Usuario no encontrado en la comunidad.</p> </div>
+return ( <div className="text-center py-12 text-slate-500"> <p>{t('Usuario no encontrado en la comunidad.')}</p> </div>
 );
 }
 
@@ -336,7 +338,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">
-              Lista de @{profile.username}
+              {t('Lista de')} @{profile.username}
             </p>
 
             <h2 className="mt-1 text-xl font-bold text-white">
@@ -344,7 +346,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             </h2>
 
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
-              {selectedList.description || 'Sin descripción.'}
+              {selectedList.description || t('Sin descripción.')}
             </p>
           </div>
 
@@ -352,7 +354,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             type="button"
             onClick={() => setSelectedList(null)}
             className="rounded-lg border border-slate-800 p-2 text-slate-400 hover:text-white"
-            aria-label="Cerrar detalle de lista"
+            aria-label={t('Cerrar detalle de lista')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -360,7 +362,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
         {selectedList.games.length === 0 ? (
           <p className="py-10 text-center text-xs text-slate-500">
-            Esta lista todavía no contiene juegos.
+            {t('Esta lista todavía no contiene juegos.')}
           </p>
         ) : (
           <div className="mx-auto mt-6 grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -402,7 +404,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                 Conexiones de @{profile.username}
               </h2>
               <p className="text-[11px] text-slate-400 mt-1">
-                {socialModalTab === 'followers' ? 'Jugadores que le siguen' : 'Jugadores a los que sigue'}
+                {socialModalTab === 'followers' ? t('Jugadores que le siguen') : t('Jugadores a los que sigue')}
               </p>
             </div>
           </div>
@@ -426,7 +428,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                 : 'text-slate-400 border-transparent hover:text-slate-200'
             }`}
           >
-            Seguidores ({profile.followersCount})
+            {t('Seguidores')} ({profile.followersCount})
           </button>
           <button
             type="button"
@@ -437,7 +439,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                 : 'text-slate-400 border-transparent hover:text-slate-200'
             }`}
           >
-            Siguiendo ({profile.followingCount})
+            {t('Siguiendo')} ({profile.followingCount})
           </button>
         </div>
 
@@ -447,7 +449,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar por usuario o biografía..."
+              placeholder={t('Buscar por usuario o biografía...')}
               value={socialSearch}
               onChange={(e) => setSocialSearch(e.target.value)}
               className="w-full bg-[#07090e] border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition"
@@ -460,17 +462,17 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           {loadingSocial ? (
             <div className="py-12 text-center text-xs text-slate-500 space-y-2">
               <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p>Cargando lista de jugadores...</p>
+              <p>{t('Cargando lista de jugadores...')}</p>
             </div>
           ) : filteredSocialUsers.length === 0 ? (
             <div className="py-12 text-center text-slate-500 space-y-2">
               <UserX className="w-8 h-8 mx-auto text-slate-600 opacity-60" />
               <p className="text-xs font-medium text-slate-400">
                 {socialSearch
-                  ? 'No se encontraron jugadores para esa búsqueda.'
+                  ? t('No se encontraron jugadores para esa búsqueda.')
                   : socialModalTab === 'followers'
-                  ? 'Aún no tiene seguidores.'
-                  : 'Aún no sigue a ningún jugador.'}
+                  ? t('Aún no tiene seguidores.')
+                  : t('Aún no sigue a ningún jugador.')}
               </p>
             </div>
           ) : (
@@ -502,7 +504,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                         @{u.username}
                       </p>
                       <p className="text-[11px] text-slate-400 truncate leading-snug">
-                        {u.bio || '¡Sin biografía todavía!'}
+                        {u.bio || t('¡Sin biografía todavía!')}
                       </p>
                     </div>
                   </button>
@@ -510,7 +512,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                   <div className="flex-shrink-0">
                     {isMe ? (
                       <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full">
-                        Tú
+                        {t('Tú')}
                       </span>
                     ) : (
                       <button
@@ -525,12 +527,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                         {isFollowedByMe ? (
                           <>
                             <UserCheck className="w-3.5 h-3.5" />
-                            <span>Siguiendo</span>
+                            <span>{t('Siguiendo')}</span>
                           </>
                         ) : (
                           <>
                             <UserPlus className="w-3.5 h-3.5" />
-                            <span>Seguir</span>
+                            <span>{t('Seguir')}</span>
                           </>
                         )}
                       </button>
@@ -566,7 +568,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           </h1>
 
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-            {profile.bio || '¡Sin biografía todavía!'}
+            {profile.bio || t('¡Sin biografía todavía!')}
           </p>
         </div>
       </div>
@@ -579,13 +581,13 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             type="button"
             onClick={() => openSocialModal('followers')}
             className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
-            title="Ver seguidores"
+            title={t('Ver seguidores')}
           >
             <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
               {profile.followersCount}
             </span>
             <span className="group-hover:text-slate-200 transition">
-              {profile.followersCount === 1 ? 'seguidor' : 'seguidores'}
+              {profile.followersCount === 1 ? t('seguidor') : t('seguidores')}
             </span>
           </button>
 
@@ -593,12 +595,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             type="button"
             onClick={() => openSocialModal('following')}
             className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
-            title="Ver usuarios seguidos"
+            title={t('Ver usuarios seguidos')}
           >
             <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
               {profile.followingCount}
             </span>
-            <span className="group-hover:text-slate-200 transition">seguidos</span>
+            <span className="group-hover:text-slate-200 transition">{t('seguidos')}</span>
           </button>
         </div>
 
@@ -609,7 +611,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             className="px-4 py-2 border border-slate-800 hover:border-blue-500/20 bg-[#07090e] hover:bg-slate-900 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
           >
             <PenSquare className="w-3.5 h-3.5" />
-            Editar Perfil
+            {t('Editar Perfil')}
           </button>
         ) : (
           <button
@@ -623,8 +625,8 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           >
             <Users className="w-4 h-4" />
             {isFollowing
-              ? 'Siguiendo ✓'
-              : 'Seguir jugador'}
+              ? `${t('Siguiendo')} ✓`
+              : t('Seguir jugador')}
           </button>
         )}
       </div>
@@ -637,7 +639,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         className="mt-6 pt-6 border-t border-slate-850 space-y-4 max-w-md animate-fade-in text-left"
       >
         <h3 className="text-xs uppercase font-bold tracking-wider text-slate-500">
-          Formulario de Edición
+          {t('Formulario de Edición')}
         </h3>
 
         {editMessage && (
@@ -648,7 +650,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
         <div className="space-y-1.5">
           <label className="block text-[10px] uppercase font-bold text-slate-500">
-            Nombre de usuario
+            {t('Nombre de usuario')}
           </label>
 
           <input
@@ -662,7 +664,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
         <div className="space-y-1.5">
           <label className="block text-[10px] uppercase font-bold text-slate-500">
-            Biografía
+            {t('Biografía')}
           </label>
 
           <textarea
@@ -682,7 +684,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             type="text"
             value={editAvatar}
             onChange={(e) => setEditAvatar(e.target.value)}
-            placeholder="Ingresa url de tu foto..."
+            placeholder={t('Ingresa url de tu foto...')}
             className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none"
           />
         </div>
@@ -693,14 +695,14 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             onClick={() => setIsEditing(false)}
             className="px-3.5 py-1.5 bg-slate-850 text-slate-400 font-semibold rounded-lg text-[11px]"
           >
-            Cancelar
+            {t('Cancelar')}
           </button>
 
           <button
             type="submit"
             className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg text-[11px]"
           >
-            Guardar
+            {t('Guardar')}
           </button>
         </div>
       </form>
@@ -715,12 +717,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
       <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
         <Trophy className="w-4.5 h-4.5 text-yellow-500" />
-        Valoraciones y Diario ({reviews.length})
+        {t('Valoraciones y Diario')} ({reviews.length})
       </h3>
 
       {reviews.length === 0 ? (
         <div className="bg-slate-900/30 p-8 rounded-xl border border-slate-850 text-center text-slate-500 text-xs">
-          Este gamer no ha realizado anotaciones o ratings todavía.
+          {t('Este gamer no ha realizado anotaciones o ratings todavía.')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -789,12 +791,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
       <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
         <Swords className="w-4.5 h-4.5 text-indigo-400" />
-        Listas Públicas ({lists.length})
+        {t('Listas Públicas')} ({lists.length})
       </h3>
 
       {lists.length === 0 ? (
         <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-xl text-center text-slate-500 text-xs">
-          No hay colecciones publicadas.
+          {t('No hay colecciones publicadas.')}
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -811,7 +813,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
               </h4>
 
               <p className="text-[10px] text-slate-500 leading-normal line-clamp-2">
-                {list.description || 'Sin descripción.'}
+                {list.description || t('Sin descripción.')}
               </p>
 
               <div className="flex h-14 gap-1.5 overflow-hidden rounded-lg border border-slate-850 bg-[#07090e]/50 p-1">
@@ -827,7 +829,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
                 {list.games.length === 0 && (
                   <span className="p-2 text-[10px] italic text-slate-600">
-                    Lista vacía.
+                    {t('Lista vacía.')}
                   </span>
                 )}
               </div>

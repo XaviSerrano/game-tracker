@@ -6,6 +6,7 @@ import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
 import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { TiltCard } from './TiltCard.tsx';
+import { useLanguage } from '../i18n.tsx';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
@@ -85,6 +86,7 @@ const GameSkeletons: React.FC<{ count?: number }> = ({ count = 8 }) => (
 );
 
 export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired }) => {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<DiscoverFilters>(readFiltersFromUrl);
   const [games, setGames] = useState<Game[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -439,12 +441,15 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
   const showHome = !hasActiveFilters && !isUserSearch;
   const activeFilterNames = [
-    filters.genreId ? { key: 'genreId', name: genreById.get(filters.genreId) || 'Género' } : null,
-    filters.platformId ? { key: 'platformId', name: platformById.get(filters.platformId) || 'Plataforma' } : null,
-    filters.yearFrom ? { key: 'yearFrom', name: `Desde ${filters.yearFrom}` } : null,
-    filters.yearTo ? { key: 'yearTo', name: `Hasta ${filters.yearTo}` } : null,
-    filters.minRating ? { key: 'minRating', name: `Valoración ${filters.minRating}+` } : null
+    filters.genreId ? { key: 'genreId', name: genreById.get(filters.genreId) || t('Género') } : null,
+    filters.platformId ? { key: 'platformId', name: platformById.get(filters.platformId) || t('Plataforma') } : null,
+    filters.yearFrom ? { key: 'yearFrom', name: `${t('Desde')} ${filters.yearFrom}` } : null,
+    filters.yearTo ? { key: 'yearTo', name: `${t('Hasta')} ${filters.yearTo}` } : null,
+    filters.minRating ? { key: 'minRating', name: `${t('Valoración')} ${filters.minRating}+` } : null
   ].filter((entry): entry is { key: keyof DiscoverFilters; name: string } => entry !== null);
+  const localizedQuickActionMessage = quickActionMessage.startsWith('Error: ')
+    ? `Error: ${t(quickActionMessage.slice('Error: '.length))}`
+    : t(quickActionMessage);
 
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
@@ -452,33 +457,33 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         <ParticleBackdrop className="opacity-60" count={14} />
         <div className="relative">
           <h2 className="text-2xl font-bold font-display tracking-tight text-white">
-            Descubrir <ShimmerText>Videojuegos</ShimmerText>
+            {t('Descubrir')} <ShimmerText>{t('Videojuegos')}</ShimmerText>
           </h2>
           <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-400">
-            Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.
+            {t('Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.')}
           </p>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="relative flex gap-2">
-          <label htmlFor="discover-search" className="sr-only">Buscar videojuegos o usuarios</label>
+          <label htmlFor="discover-search" className="sr-only">{t('Buscar videojuegos o usuarios')}</label>
           <div className="relative min-w-0 flex-1">
             <Search aria-hidden="true" className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
             <input
               id="discover-search"
               type="search"
-              placeholder="Busca juegos o @usuarios..."
+              placeholder={t('Busca juegos o @usuarios...')}
               value={filters.query}
               onChange={event => updateFilters({ query: event.target.value })}
               className="w-full rounded-xl border border-slate-800 bg-[#0f121d] py-3 pl-11 pr-4 text-xs text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <button type="submit" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-blue-500">
-            Buscar
+            {t('Buscar')}
           </button>
           {!isUserSearch && (
             <button
               type="button"
-              aria-label={showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+              aria-label={showFilters ? t('Ocultar filtros') : t('Mostrar filtros')}
               aria-expanded={showFilters}
               onClick={() => setShowFilters(open => !open)}
               className={`rounded-xl border px-3.5 py-3 transition ${showFilters ? 'border-blue-500/30 bg-slate-800 text-blue-300' : 'border-slate-800 bg-[#0f121d] text-slate-400 hover:text-white'}`}
@@ -491,41 +496,41 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         {showFilters && !isUserSearch && (
           <div className="relative grid grid-cols-1 gap-4 rounded-xl border border-slate-800 bg-[#0b0e16] p-4 sm:grid-cols-2 xl:grid-cols-3">
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Género</span>
+              <span className="block">{t('Género')}</span>
               <select value={filters.genreId} onChange={event => updateFilters({ genreId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white [color-scheme:dark] [&>option]:bg-[#07090e] [&>option]:text-white">
-                <option value="">Todos los géneros</option>
-                {loadingTaxonomies && genres.length === 0 && <option disabled>Cargando géneros...</option>}
+                <option value="">{t('Todos los géneros')}</option>
+                {loadingTaxonomies && genres.length === 0 && <option disabled>{t('Cargando géneros...')}</option>}
                 {genres.map(genre => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
               </select>
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Plataforma</span>
+              <span className="block">{t('Plataforma')}</span>
               <select value={filters.platformId} onChange={event => updateFilters({ platformId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white [color-scheme:dark] [&>option]:bg-[#07090e] [&>option]:text-white">
-                <option value="">Todas las plataformas</option>
-                {loadingTaxonomies && platforms.length === 0 && <option disabled>Cargando plataformas...</option>}
+                <option value="">{t('Todas las plataformas')}</option>
+                {loadingTaxonomies && platforms.length === 0 && <option disabled>{t('Cargando plataformas...')}</option>}
                 {platforms.map(platform => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
               </select>
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Ordenar</span>
+              <span className="block">{t('Ordenar')}</span>
               <select value={filters.sort} onChange={event => updateFilters({ sort: event.target.value as DiscoverFilters['sort'] })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white">
-                <option value="relevance">Relevancia</option>
-                <option value="newest">Más recientes</option>
-                <option value="rating">Mejor valorados</option>
-                <option value="popularity">Más populares</option>
+                <option value="relevance">{t('Relevancia')}</option>
+                <option value="newest">{t('Más recientes')}</option>
+                <option value="rating">{t('Mejor valorados')}</option>
+                <option value="popularity">{t('Más populares')}</option>
               </select>
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Desde el año</span>
-              <input type="number" min="1950" max="2100" value={filters.yearFrom} onChange={event => updateFilters({ yearFrom: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder="p. ej. 2018" />
+              <span className="block">{t('Desde el año')}</span>
+              <input type="number" min="1950" max="2100" value={filters.yearFrom} onChange={event => updateFilters({ yearFrom: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder={t('p. ej. 2018')} />
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Hasta el año</span>
-              <input type="number" min="1950" max="2100" value={filters.yearTo} onChange={event => updateFilters({ yearTo: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder="p. ej. 2026" />
+              <span className="block">{t('Hasta el año')}</span>
+              <input type="number" min="1950" max="2100" value={filters.yearTo} onChange={event => updateFilters({ yearTo: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder={t('p. ej. 2026')} />
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
-              <span className="block">Valoración mínima (0–100)</span>
-              <input type="number" min="0" max="100" value={filters.minRating} onChange={event => updateFilters({ minRating: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder="Cualquier valoración" />
+              <span className="block">{t('Valoración mínima (0–100)')}</span>
+              <input type="number" min="0" max="100" value={filters.minRating} onChange={event => updateFilters({ minRating: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white" placeholder={t('Cualquier valoración')} />
             </label>
           </div>
         )}
@@ -533,15 +538,15 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
       {taxonomyError && (
         <div role="status" className="flex flex-wrap items-center gap-2 text-xs text-amber-300">
-          <span>{taxonomyError}</span>
-          <button type="button" onClick={() => setTaxonomyRetry(value => value + 1)} className="font-semibold underline">Reintentar</button>
+          <span>{t(taxonomyError)}</span>
+          <button type="button" onClick={() => setTaxonomyRetry(value => value + 1)} className="font-semibold underline">{t('Reintentar')}</button>
         </div>
       )}
       {quickActionMessage && (
         <div role="status" className={`rounded-xl border p-2.5 text-xs ${quickActionMessage.startsWith('Error') ? 'border-red-500/20 bg-red-950/40 text-red-300' : 'border-emerald-500/20 bg-emerald-950/40 text-emerald-300'}`}>
-          {quickActionMessage}
+          {localizedQuickActionMessage}
           {token && !libraryReady && !loadingLibrary && (
-            <button type="button" onClick={() => { setQuickActionMessage(''); setLibraryRetry(value => value + 1); }} className="ml-2 font-semibold underline">Reintentar</button>
+            <button type="button" onClick={() => { setQuickActionMessage(''); setLibraryRetry(value => value + 1); }} className="ml-2 font-semibold underline">{t('Reintentar')}</button>
           )}
         </div>
       )}
@@ -549,8 +554,8 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       {showHome && (
         <section aria-labelledby="discover-popular" className="space-y-3">
           <div>
-            <h3 id="discover-popular" className="text-lg font-bold text-white">Populares ahora</h3>
-            <p className="mt-1 text-xs text-slate-500">Juegos con mayor actividad y valoraciones en IGDB.</p>
+            <h3 id="discover-popular" className="text-lg font-bold text-white">{t('Populares ahora')}</h3>
+            <p className="mt-1 text-xs text-slate-500">{t('Juegos con mayor actividad y valoraciones en IGDB.')}</p>
           </div>
           {loadingHome && <GameSkeletons count={15} />}
           {popularGames.length > 0 && (
@@ -560,20 +565,20 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           )}
           {homeError && (
             <div className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
-              <p className="text-sm font-semibold text-red-300">No se pudo cargar el catálogo</p>
-              <p className="mt-2 text-xs text-slate-400">{homeError}</p>
+              <p className="text-sm font-semibold text-red-300">{t('No se pudo cargar el catálogo')}</p>
+              <p className="mt-2 text-xs text-slate-400">{t(homeError)}</p>
               <button type="button" onClick={() => void fetchPopular(popularGames.length ? popularPage + 1 : 0)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs text-white">
-                <RefreshCw className="h-3.5 w-3.5" /> Reintentar
+                <RefreshCw className="h-3.5 w-3.5" /> {t('Reintentar')}
               </button>
             </div>
           )}
           {!loadingHome && !homeError && popularGames.length === 0 && (
-            <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">No hay juegos populares disponibles en este momento.</p>
+            <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">{t('No hay juegos populares disponibles en este momento.')}</p>
           )}
           {popularHasMore && !homeError && (
             <div className="flex justify-center">
               <button type="button" disabled={loadingMorePopular} onClick={() => void fetchPopular(popularPage + 1)} className="rounded-xl border border-blue-500/30 bg-blue-600/10 px-5 py-2.5 text-xs font-semibold text-blue-300 disabled:opacity-60">
-                {loadingMorePopular ? 'Cargando...' : 'Cargar más'}
+                {loadingMorePopular ? t('Cargando...') : t('Cargar más')}
               </button>
             </div>
           )}
@@ -584,23 +589,23 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-bold text-white">
-              {filters.query.trim() ? `Resultados para “${filters.query.trim()}”` : 'Juegos que coinciden con tus filtros'}
+              {filters.query.trim() ? `${t('resultados para')} “${filters.query.trim()}”` : t('Juegos que coinciden con tus filtros')}
             </h3>
             {(activeFilterNames.length > 0 || filters.query.trim()) && (
               <button type="button" onClick={clearFilters} className="text-xs font-semibold text-blue-300 hover:text-blue-200">
-                Limpiar filtros
+                {t('Limpiar filtros')}
               </button>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            {filters.query.trim() && <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] text-blue-200">Búsqueda: {filters.query.trim()}</span>}
+            {filters.query.trim() && <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] text-blue-200">{t('Búsqueda:')} {filters.query.trim()}</span>}
             {activeFilterNames.map(filter => (
               <button
                 type="button"
                 key={filter.key}
                 onClick={() => updateFilters({ [filter.key]: '' })}
                 className="rounded-full border border-slate-700 bg-slate-800/70 px-2.5 py-1 text-[11px] text-slate-300 hover:text-white"
-                aria-label={`Quitar filtro ${filter.name}`}
+                aria-label={`${t('Quitar filtro')} ${filter.name}`}
               >
                 {filter.name} ×
               </button>
@@ -610,22 +615,22 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           {loading && games.length === 0 ? <GameSkeletons /> : null}
           {apiError ? (
             <div className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
-              <p className="text-sm font-semibold text-red-300">Error buscando juegos</p>
-              <p className="mt-2 text-xs text-slate-400">{apiError}</p>
+              <p className="text-sm font-semibold text-red-300">{t('Error buscando juegos')}</p>
+              <p className="mt-2 text-xs text-slate-400">{t(apiError)}</p>
               <button type="button" onClick={() => setFilters(current => ({ ...current }))} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs text-white">
-                <RefreshCw className="h-3.5 w-3.5" /> Reintentar
+                <RefreshCw className="h-3.5 w-3.5" /> {t('Reintentar')}
               </button>
             </div>
           ) : games.length > 0 ? (
             <>
-              <p aria-live="polite" className="text-xs text-slate-500">{games.length} resultados cargados</p>
+              <p aria-live="polite" className="text-xs text-slate-500">{games.length} {t('resultados cargados')}</p>
               <div className={`mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 transition-opacity sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ${loading ? 'opacity-60' : 'opacity-100'}`}>
                 {games.map(renderGameCard)}
               </div>
               {hasMore && (
                 <div className="flex justify-center">
                   <button type="button" disabled={loadingMore} onClick={() => updateFilters({ page: filters.page + 1 })} className="rounded-xl border border-blue-500/30 bg-blue-600/10 px-5 py-2.5 text-xs font-semibold text-blue-300 disabled:opacity-60">
-                    {loadingMore ? 'Cargando...' : 'Cargar más'}
+                    {loadingMore ? t('Cargando...') : t('Cargar más')}
                   </button>
                 </div>
               )}
@@ -633,15 +638,15 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           ) : !loading && !apiError && filters.query.trim().length === 1 && !shortSearchForced ? (
             <div className="rounded-2xl border border-slate-800 bg-[#0f121d] p-8 text-center">
               <Search className="mx-auto h-8 w-8 text-slate-600" />
-              <p className="mt-3 text-sm font-semibold text-slate-300">Escribe al menos 2 caracteres</p>
-              <p className="mt-1 text-xs text-slate-500">También puedes pulsar Buscar para forzar una consulta corta.</p>
+              <p className="mt-3 text-sm font-semibold text-slate-300">{t('Escribe al menos 2 caracteres')}</p>
+              <p className="mt-1 text-xs text-slate-500">{t('También puedes pulsar Buscar para forzar una consulta corta.')}</p>
             </div>
           ) : !loading ? (
             <div className="rounded-2xl border border-slate-800 bg-[#0f121d] p-8 text-center">
               <Gamepad2 className="mx-auto h-8 w-8 text-slate-600" />
-              <p className="mt-3 text-sm font-semibold text-slate-300">No se encontraron juegos</p>
-              <p className="mt-1 text-xs text-slate-500">Prueba con otro título o quita alguno de los filtros activos.</p>
-              <button type="button" onClick={clearFilters} className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-white">Quitar filtros</button>
+              <p className="mt-3 text-sm font-semibold text-slate-300">{t('No se encontraron juegos')}</p>
+              <p className="mt-1 text-xs text-slate-500">{t('Prueba con otro título o quita alguno de los filtros activos.')}</p>
+              <button type="button" onClick={clearFilters} className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-white">{t('Quitar filtros')}</button>
             </div>
           ) : null}
         </div>
@@ -652,7 +657,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           {loading ? <div className="h-24 animate-pulse rounded-xl bg-[#0f121d]" /> : apiError ? (
             <p className="rounded-xl border border-red-500/20 p-5 text-xs text-red-300">{apiError}</p>
           ) : filters.query.trim() === '@' ? (
-            <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">Escribe un nombre de usuario después de @.</p>
+            <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">{t('Escribe un nombre de usuario después de @.')}</p>
           ) : users.length ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {users.map(user => (
@@ -660,12 +665,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
                   <img src={user.avatar} alt="" loading="lazy" className="h-11 w-11 rounded-full border border-slate-800 object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-bold text-white">@{user.username}</span>
-                    <span className="mt-1 block line-clamp-2 text-[11px] text-slate-500">{user.bio || 'Sin bio por ahora.'}</span>
+                    <span className="mt-1 block line-clamp-2 text-[11px] text-slate-500">{user.bio || t('Sin bio por ahora.')}</span>
                   </span>
                 </button>
               ))}
             </div>
-          ) : !loading && <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">No se encontraron usuarios.</p>}
+          ) : !loading && <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">{t('No se encontraron usuarios.')}</p>}
         </section>
       )}
 
