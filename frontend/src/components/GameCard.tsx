@@ -60,6 +60,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   };
 
   const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onSelectGame(game.igdbId);

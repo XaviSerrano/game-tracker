@@ -18,6 +18,8 @@ El formato es simple y humano: agrupado por fecha, con resumen funcional y tecni
 
 ### Cambiado
 
+- Las tarjetas de Descubrir permiten añadir y quitar juegos de la wishlist
+  con el marcador, sin abrir el detalle.
 - Los filtros de Descubrir ofrecen todos los géneros y plataformas de IGDB
   e indican los errores de carga con opción de reintentar.
 - Descubrir muestra los juegos populares en una cuadrícula de 15 resultados

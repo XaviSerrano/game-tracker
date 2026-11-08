@@ -156,6 +156,9 @@ export default function App() {
     setToken(null);
     setSelectedGameId(null);
     setSelectedUserId(null);
+
+    navigateTo('/');
+
   };
 
   const handleNavigation = (tab: MainTab) => {

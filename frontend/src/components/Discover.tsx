@@ -105,6 +105,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [taxonomyRetry, setTaxonomyRetry] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [libraryStatuses, setLibraryStatuses] = useState<Map<number, GameStatus>>(new Map());
+  const [libraryReady, setLibraryReady] = useState(false);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [libraryRetry, setLibraryRetry] = useState(0);
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const [shortSearchForced, setShortSearchForced] = useState(false);
@@ -297,31 +300,50 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   }, [filters, hasActiveFilters, isUserSearch]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadLibrary = async () => {
+      setLibraryReady(false);
+      setLibraryStatuses(new Map());
       if (!token) {
-        setLibraryStatuses(new Map());
+        setLoadingLibrary(false);
         return;
       }
+      setLoadingLibrary(true);
       try {
         const meResponse = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
         });
-        if (!meResponse.ok) return;
+        if (!meResponse.ok) throw new Error('No se pudo comprobar la sesión.');
         const me = await meResponse.json();
-        const libraryResponse = await fetch(`/api/users/${me.id}/library`);
-        if (!libraryResponse.ok) return;
+        const libraryResponse = await fetch(`/api/users/${me.id}/library`, { signal: controller.signal });
+        if (!libraryResponse.ok) throw new Error('No se pudo cargar tu biblioteca.');
         const data = await libraryResponse.json();
+        if (!Array.isArray(data)) throw new Error('La respuesta de la biblioteca no es válida.');
+        if (controller.signal.aborted) return;
         setLibraryStatuses(new Map(
-          (Array.isArray(data) ? data : [])
+          data
             .filter((entry: any) => Number.isSafeInteger(entry?.gameId) && typeof entry?.status === 'string')
             .map((entry: any) => [entry.gameId, entry.status as GameStatus])
         ));
+        setLibraryReady(true);
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error('Error loading library statuses for Discover:', error);
+        setQuickActionMessage(`Error: ${error instanceof Error ? error.message : 'No se pudo cargar tu biblioteca.'}`);
+      } finally {
+        if (!controller.signal.aborted) setLoadingLibrary(false);
       }
     };
     void loadLibrary();
-  }, [token]);
+    return () => controller.abort();
+  }, [token, libraryRetry]);
+
+  useEffect(() => {
+    if (!quickActionMessage || quickActionMessage.startsWith('Error')) return;
+    const timeout = window.setTimeout(() => setQuickActionMessage(''), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [quickActionMessage]);
 
   const updateFilters = (updates: Partial<DiscoverFilters>) => {
     if (updates.query !== undefined && updates.query.trim().length !== 1) {
@@ -348,11 +370,36 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       onAuthRequired?.();
       return;
     }
-    if (libraryStatuses.has(gameId) || savingWishlistGameId === gameId) return;
+    if (!libraryReady) {
+      setQuickActionMessage(loadingLibrary
+        ? 'Cargando tu biblioteca. Inténtalo de nuevo en un momento.'
+        : 'Error: No se ha podido comprobar tu biblioteca. Vuelve a intentarlo.');
+      return;
+    }
+    if (savingWishlistGameId !== null) return;
+
+    const status = libraryStatuses.get(gameId);
+    if (status && status !== 'WISHLIST') return;
 
     setSavingWishlistGameId(gameId);
     setQuickActionMessage('');
     try {
+      if (status === 'WISHLIST') {
+        const response = await fetch(`/api/library/${gameId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data?.error || 'No se pudo quitar el juego de la wishlist.');
+        setLibraryStatuses(previous => {
+          const next = new Map(previous);
+          next.delete(gameId);
+          return next;
+        });
+        setQuickActionMessage('Juego quitado de tu wishlist.');
+        return;
+      }
+
       const importResponse = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
       const importedGame = await importResponse.json();
       if (!importResponse.ok) throw new Error(importedGame?.error || 'No se pudo guardar el juego.');
@@ -370,7 +417,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
       setLibraryStatuses(previous => new Map(previous).set(gameId, 'WISHLIST'));
       setQuickActionMessage('Juego añadido a tu wishlist.');
-      window.setTimeout(() => setQuickActionMessage(''), 3000);
     } catch (error) {
       setQuickActionMessage(`Error: ${error instanceof Error ? error.message : 'No se pudo añadir el juego.'}`);
     } finally {
@@ -385,7 +431,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         onSelectGame={onSelectGame}
         userGameStatus={libraryStatuses.get(game.igdbId)}
         showDiscoverMeta
-        onToggleWishlist={!libraryStatuses.has(game.igdbId) ? handleQuickWishlist : undefined}
+        onToggleWishlist={!libraryStatuses.has(game.igdbId) || libraryStatuses.get(game.igdbId) === 'WISHLIST' ? handleQuickWishlist : undefined}
         savingWishlistGameId={savingWishlistGameId}
       />
     </TiltCard>
@@ -494,6 +540,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       {quickActionMessage && (
         <div role="status" className={`rounded-xl border p-2.5 text-xs ${quickActionMessage.startsWith('Error') ? 'border-red-500/20 bg-red-950/40 text-red-300' : 'border-emerald-500/20 bg-emerald-950/40 text-emerald-300'}`}>
           {quickActionMessage}
+          {token && !libraryReady && !loadingLibrary && (
+            <button type="button" onClick={() => { setQuickActionMessage(''); setLibraryRetry(value => value + 1); }} className="ml-2 font-semibold underline">Reintentar</button>
+          )}
         </div>
       )}
 
