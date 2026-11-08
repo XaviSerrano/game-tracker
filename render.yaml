@@ -2,18 +2,16 @@ services:
   - type: web
     name: gametracker-api
     runtime: node
-    rootDir: frontend
+    rootDir: backend
     buildCommand: npm ci && npm run build
     startCommand: npm run start
-    healthCheckPath: /api/social/feed?scope=all
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 22.14.0
       - key: NODE_ENV
         value: production
-      # Crea una base de datos PostgreSQL en Render (dashboard → New → PostgreSQL)
-      # y pega aquí su "Internal Connection String" (o External si el servicio
-      # web vive fuera de Render).
+      # Use the managed PostgreSQL connection string for this service.
       - key: DATABASE_URL
         sync: false
       - key: IGDB_CLIENT_ID

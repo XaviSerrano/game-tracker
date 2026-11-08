@@ -1,384 +1,54 @@
 # Data Model
 
-## Objetivo
-
-Este documento describe las entidades de GameTracker, sus relaciones y donde se almacenan hoy los datos.
-
-> Documento vivo: cualquier cambio en entidades, campos o persistencia debe reflejarse aqui.
-
----
-
-## Estado actual
-
-Hoy el proyecto tiene **dos modelos de datos convivientes**:
-
-1. **Modelo principal de Express + PostgreSQL** en `frontend/server/db.ts`
-2. **Modelo parcial SQLite** en `backend/app/models.py`
-
-Esto significa que la fuente de verdad depende de la capa backend que se use.
-
----
-
-# 1. Modelo principal del servidor Express
-
-El servidor Node usa PostgreSQL mediante `DATABASE_URL`, configurada para desarrollo local en `backend/.env`.
-
-- `frontend/server/db.ts`
-- esquema idempotente inicializado por `initDb()`
-
-## 1.1 Entidad `User`
-
-Representa un usuario de la aplicacion.
-
-### Campos
-
-- `id: string`
-- `username: string`
-- `email: string`
-- `avatar: string`
-- `bio: string`
-- `createdAt: string`
-
-### Relaciones
-
-- 1:N con `UserGame`
-- 1:N con `Review`
-- 1:N con `CustomList`
-- N:N con `User` via `Follow`
-- 1:N con `Activity`
-
----
-
-## 1.2 Entidad `Game`
-
-Representa un videojuego importado o cargado desde IGDB.
-
-### Campos
-
-- `igdbId: number`
-- `name: string`
-- `slug: string`
-- `cover: string`
-- `summary: string`
-- `genres: string[]`
-- `platforms: string[]`
-- `releaseDate: string`
-- `rating?: number`
-- `popularity?: number`
-
-### Relaciones
-
-- 1:N con `UserGame`
-- 1:N con `Review`
-- N:N con `CustomList` via `CustomListItem`
-- 1:N potencial con `Activity`
-
----
-
-## 1.3 Entidad `UserGame`
-
-Representa el tracking de un juego por parte de un usuario.
-
-Es una de las entidades mas importantes del sistema.
-
-### Campos
-
-- `userId: string`
-- `gameId: number`
-- `status: GameStatus`
-- `rating: number`
-- `hoursPlayed: number`
-- `startedAt: string | null`
-- `completedAt: string | null`
-- `notes: string`
-- `updatedAt: string`
-
-### Notas
-
-- `rating` usa escala 1-5
-- `0` significa sin valorar
-- se usa como **fuente de verdad del rating** tambien para las reviews
-
-### Relaciones
-
-- N:1 con `User`
-- N:1 con `Game`
-
-### Clave logica
-
-- combinacion `userId + gameId`
-
----
-
-## 1.4 Entidad `Review`
-
-Representa una reseña publica escrita por un usuario sobre un juego.
-
-### Campos
-
-- `id: string`
-- `userId: string`
-- `gameId: number`
-- `title: string`
-- `content: string`
-- `rating?: number`
-- `likes: string[]`
-- `createdAt: string`
-
-### Notas importantes
-
-- aunque la review expone rating, el valor real debe mantenerse sincronizado con `UserGame.rating`
-- los likes se guardan como array de `userId`
-
-### Relaciones
-
-- N:1 con `User`
-- N:1 con `Game`
-
----
-
-## 1.5 Entidad `CustomList`
-
-Representa una lista personalizada creada por un usuario.
-
-### Campos
-
-- `id: string`
-- `userId: string`
-- `name: string`
-- `description: string`
-- `createdAt: string`
-
-### Relaciones
-
-- N:1 con `User`
-- 1:N con `CustomListItem`
-
----
-
-## 1.6 Entidad `CustomListItem`
-
-Tabla puente entre listas y juegos.
-
-### Campos
-
-- `listId: string`
-- `gameId: number`
-
-### Relaciones
-
-- N:1 con `CustomList`
-- N:1 con `Game`
-
----
-
-## 1.7 Entidad `Follow`
-
-Relacion social entre usuarios.
-
-### Campos
-
-- `followerId: string`
-- `followingId: string`
-
-### Relaciones
-
-- N:1 con `User` como follower
-- N:1 con `User` como followed
-
-### Cardinalidad
-
-- N:N entre usuarios
-
----
-
-## 1.8 Entidad `Activity`
-
-Representa eventos del feed social.
-
-### Campos
-
-- `id: string`
-- `userId: string`
-- `type: ActivityType`
-- `gameId?: number`
-- `targetUserId?: string`
-- `details?: string`
-- `createdAt: string`
-
-### Tipos actuales
-
-- `COMPLETED`
-- `WISHLIST`
-- `PLAYING`
-- `REVIEWED`
-- `LIST_CREATED`
-- `FOLLOWED`
-
-### Relaciones
-
-- N:1 con `User`
-- opcional N:1 con `Game`
-- opcional N:1 con `User` destino
-
----
-
-# 2. Modelo del backend FastAPI + SQLite
-
-Persistencia actual:
-
-- `backend/gametracker.db`
-- ORM en `backend/app/models.py`
-
-## 2.1 Tabla `user_games`
-
-### Campos
-
-- `igdb_id: int` (PK)
-- `name: string`
-- `cover: string`
-- `status: string`
-- `added_at: datetime`
-- `updated_at: datetime`
-
-### Observaciones
-
-- este modelo no representa aun la misma riqueza que `UserGame` del servidor Express
-- no incluye:
-  - `userId`
-  - `rating`
-  - `hoursPlayed`
-  - `notes`
-  - `startedAt`
-  - `completedAt`
-
-Por tanto, hoy es un modelo mas simple y no equivalente funcionalmente.
-
----
-
-## 2.2 Tabla `favorites`
-
-### Campos
-
-- `igdb_id: int` (PK)
-- `name: string`
-- `cover: string`
-- `added_at: datetime`
-
----
-
-# 3. Relaciones del dominio
-
-## Resumen conceptual
+GameTracker's active application data is stored in PostgreSQL through
+`backend/src/db.ts`. The database pool uses `DATABASE_URL`; `initDb()` creates
+tables and applies idempotent migrations before the API starts.
+
+## Tables
+
+| Table | Purpose |
+|---|---|
+| `users` | Profiles, password hash/salt, and password-reset state |
+| `games` | IGDB game details cached/imported by the API |
+| `userGames` | Per-user status, rating, playtime, and notes |
+| `reviews` | User-written reviews and stored likes |
+| `customLists` | User-owned lists |
+| `customListItems` | Games included in custom lists |
+| `follows` | User-to-user follow relationships |
+| `activities` | Social activity feed entries |
+| `sessions` | Session tokens and expiration |
+| `securityEvents` | Authentication and security audit events |
+
+`userGames`, `reviews`, and list items reference `games("igdbId")`; user-owned
+records reference `users(id)`. Existing IDs and column names are part of the
+current database contract and should not be changed without a migration.
+
+## Domain relationships
 
 ```text
-User
- |- UserGame -> Game
- |- Review   -> Game
- |- CustomList -> CustomListItem -> Game
- |- Activity
- |- Follow (con otros User)
+User -> UserGame -> Game
+User -> Review -> Game
+User -> CustomList -> CustomListItem -> Game
+User -> Follow -> User
+User -> Activity -> optional Game/User
 ```
 
-## Relaciones clave
+The shared TypeScript contracts live in `shared/types.ts`. The frontend
+re-exports them through `frontend/src/types.ts`; backend modules import the
+shared types directly.
 
-- un usuario puede trackear muchos juegos
-- un juego puede ser trackeado por muchos usuarios
-- un usuario puede escribir muchas reviews
-- una review pertenece a un solo juego
-- una lista pertenece a un usuario
-- una lista contiene muchos juegos
-- un usuario puede seguir a muchos usuarios
+## Single source of truth
 
----
+PostgreSQL is the only supported application database. The former FastAPI
+service used a separate SQLite schema for a partial library/favorites model;
+that code is retired and is not read or migrated by the active application.
+Local SQLite sidecar files and JSON catalog snapshots are preserved as legacy
+artifacts until their owner confirms whether they can be archived or removed.
 
-# 4. Fuente de verdad actual
+## Migration rules
 
-## En la practica hoy
-
-La fuente de verdad mas completa del producto actual es:
-
-- `frontend/server/db.ts`
-- PostgreSQL (`DATABASE_URL`)
-
-## En transicion / secundario
-
-La parte FastAPI + SQLite existe, pero todavia no cubre todo el dominio del producto.
-
-## Implicacion
-
-Antes de publicacion conviene unificar:
-
-- usuarios
-- auth
-- biblioteca
-- reviews
-- listas
-- follows
-- actividad
-
-en una unica capa persistente real.
-
----
-
-# 5. Inconsistencias y deuda tecnica actual
-
-## Duplicidad de modelos
-
-Hay duplicidad entre:
-
-- `UserGame` del servidor Express
-- `UserGame` del backend Python
-
-pero no tienen los mismos campos ni el mismo alcance.
-
-## Persistencia local
-
-La persistencia actual depende de:
-
-- PostgreSQL para el servidor Express, también en desarrollo local
-- SQLite en el backend Python secundario
-
-Express/PostgreSQL es la fuente de verdad usada por la aplicación principal. FastAPI/SQLite sigue siendo una implementación secundaria y no comparte todavía toda la persistencia del producto.
-
----
-
-# 6. Recomendacion de evolucion del modelo
-
-## Corto plazo
-
-- consolidar una unica fuente de verdad entre Express/PostgreSQL y FastAPI/SQLite
-- normalizar usuarios, juegos, tracking, reviews y follows
-
-## Medio plazo
-
-Mantener una base de datos relacional compartida por los servicios, idealmente:
-
-- PostgreSQL en desarrollo y producción
-- retirar o integrar la persistencia SQLite del backend secundario
-
-## Modelo objetivo recomendado
-
-Entidades de produccion sugeridas:
-
-- users
-- games
-- user_games
-- reviews
-- review_likes
-- lists
-- list_items
-- follows
-- activities
-
----
-
-# 7. Mantenimiento de este documento
-
-Actualiza este archivo si:
-
-- se añade un campo a una entidad
-- cambia la relacion entre entidades
-- se mueve la fuente de verdad
-- se añaden tablas nuevas
-- se elimina la duplicidad entre Express y FastAPI
+- Add schema changes in `initDb()` in `backend/src/db.ts`.
+- Make schema operations safe to run on every startup (`IF NOT EXISTS`,
+  idempotent updates).
+- Preserve foreign keys and the existing `games("igdbId")` key.
+- Update this document and relevant API contracts alongside schema changes.

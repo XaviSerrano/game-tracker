@@ -31,13 +31,6 @@ interface CatalogOption {
   slug: string;
 }
 
-interface DiscoverHome {
-  newReleases: Game[];
-  upcoming: Game[];
-  popular: Game[];
-  topRated: Game[];
-}
-
 const DEFAULT_FILTERS: DiscoverFilters = {
   query: '',
   genreId: '',
@@ -95,18 +88,22 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [filters, setFilters] = useState<DiscoverFilters>(readFiltersFromUrl);
   const [games, setGames] = useState<Game[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [home, setHome] = useState<DiscoverHome | null>(null);
+  const [popularGames, setPopularGames] = useState<Game[]>([]);
+  const [popularPage, setPopularPage] = useState(0);
+  const [popularHasMore, setPopularHasMore] = useState(false);
   const [genres, setGenres] = useState<CatalogOption[]>([]);
   const [platforms, setPlatforms] = useState<CatalogOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingHome, setLoadingHome] = useState(true);
+  const [loadingMorePopular, setLoadingMorePopular] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [homeError, setHomeError] = useState<string | null>(null);
   const [taxonomyError, setTaxonomyError] = useState<string | null>(null);
+  const [loadingTaxonomies, setLoadingTaxonomies] = useState(true);
+  const [taxonomyRetry, setTaxonomyRetry] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [expandedRails, setExpandedRails] = useState<Set<keyof DiscoverHome>>(new Set());
   const [libraryStatuses, setLibraryStatuses] = useState<Map<number, GameStatus>>(new Map());
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
@@ -121,49 +118,80 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const genreById = useMemo(() => new Map(genres.map(option => [String(option.id), option.name])), [genres]);
   const platformById = useMemo(() => new Map(platforms.map(option => [String(option.id), option.name])), [platforms]);
 
-  const fetchHome = useCallback(async (signal?: AbortSignal) => {
-    setLoadingHome(true);
+  const fetchPopular = useCallback(async (page: number, signal?: AbortSignal) => {
+    if (page === 0) setLoadingHome(true);
+    else setLoadingMorePopular(true);
     setHomeError(null);
     try {
-      const response = await fetch('/api/discover/home', { signal });
+      const response = await fetch(`/api/discover/popular?page=${page}`, { signal });
       const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || 'No se pudo cargar Descubrir.');
-      setHome(data);
+      if (!response.ok) throw new Error(data?.error || 'No se pudieron cargar los juegos populares.');
+      if (!Array.isArray(data?.items) || typeof data?.hasMore !== 'boolean') {
+        throw new Error('La respuesta de juegos populares no es válida.');
+      }
+      const items: Game[] = data.items;
+      setPopularGames(previous => {
+        if (page === 0) return items;
+        const merged = new Map(previous.map(game => [game.igdbId, game]));
+        items.forEach(game => merged.set(game.igdbId, game));
+        return [...merged.values()];
+      });
+      setPopularPage(page);
+      setPopularHasMore(data.hasMore);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       setHomeError(error instanceof Error ? error.message : 'Error inesperado al cargar el catálogo.');
     } finally {
-      if (!signal?.aborted) setLoadingHome(false);
+      if (!signal?.aborted) {
+        setLoadingHome(false);
+        setLoadingMorePopular(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetchHome(controller.signal);
+    void fetchPopular(0, controller.signal);
     return () => controller.abort();
-  }, [fetchHome]);
+  }, [fetchPopular]);
 
   useEffect(() => {
     const controller = new AbortController();
     const loadTaxonomies = async () => {
-      try {
-        const [genreResponse, platformResponse] = await Promise.all([
-          fetch('/api/igdb/genres', { signal: controller.signal }),
-          fetch('/api/igdb/platforms', { signal: controller.signal })
-        ]);
-        const [genreData, platformData] = await Promise.all([genreResponse.json(), platformResponse.json()]);
-        if (!genreResponse.ok) throw new Error(genreData?.error || 'No se pudieron cargar los géneros.');
-        if (!platformResponse.ok) throw new Error(platformData?.error || 'No se pudieron cargar las plataformas.');
-        setGenres(Array.isArray(genreData) ? genreData : []);
-        setPlatforms(Array.isArray(platformData) ? platformData : []);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        setTaxonomyError(error instanceof Error ? error.message : 'No se pudieron cargar los filtros.');
+      setLoadingTaxonomies(true);
+      setTaxonomyError(null);
+      const loadOptions = async (kind: 'genres' | 'platforms', label: string): Promise<CatalogOption[]> => {
+        const response = await fetch(`/api/igdb/${kind}`, { signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error || `No se pudieron cargar ${label}.`);
+        if (!Array.isArray(data) || data.length === 0 || !data.every(option =>
+          Number.isSafeInteger(option?.id) && typeof option?.name === 'string'
+        )) throw new Error(`No se recibió una lista válida de ${label}.`);
+        return data;
+      };
+
+      const [genreResult, platformResult] = await Promise.allSettled([
+        loadOptions('genres', 'géneros'),
+        loadOptions('platforms', 'plataformas')
+      ]);
+      if (controller.signal.aborted) return;
+      const errors: string[] = [];
+      if (genreResult.status === 'fulfilled') setGenres(genreResult.value);
+      else {
+        console.error('Error loading genres:', genreResult.reason);
+        errors.push(genreResult.reason instanceof Error ? genreResult.reason.message : 'No se pudieron cargar los géneros.');
       }
+      if (platformResult.status === 'fulfilled') setPlatforms(platformResult.value);
+      else {
+        console.error('Error loading platforms:', platformResult.reason);
+        errors.push(platformResult.reason instanceof Error ? platformResult.reason.message : 'No se pudieron cargar las plataformas.');
+      }
+      setTaxonomyError(errors.length ? errors.join(' ') : null);
+      setLoadingTaxonomies(false);
     };
     void loadTaxonomies();
     return () => controller.abort();
-  }, []);
+  }, [taxonomyRetry]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -363,41 +391,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     </TiltCard>
   );
 
-  const renderRail = (key: keyof DiscoverHome, title: string, description: string, gamesForRail: Game[] | undefined) => {
-    const isExpanded = expandedRails.has(key);
-    const visibleGames = isExpanded ? gamesForRail || [] : (gamesForRail || []).slice(0, 10);
-    return (
-      <section key={key} aria-labelledby={`discover-${key}`} className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h3 id={`discover-${key}`} className="text-lg font-bold text-white">{title}</h3>
-            <p className="mt-1 text-xs text-slate-500">{description}</p>
-          </div>
-          {(gamesForRail?.length || 0) > 10 && (
-            <button
-              type="button"
-              onClick={() => setExpandedRails(previous => {
-                const next = new Set(previous);
-                if (next.has(key)) next.delete(key);
-                else next.add(key);
-                return next;
-              })}
-              className="shrink-0 rounded-lg border border-slate-800 px-3 py-2 text-xs font-semibold text-blue-300 hover:border-blue-500/40"
-            >
-              {isExpanded ? 'Ver menos' : 'Ver más'}
-            </button>
-          )}
-        </div>
-        {loadingHome && !gamesForRail ? <GameSkeletons count={5} /> : null}
-        {!loadingHome && visibleGames.length > 0 && (
-          <div className="grid grid-flow-col auto-cols-[minmax(145px,1fr)] gap-3 overflow-x-auto pb-3 sm:auto-cols-[minmax(165px,1fr)]">
-            {visibleGames.map(renderGameCard)}
-          </div>
-        )}
-      </section>
-    );
-  };
-
   const showHome = !hasActiveFilters && !isUserSearch;
   const activeFilterNames = [
     filters.genreId ? { key: 'genreId', name: genreById.get(filters.genreId) || 'Género' } : null,
@@ -453,15 +446,17 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           <div className="relative grid grid-cols-1 gap-4 rounded-xl border border-slate-800 bg-[#0b0e16] p-4 sm:grid-cols-2 xl:grid-cols-3">
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
               <span className="block">Género</span>
-              <select value={filters.genreId} onChange={event => updateFilters({ genreId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white">
+              <select value={filters.genreId} onChange={event => updateFilters({ genreId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white [color-scheme:dark] [&>option]:bg-[#07090e] [&>option]:text-white">
                 <option value="">Todos los géneros</option>
+                {loadingTaxonomies && genres.length === 0 && <option disabled>Cargando géneros...</option>}
                 {genres.map(genre => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
               </select>
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
               <span className="block">Plataforma</span>
-              <select value={filters.platformId} onChange={event => updateFilters({ platformId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white">
+              <select value={filters.platformId} onChange={event => updateFilters({ platformId: event.target.value })} className="w-full rounded-lg border border-slate-800 bg-[#07090e] px-3 py-2.5 text-xs text-white [color-scheme:dark] [&>option]:bg-[#07090e] [&>option]:text-white">
                 <option value="">Todas las plataformas</option>
+                {loadingTaxonomies && platforms.length === 0 && <option disabled>Cargando plataformas...</option>}
                 {platforms.map(platform => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
               </select>
             </label>
@@ -490,7 +485,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         )}
       </SpotlightPanel>
 
-      {taxonomyError && <p role="status" className="text-xs text-amber-300">{taxonomyError}</p>}
+      {taxonomyError && (
+        <div role="status" className="flex flex-wrap items-center gap-2 text-xs text-amber-300">
+          <span>{taxonomyError}</span>
+          <button type="button" onClick={() => setTaxonomyRetry(value => value + 1)} className="font-semibold underline">Reintentar</button>
+        </div>
+      )}
       {quickActionMessage && (
         <div role="status" className={`rounded-xl border p-2.5 text-xs ${quickActionMessage.startsWith('Error') ? 'border-red-500/20 bg-red-950/40 text-red-300' : 'border-emerald-500/20 bg-emerald-950/40 text-emerald-300'}`}>
           {quickActionMessage}
@@ -498,24 +498,37 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       )}
 
       {showHome && (
-        <div className="space-y-8">
-          {homeError ? (
+        <section aria-labelledby="discover-popular" className="space-y-3">
+          <div>
+            <h3 id="discover-popular" className="text-lg font-bold text-white">Populares ahora</h3>
+            <p className="mt-1 text-xs text-slate-500">Juegos con mayor actividad y valoraciones en IGDB.</p>
+          </div>
+          {loadingHome && <GameSkeletons count={15} />}
+          {popularGames.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+              {popularGames.map(renderGameCard)}
+            </div>
+          )}
+          {homeError && (
             <div className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
               <p className="text-sm font-semibold text-red-300">No se pudo cargar el catálogo</p>
               <p className="mt-2 text-xs text-slate-400">{homeError}</p>
-              <button type="button" onClick={() => void fetchHome()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs text-white">
+              <button type="button" onClick={() => void fetchPopular(popularGames.length ? popularPage + 1 : 0)} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs text-white">
                 <RefreshCw className="h-3.5 w-3.5" /> Reintentar
               </button>
             </div>
-          ) : (
-            <>
-              {renderRail('newReleases', 'Nuevos lanzamientos relevantes', 'Novedades de los últimos 90 días seleccionadas por interés y valoración.', home?.newReleases)}
-              {renderRail('upcoming', 'Próximamente', 'Juegos con lanzamiento previsto en los próximos cuatro meses.', home?.upcoming)}
-              {renderRail('popular', 'Populares ahora', 'Juegos con mayor actividad y valoraciones en IGDB.', home?.popular)}
-              {renderRail('topRated', 'Mejor valorados del último año', 'Lanzamientos recientes con buenas valoraciones de la comunidad.', home?.topRated)}
-            </>
           )}
-        </div>
+          {!loadingHome && !homeError && popularGames.length === 0 && (
+            <p className="rounded-xl border border-slate-800 p-8 text-center text-xs text-slate-400">No hay juegos populares disponibles en este momento.</p>
+          )}
+          {popularHasMore && !homeError && (
+            <div className="flex justify-center">
+              <button type="button" disabled={loadingMorePopular} onClick={() => void fetchPopular(popularPage + 1)} className="rounded-xl border border-blue-500/30 bg-blue-600/10 px-5 py-2.5 text-xs font-semibold text-blue-300 disabled:opacity-60">
+                {loadingMorePopular ? 'Cargando...' : 'Cargar más'}
+              </button>
+            </div>
+          )}
+        </section>
       )}
 
       {hasActiveFilters && !isUserSearch && (

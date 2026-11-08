@@ -51,7 +51,7 @@ Identificar si afecta a:
 
 - UI
 - API Express
-- backend FastAPI
+- backend Node/Express
 - modelo de datos
 - despliegue
 - documentacion
@@ -150,7 +150,7 @@ Si el cambio modifica como se reparte la responsabilidad entre capas:
 
 Ejemplos:
 
-- mover logica de Express a FastAPI
+- mover logica entre frontend y backend Node
 - eliminar duplicidad entre backends
 - introducir una nueva capa de servicios
 

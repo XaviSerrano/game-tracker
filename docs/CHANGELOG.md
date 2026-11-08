@@ -12,6 +12,27 @@ El formato es simple y humano: agrupado por fecha, con resumen funcional y tecni
 
 ### Añadido
 
+- Los visitantes pueden abrir y compartir el detalle de los juegos y leer sus
+  reseñas sin iniciar sesión. La interfaz mantiene sus controles y solicita
+  iniciar sesión o registrarse al intentar realizar acciones personales.
+
+### Cambiado
+
+- Los filtros de Descubrir ofrecen todos los géneros y plataformas de IGDB
+  e indican los errores de carga con opción de reintentar.
+- Descubrir muestra los juegos populares en una cuadrícula de 15 resultados
+  iniciales, con carga de páginas adicionales; búsqueda y filtros no cambian.
+- La descripción del juego se muestra completa sin expandirse al pasar el cursor.
+- El detalle muestra `--` en las estimaciones de duración que aún no están disponibles.
+- Consolidado Express como backend único bajo `backend/src/`; FastAPI y su
+  almacén SQLite separado se retiraron del código activo.
+- Separado `frontend/` como SPA Vite; se añadió proxy local hacia Express y se
+  actualizó Render para construir el backend.
+- Centralizados los tipos de dominio en `shared/types.ts` y la integración
+  IGDB en el backend Node.
+
+### Añadido
+
 - Carpeta `docs/` para centralizar la documentacion del proyecto
 - `docs/ROADMAP.md`
 - `docs/PROJECT_STRUCTURE.md`

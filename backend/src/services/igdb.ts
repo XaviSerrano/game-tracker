@@ -1,5 +1,5 @@
-import { Game } from '../src/types.ts';
-import { db } from './db.ts';
+import type { Game } from '../../../shared/types.ts';
+import { db } from '../db.ts';
 
 // ==================================================
 // CACHE
@@ -1401,83 +1401,48 @@ export class IgdbService {
   }
 
   static async getGenreOptions(): Promise<IgdbCatalogOption[]> {
-    const cacheKey = 'igdb:genres';
-    const cached = cacheGet<IgdbCatalogOption[]>(cacheKey);
-    if (cached) return cached;
-
-    const token = await getTwitchToken();
-    const { clientId } = getIgdbCredentials();
-    const response = await fetchIgdb('https://api.igdb.com/v4/genres', {
-      method: 'POST',
-      headers: {
-        'Client-ID': clientId,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'text/plain'
-      },
-      body: 'fields id,name; sort name asc; limit 500;'
-    });
-    if (!response.ok) {
-      throw new Error(`IGDB genres request failed (${response.status}): ${await response.text()}`);
-    }
-
-    const data: unknown = await response.json();
-    if (!Array.isArray(data)) {
-      throw new Error('IGDB genres response was not a list.');
-    }
-    const options = data
-      .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string')
-      .map(item => ({ id: item.id as number, name: item.name.trim(), slug: item.slug || makeSlug(item.name) }))
-      .filter(item => item.name)
-      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
-    cacheSet(cacheKey, options, TAXONOMY_CACHE_TTL_MS);
-    return options;
+    return this.getCatalogOptions('genres');
   }
 
   static async getPlatformOptions(): Promise<IgdbCatalogOption[]> {
-    const cacheKey = 'igdb:platforms';
+    return this.getCatalogOptions('platforms');
+  }
+
+  private static async getCatalogOptions(kind: 'genres' | 'platforms'): Promise<IgdbCatalogOption[]> {
+    const cacheKey = `igdb:${kind}`;
     const cached = cacheGet<IgdbCatalogOption[]>(cacheKey);
     if (cached) return cached;
 
     const token = await getTwitchToken();
     const { clientId } = getIgdbCredentials();
-    const response = await fetchIgdb('https://api.igdb.com/v4/platforms', {
-      method: 'POST',
-      headers: {
-        'Client-ID': clientId,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'text/plain'
-      },
-      body: 'fields id,name,slug; sort name asc; limit 500;'
-    });
-    if (!response.ok) {
-      throw new Error(`IGDB platforms request failed (${response.status}): ${await response.text()}`);
-    }
+    const options: IgdbCatalogOption[] = [];
+    const limit = 500;
+    let offset = 0;
+    let count: number;
+    do {
+      const response = await fetchIgdb(`https://api.igdb.com/v4/${kind}`, {
+        method: 'POST',
+        headers: {
+          'Client-ID': clientId,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'text/plain'
+        },
+        body: `fields id,name,slug; sort id asc; limit ${limit}; offset ${offset};`
+      });
+      if (!response.ok) {
+        throw new Error(`IGDB ${kind} request failed (${response.status}): ${await response.text()}`);
+      }
 
-    const data: unknown = await response.json();
-    if (!Array.isArray(data)) {
-      throw new Error('IGDB platforms response was not a list.');
-    }
-    const platforms = data
-      .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string')
-      .map(item => ({ id: item.id as number, name: item.name.trim(), slug: item.slug || makeSlug(item.name) }));
-    const normalize = (value: string) => normalizeSearchText(value).toLowerCase().replace(/[^a-z0-9]/g, '');
-    const curated: Array<{ name: string; aliases: string[] }> = [
-      { name: 'PC', aliases: ['pc', 'pc microsoft windows', 'windows'] },
-      { name: 'Mac', aliases: ['mac', 'macintosh', 'macos'] },
-      { name: 'PlayStation 5', aliases: ['playstation 5', 'ps5'] },
-      { name: 'PlayStation 4', aliases: ['playstation 4', 'ps4'] },
-      { name: 'Xbox Series X|S', aliases: ['xbox series x s', 'xbox series x|s', 'xbox series x'] },
-      { name: 'Xbox One', aliases: ['xbox one'] },
-      { name: 'Nintendo Switch', aliases: ['nintendo switch', 'switch'] },
-      { name: 'iOS', aliases: ['ios'] },
-      { name: 'Android', aliases: ['android'] }
-    ];
-    const options = curated.flatMap(({ name, aliases }) => {
-      const match = platforms.find(platform => aliases.some(alias =>
-        normalize(platform.name) === normalize(alias) || normalize(platform.slug) === normalize(alias)
-      ));
-      return match ? [{ ...match, name }] : [];
-    });
+      const data: unknown = await response.json();
+      if (!Array.isArray(data)) throw new Error(`IGDB ${kind} response was not a list.`);
+      count = data.length;
+      options.push(...data
+        .filter(item => Number.isSafeInteger(item?.id) && typeof item?.name === 'string' && item.name.trim())
+        .map(item => ({ id: item.id as number, name: item.name.trim(), slug: typeof item.slug === 'string' ? item.slug : makeSlug(item.name) })));
+      offset += limit;
+    } while (count === limit);
+
+    options.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
     cacheSet(cacheKey, options, TAXONOMY_CACHE_TTL_MS);
     return options;
   }

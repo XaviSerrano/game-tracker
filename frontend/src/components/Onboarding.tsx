@@ -5,13 +5,14 @@ import { User } from '../types.ts';
 interface OnboardingProps {
   onLogin: (user: User) => void;
   preseededUsers: User[];
+  notice?: string;
 }
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers, notice }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -212,6 +213,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers 
             Organiza tus videojuegos, sigue tus progresos y descubre recomendaciones con tus amigos
           </p>
         </div>
+
+        {notice && (
+          <div role="alert" className="mb-4 p-3 bg-blue-950/30 border border-blue-500/20 text-blue-300 text-xs rounded-xl">
+            {notice}
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-red-950/40 border border-red-500/30 text-red-400 text-xs rounded-xl">

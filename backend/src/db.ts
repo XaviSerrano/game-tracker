@@ -9,7 +9,7 @@ import type {
   Activity,
   ActivityType,
   GameStatus
-} from '../src/types.ts';
+} from '../../shared/types.ts';
 
 interface StoredUser extends User {
   passwordHash?: string | null;

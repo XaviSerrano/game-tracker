@@ -210,7 +210,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       );
     }
 
-    if (act.type === 'REVIEW') {
+    if (act.type === 'REVIEWED') {
       return (
         <div className="space-y-3">
           <div className="text-sm text-slate-300 leading-relaxed">

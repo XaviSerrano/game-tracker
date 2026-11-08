@@ -16,11 +16,10 @@ Este roadmap esta pensado para ejecutarse por fases, con entregables claros y de
 Hoy el proyecto ya tiene una buena base visual y funcional:
 
 - Frontend en **React + Vite**
-- Servidor Node/Express en `frontend/server.ts`
-- Backend FastAPI en `backend/`
+- Backend único Node/Express en `backend/src/`
 - Integracion con **IGDB/Twitch**
 - Biblioteca de juegos, reviews, listas, perfil, feed y estadisticas
-- Persistencia local/prototipo en parte del sistema
+- PostgreSQL como base de datos activa
 
 Antes de publicar, hay que convertir esta base en un producto consistente, seguro y mantenible.
 
@@ -35,24 +34,18 @@ Antes de publicar, hay que convertir esta base en un producto consistente, segur
 
 ---
 
-## Fase 0 - Definir arquitectura final
+## Fase 0 - Consolidar arquitectura (completada)
 
 ### Objetivo
 Cerrar decisiones tecnicas que afectan a todo lo demas.
 
 ### Tareas
 
-- [ ] Decidir cual sera el backend principal en produccion:
-  - opcion A: mantener **Express** como backend principal
-  - opcion B: migrar todo a **FastAPI**
-  - opcion C: separar claramente frontend web y API backend
-- [ ] Eliminar o planificar la eliminacion de rutas duplicadas entre `frontend/server.ts` y `backend/`
-- [ ] Definir la base de datos final de produccion:
-  - desarrollo local: SQLite
-  - produccion: PostgreSQL recomendado
-- [ ] Definir proveedor de hosting:
-  - frontend: Vercel / Netlify / servidor propio
-  - backend/API: Render / Railway / Fly.io / VPS
+- [x] Elegir Express como backend único.
+- [x] Mantener PostgreSQL como base de datos activa en desarrollo y producción.
+- [x] Separar SPA (Vercel) y API (Render), con proxy de Vite en desarrollo.
+- [ ] Confirmar si los artefactos SQLite/JSON heredados contienen datos que
+  deban archivarse antes de eliminarlos.
 - [ ] Definir estrategia movil recomendada
   - **Recomendacion:** usar **Capacitor** para empaquetar la app React actual como app movil
 
@@ -136,7 +129,8 @@ Salir de la logica de demo y pasar a persistencia y usuarios reales.
 
 ### Recomendacion
 
-Si se mantiene SQLite para local, preparar desde esta fase la compatibilidad con **PostgreSQL** para produccion.
+PostgreSQL es la base de datos activa en desarrollo y producción; no se planea
+una capa de compatibilidad SQLite para la aplicación.
 
 ### Entregable
 

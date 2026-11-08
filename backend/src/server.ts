@@ -1,15 +1,13 @@
-import './server/env.ts';
+import './env.ts';
 import crypto from 'crypto';
 import express from 'express';
 import nodemailer from 'nodemailer';
-import path from 'path';
-import { createServer as createViteServer } from 'vite';
-import { db, initDb } from './server/db.ts';
-import { IgdbService } from './server/igdb.ts';
-import { Activity, ActivityType, User, UserGame, CustomList, Review } from './src/types.ts';
+import { db, initDb } from './db.ts';
+import { IgdbService } from './services/igdb.ts';
+import type { Activity, ActivityType, User, UserGame, CustomList, Review } from '../../shared/types.ts';
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000');
+const PORT = parseInt(process.env.PORT || '3001', 10);
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const MAX_ACTIVE_SESSIONS_PER_USER = 5;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
@@ -17,6 +15,10 @@ const MIN_PASSWORD_LENGTH = 8;
 const SESSION_COOKIE_NAME = 'gt_session';
 
 app.use(express.json());
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
@@ -248,7 +250,7 @@ const buildResetUrl = (req: express.Request, token: string) => {
 
 const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken: string) => {
   const resetUrl = buildResetUrl(req, rawToken);
-  const info = await authMailer.transport.sendMail({
+  await authMailer.transport.sendMail({
     from: authMailer.from,
     to: user.email,
     subject: 'Recupera tu contraseña de GameTracker',
@@ -257,7 +259,7 @@ const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken
   });
 
   if (!authMailer.configured) {
-    console.info('Password reset email payload:', info.message);
+    console.info('Password reset email payload prepared in debug mode.');
   }
 
   return {
@@ -589,6 +591,27 @@ app.get('/api/discover/home', async (_req, res) => {
     const limited = typeof err?.message === 'string' && err.message.includes('(429)');
     res.status(limited ? 429 : 502).json({
       error: limited ? 'IGDB está temporalmente saturada. Inténtalo de nuevo en unos segundos.' : 'No se pudo cargar el catálogo de IGDB.'
+    });
+  }
+});
+
+app.get('/api/discover/popular', async (req, res) => {
+  const rawPage = req.query.page === undefined ? '0' : req.query.page;
+  if (typeof rawPage !== 'string' || !/^\d+$/.test(rawPage) || !Number.isSafeInteger(Number(rawPage)) || Number(rawPage) > 33) {
+    return res.status(400).json({ error: 'La página de juegos populares no es válida.' });
+  }
+
+  const page = Number(rawPage);
+  const limit = 15;
+  try {
+    const games = await IgdbService.getPopularNow(500);
+    const start = page * limit;
+    res.json({ items: games.slice(start, start + limit), page, hasMore: start + limit < games.length });
+  } catch (err: any) {
+    console.error('Error loading popular games:', err);
+    const limited = typeof err?.message === 'string' && err.message.includes('(429)');
+    res.status(limited ? 429 : 502).json({
+      error: limited ? 'IGDB está temporalmente saturada. Inténtalo de nuevo en unos segundos.' : 'No se pudieron cargar los juegos populares de IGDB.'
     });
   }
 });
@@ -1100,25 +1123,8 @@ app.get('/api/users/:id/stats', async (req, res) => {
   }
 });
 
-// --- VITE EXPRES INTERFACE ---
 async function startServer() {
   await initDb();
-
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa'
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      const isKnownAppPath = req.path === '/' || /^\/game\/\d+\/?$/.test(req.path) ||
-        /^\/(discover|library|lists|stats|profile)\/?$/.test(req.path);
-      res.status(isKnownAppPath ? 200 : 404).sendFile(path.join(distPath, 'index.html'));
-    });
-  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 GameTracker Express Server listening on port ${PORT}`);

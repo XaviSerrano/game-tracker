@@ -31,7 +31,7 @@ Cada decision debe incluir:
 ## ADR-001 - Convivencia temporal de Express y FastAPI
 
 - **Fecha:** 2026-07-11
-- **Estado:** accepted
+- **Estado:** superseded by ADR-005
 
 ### Contexto
 
@@ -58,6 +58,34 @@ Se documenta explicitamente que, por ahora, ambas capas conviven en paralelo mie
 - reducir rutas duplicadas
 
 ---
+
+## ADR-005 - Express como backend único
+
+- **Fecha:** 2026-11-08
+- **Estado:** accepted
+
+### Contexto
+
+La aplicación principal ya usa Express para autenticación, sesiones, dominio y
+PostgreSQL. FastAPI mantenía una implementación parcial de IGDB y una base
+SQLite independiente, sin consumidores propios identificados en el frontend.
+
+### Decisión
+
+- Mantener Express como única API y PostgreSQL como única base de datos activa.
+- Mantener una única integración IGDB en `backend/src/services/igdb.ts`.
+- Desplegar la SPA estática en Vercel y la API en Render.
+- Compartir contratos TypeScript mediante `shared/types.ts`.
+- Preservar archivos locales heredados hasta confirmar si deben archivarse o
+  eliminarse.
+
+### Impacto
+
+- Vite ejecuta como servidor frontend independiente y su proxy de desarrollo
+  apunta al backend Express.
+- La API sigue usando URLs relativas; Vercel reescribe `/api/*` al backend para
+  conservar el flujo de sesión existente.
+- El código FastAPI y sus dependencias dejan de formar parte del despliegue.
 
 ## ADR-002 - Fuente de verdad unica para rating de juegos
 

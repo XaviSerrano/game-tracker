@@ -33,10 +33,11 @@ import { Breadcrumbs } from './Breadcrumbs.tsx';
 
 interface GameDetailsProps {
   gameId: number;
-  currentUser: User;
-  token: string;
+  currentUser: User | null;
+  token: string | null;
   onBack: () => void;
   onSelectUser: (userId: string) => void;
+  onAuthRequired?: () => void;
 
   onGoHome: () => void;
 
@@ -207,6 +208,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   token,
   onBack,
   onSelectUser,
+  onAuthRequired,
   onGoHome,
   breadcrumbParentLabel,
   onGoBackToParent
@@ -246,6 +248,19 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   const screenshots = game?.screenshots ?? [];
 
+  const requireSession = () => {
+    if (currentUser && token) return false;
+    onAuthRequired?.();
+    return true;
+  };
+
+  const handlePrivateButtonClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target instanceof Element && event.target.closest('button') && (!currentUser || !token)) {
+      event.preventDefault();
+      event.stopPropagation();
+      requireSession();
+    }
+  };
 
   const fetchGameData = async () => {
     setLoading(true);
@@ -262,39 +277,39 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       const gameData = await gameRes.json();
       setGame(gameData);
 
-      // 2. Fetch user's tracking info
-      const ugRes = await fetch(`/api/users/${currentUser.id}/library`);
-      if (ugRes.ok) {
-        const ugData: (UserGame & { game: Game })[] = await ugRes.json();
-        const found = ugData.find(item => item.gameId === gameId);
-        if (found) {
-          setUserGame(found);
-          setStatus(found.status);
-          setRating(found.rating);
-          setHoursPlayed(found.hoursPlayed);
-          setNotes(found.notes);
-          setStartedAt(found.startedAt || '');
-          setCompletedAt(found.completedAt || '');
-          setIsInWishlist(found.status === 'WISHLIST');
-        }
-      }
-
-      // 3. Fetch reviews
+      // Fetch public reviews independently of authentication.
       const reviewsRes = await fetch(`/api/reviews/${gameId}`);
       if (reviewsRes.ok) {
         const reviewsData = await reviewsRes.json();
         setReviews(reviewsData);
       }
 
-      // 4. Fetch my custom lists (for add-to-list action)
-      const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      if (currentUser && token) {
+        const ugRes = await fetch(`/api/users/${currentUser.id}/library`);
+        if (ugRes.ok) {
+          const ugData: (UserGame & { game: Game })[] = await ugRes.json();
+          const found = ugData.find(item => item.gameId === gameId);
+          if (found) {
+            setUserGame(found);
+            setStatus(found.status);
+            setRating(found.rating);
+            setHoursPlayed(found.hoursPlayed);
+            setNotes(found.notes);
+            setStartedAt(found.startedAt || '');
+            setCompletedAt(found.completedAt || '');
+            setIsInWishlist(found.status === 'WISHLIST');
+          }
         }
-      });
-      if (listsRes.ok) {
-        const listsData = await listsRes.json();
-        setMyLists(listsData);
+
+        const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (listsRes.ok) {
+          const listsData = await listsRes.json();
+          setMyLists(listsData);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -305,7 +320,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   useEffect(() => {
     fetchGameData();
-  }, [gameId]);
+  }, [gameId, currentUser?.id, token]);
 
   useEffect(() => {
     if (!progressMenuOpen) return;
@@ -352,6 +367,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
 
   const saveTracking = async (nextStatus: GameStatus, successMessage = '¡Biblioteca actualizada con éxito!') => {
+    if (requireSession()) return;
     setMessage('');
     try {
       const res = await fetch('/api/library', {
@@ -476,6 +492,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (requireSession()) return;
     if (!reviewTitle.trim() || !reviewContent.trim()) return;
 
     try {
@@ -504,6 +521,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   };
 
   const handleLikeReview = async (reviewId: string) => {
+    if (requireSession()) return;
+
     try {
       const res = await fetch(`/api/reviews/${reviewId}/like`, {
         method: 'POST',
@@ -761,7 +780,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </h1>
             </div>
 
-            <p className="text-slate-400 text-xs leading-relaxed md:max-w-2xl line-clamp-4 hover:line-clamp-none transition duration-200">
+            <p className="text-slate-400 text-xs leading-relaxed md:max-w-2xl">
               {game.summary}
             </p>
 
@@ -777,37 +796,29 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               ))}
             </div>
 
-            {game.timeToBeat && Object.values(game.timeToBeat).some(value => typeof value === 'number') && (
-              <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>
-                    <p className="mt-1 text-[11px] text-slate-500">Estimación orientativa de IGDB</p>
-                  </div>
-                  <Clock className="h-5 w-5 text-cyan-300/80" />
+            <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>
+                  <p className="mt-1 text-[11px] text-slate-500">Estimación orientativa de IGDB</p>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {game.timeToBeat.hastily && (
-                    <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.07] px-3 py-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Historia</p>
-                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.hastily}<span className="ml-1 text-xs font-semibold text-blue-200/70">h</span></p>
-                    </div>
-                  )}
-                  {game.timeToBeat.normally && (
-                    <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Normal</p>
-                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.normally}<span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span></p>
-                    </div>
-                  )}
-                  {game.timeToBeat.completely && (
-                    <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.09] px-3 py-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Completista</p>
-                      <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.completely}<span className="ml-1 text-xs font-semibold text-violet-200/70">h</span></p>
-                    </div>
-                  )}
+                <Clock className="h-5 w-5 text-cyan-300/80" />
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.07] px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Historia</p>
+                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.hastily ?? '--'}{game.timeToBeat?.hastily != null && <span className="ml-1 text-xs font-semibold text-blue-200/70">h</span>}</p>
+                </div>
+                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Normal</p>
+                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.normally ?? '--'}{game.timeToBeat?.normally != null && <span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span>}</p>
+                </div>
+                <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.09] px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">Completista</p>
+                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.completely ?? '--'}{game.timeToBeat?.completely != null && <span className="ml-1 text-xs font-semibold text-violet-200/70">h</span>}</p>
                 </div>
               </div>
-            )}
+            </div>
 
             {game.platforms.length > 0 && (
               <div className="space-y-2 pt-1">
@@ -852,7 +863,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         <div className="lg:col-span-2 space-y-6">
           
           {/* Tracking control form */}
-          <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl space-y-5">
+          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-blue-400" />
@@ -1170,7 +1181,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
                       <button
                         onClick={() => handleLikeReview(rev.id)}
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer transition ${rev.likes.includes(currentUser.id) ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-[#07090e] text-slate-500 border-slate-800 hover:text-slate-355'}`}
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer transition ${currentUser && rev.likes.includes(currentUser.id) ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-[#07090e] text-slate-500 border-slate-800 hover:text-slate-355'}`}
                       >
                         <ThumbsUp className="w-3.5 h-3.5" />
                         <span className="font-bold">{rev.likes.length}</span>
@@ -1205,7 +1216,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         <div className="space-y-6">
           
           {/* Write custom review section */}
-          <div className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
+          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
             <h3 className="font-bold text-slate-300 font-display text-sm">Reseñar este juego</h3>
             <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
               <div>

@@ -59,6 +59,7 @@ export default function App() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [gameReturnPath, setGameReturnPath] = useState('/');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authNotice, setAuthNotice] = useState('');
 
   // The session is kept in an httpOnly cookie and verified server-side.
   const verifySession = async () => {
@@ -136,6 +137,8 @@ export default function App() {
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
     setToken('cookie-session');
+    setAuthModalOpen(false);
+    setAuthNotice('');
     setAllUsers(prev => prev.some(existingUser => existingUser.id === user.id) ? prev : [...prev, user]);
     setActiveTab('feed');
     setSelectedGameId(null);
@@ -156,6 +159,9 @@ export default function App() {
     setToken(null);
     setSelectedGameId(null);
     setSelectedUserId(null);
+
+    navigateTo('/');
+
   };
 
   const handleNavigation = (tab: MainTab) => {
@@ -253,26 +259,41 @@ export default function App() {
             <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
             <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
           </div>
-          <button onClick={() => setAuthModalOpen(true)} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
+          <button onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
             Iniciar sesión / Registrarse
           </button>
         </header>
         <main className="mx-auto max-w-6xl px-3 py-5 md:px-5 md:py-7">
-          <div className="mb-5 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-4 py-3 text-center text-xs text-slate-300">
-            Explora GameTracker libremente. Te pediremos iniciar sesión cuando quieras guardar, seguir o crear contenido.
-          </div>
-          <Discover
-            onSelectGame={() => setAuthModalOpen(true)}
-            onSelectUser={() => setAuthModalOpen(true)}
-            onAuthRequired={() => setAuthModalOpen(true)}
-          />
+          {isKnownGamePath ? (
+            <GameDetails
+              key={gamePathId}
+              gameId={gamePathId}
+              currentUser={null}
+              token={null}
+              onBack={handleBackFromGame}
+              onSelectUser={() => setAuthModalOpen(true)}
+              onAuthRequired={() => {
+                setAuthNotice('Inicia sesión o regístrate para realizar esta acción.');
+                setAuthModalOpen(true);
+              }}
+              onGoHome={handleGoHome}
+              breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
+              onGoBackToParent={handleBackFromGame}
+            />
+          ) : (
+            <Discover
+              onSelectGame={handleSelectGame}
+              onSelectUser={() => setAuthModalOpen(true)}
+              onAuthRequired={() => setAuthModalOpen(true)}
+            />
+          )}
         </main>
         {authModalOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm">
-            <button onClick={() => setAuthModalOpen(false)} className="fixed right-5 top-5 z-[60] rounded-full border border-slate-700 bg-[#0f121d] px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
+            <button onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed right-5 top-5 z-[60] rounded-full border border-slate-700 bg-[#0f121d] px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
               Cerrar
             </button>
-            <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} />
+            <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} notice={authNotice} />
           </div>
         )}
       </div>

@@ -4,6 +4,11 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
+  const port = Number(process.env.FRONTEND_PORT || 3000);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('FRONTEND_PORT must be a valid port number.');
+  }
+
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -12,13 +17,18 @@ export default defineConfig(() => {
       },
     },
     server: {
-      port: 3000,
+      port,
+      strictPort: true,
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      // Redirige /api/* al backend FastAPI en desarrollo
+      // Express es el backend único y escucha en este puerto en desarrollo.
       proxy: {
         '/api': {
-          target: 'http://localhost:8000',
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+        },
+        '/health': {
+          target: 'http://localhost:3001',
           changeOrigin: true,
         },
       },
