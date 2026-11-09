@@ -329,7 +329,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               </label>
               <input
                 type="text"
-                placeholder="ej. ezio_auditore"
+                placeholder={t('ej. ezio_auditore')}
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}

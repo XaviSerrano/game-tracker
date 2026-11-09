@@ -231,13 +231,13 @@ export const GameCard: React.FC<GameCardProps> = ({
                 </p>
               ) : (
                 <p className="text-[9px] text-slate-500 mt-1 truncate uppercase font-mono">
-                  {game.genres.slice(0, 1).join(', ') || 'Videojuego'}
+                  {game.genres.slice(0, 1).join(', ') || t('Videojuego')}
                 </p>
               )
             ) : (
               <div className="mt-1 space-y-0.5">
                 <p className="truncate text-[10px] text-slate-500">
-                  {game.genres.slice(0, 2).join(', ') || 'Videojuego'}
+                  {game.genres.slice(0, 2).join(', ') || t('Videojuego')}
                 </p>
                 {showDiscoverMeta && (
                   <p className="truncate text-[9px] text-slate-600">
@@ -253,7 +253,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
         {isFeedCard && (
           <p className="text-[9px] text-slate-500 mt-0.5 truncate">
-            {game.genres?.slice(0, 1).join(', ') || 'Videojuego'}
+            {game.genres?.slice(0, 1).join(', ') || t('Videojuego')}
           </p>
         )}
       </div>

@@ -11,7 +11,7 @@ import {
 import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
-import { useLanguage } from '../i18n.tsx';
+import { translateActivityDetails, useLanguage } from '../i18n.tsx';
 
 interface HomeFeedProps {
   currentUser: User;
@@ -231,7 +231,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               </div>
 
               <p className="text-xs leading-relaxed text-slate-300 italic">
-                "{act.details}"
+                "{translateActivityDetails(act.type, act.details, t)}"
               </p>
             </div>
           )}
@@ -244,8 +244,14 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <div className="text-sm text-slate-300 leading-relaxed">
           {username}{' '}
           <span>
-            {act.details ||
-              t('actualizó su biblioteca')}
+            {translateActivityDetails(
+              act.type,
+              act.details,
+              t,
+              typeof act.gameId === 'number'
+                ? activityGames[act.gameId]?.name
+                : undefined
+            )}
           </span>
         </div>
       );
@@ -255,8 +261,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       <div className="text-sm text-slate-300 leading-relaxed">
         {username}{' '}
         <span>
-          {act.details ||
-            t('realizó una acción social')}
+          {translateActivityDetails(act.type, act.details, t)}
         </span>
       </div>
     );
@@ -445,7 +450,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                   <div
                     className={
                       hasGame || isFollow
-                        ? 'grid grid-cols-1 md:grid-cols-2 gap-5'
+                        ? 'grid grid-cols-1 md:grid-cols-[3fr_7fr] gap-5'
                         : ''
                     }
                   >

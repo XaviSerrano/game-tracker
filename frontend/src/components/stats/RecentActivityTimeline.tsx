@@ -1,7 +1,7 @@
 import React from 'react';
 import { History, Trophy, Gamepad2, CheckCircle2, XCircle, Bookmark, Star, ListPlus, UserPlus, LucideIcon } from 'lucide-react';
 import { RecentActivityItem } from './types.ts';
-import { useLanguage } from '../../i18n.tsx';
+import { translateActivityDetails, useLanguage } from '../../i18n.tsx';
 
 interface RecentActivityTimelineProps {
   activities: RecentActivityItem[];
@@ -59,7 +59,7 @@ export const RecentActivityTimeline: React.FC<RecentActivityTimelineProps> = ({ 
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-slate-300 leading-relaxed truncate">
-                  {activity.details ? t(activity.details) : t('Actualizó su biblioteca')}
+                  {translateActivityDetails(activity.type, activity.details, t)}
                 </p>
                 <span className="text-[10px] text-slate-500">{formatRelativeDate(activity.createdAt, language, t)}</span>
               </div>

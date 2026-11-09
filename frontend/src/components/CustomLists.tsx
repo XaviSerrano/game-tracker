@@ -369,7 +369,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                         onClick={() => onSelectUser(list.userId)}
                         className="text-[10px] font-bold text-slate-500 hover:text-blue-400 leading-none cursor-pointer"
                       >
-                        @{list.author?.username || 'usuario'}
+                        @{list.author?.username || t('usuario')}
                       </button>
                       <span className="text-[10px] text-slate-600 uppercase font-mono font-bold bg-[#07090e] border border-slate-800 px-2 py-0.5 rounded-full">
                         {list.games.length} {t('juegos')}

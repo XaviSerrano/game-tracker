@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { ActivityType } from '../../shared/types.ts';
 
 export type Language = 'en' | 'es';
 
@@ -85,6 +86,16 @@ const translations: Record<string, string> = Object.fromEntries([
   ['día', 'day'] as const,
   ['días', 'days'] as const,
   ['comenzó a seguir a', 'started following'] as const,
+  ['se unió a GameTracker 🎮', 'joined GameTracker 🎮'] as const,
+  ['completó 🏆 {game}', 'completed {game} 🏆'] as const,
+  ['está jugando a 🎮 {game}', 'is playing 🎮 {game}'] as const,
+  ['añadió {game} a su wishlist ⭐️', 'added {game} to their wishlist ⭐️'] as const,
+  ['abandonó ❌ {game}', 'abandoned {game} ❌'] as const,
+  ['jugó a {game}', 'played {game}'] as const,
+  ['añadió a su biblioteca {game}', 'added {game} to their library'] as const,
+  ['creó la lista', 'created the list'] as const,
+  ['reseñó', 'reviewed'] as const,
+  ['sin valoración', 'unrated'] as const,
   ['ha publicado una reseña', 'published a review'] as const,
   ['Reseña', 'Review'] as const,
   ['actualizó su biblioteca', 'updated their library'] as const,
@@ -454,4 +465,54 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error('useLanguage must be used within a LanguageProvider');
   return context;
+}
+
+export function translateActivityDetails(
+  type: ActivityType,
+  details: string | undefined,
+  t: (text: string) => string,
+  gameName?: string
+): string {
+  if (!details) return t('Actualizó su biblioteca');
+
+  const gameActions: Partial<Record<ActivityType, { prefix: string; template: string }>> = {
+    COMPLETED: { prefix: 'completó 🏆', template: 'completó 🏆 {game}' },
+    PLAYING: { prefix: 'está jugando a 🎮', template: 'está jugando a 🎮 {game}' },
+    WISHLIST: { prefix: 'añadió a su wishlist ⭐️', template: 'añadió {game} a su wishlist ⭐️' },
+    ABANDONED: { prefix: 'abandonó ❌', template: 'abandonó ❌ {game}' },
+    PLAYED: { prefix: 'jugó a', template: 'jugó a {game}' }
+  };
+  const gameAction = gameActions[type];
+
+  if (gameAction) {
+    const extractedGameName = details.startsWith(gameAction.prefix)
+      ? details.slice(gameAction.prefix.length).trim()
+      : '';
+    const name = gameName || extractedGameName;
+    return name
+      ? t(gameAction.template).replace('{game}', name)
+      : t('Actualizó su biblioteca');
+  }
+
+  if (type === 'REVIEWED' && details.startsWith('reseñó ')) {
+    return `${t('reseñó')}${details.slice('reseñó'.length)}`
+      .replace(/\(sin ⭐\)$/, `(${t('sin valoración')} ⭐)`);
+  }
+
+  if (type === 'LIST_CREATED' && details.startsWith('creó la lista')) {
+    return `${t('creó la lista')}${details.slice('creó la lista'.length)}`;
+  }
+
+  if (type === 'FOLLOWED') {
+    if (details === 'se unió a GameTracker 🎮') return t(details);
+    return details.replace(' comenzó a seguir a ', ` ${t('comenzó a seguir a')} `);
+  }
+
+  const addedToLibraryPrefix = 'añadió a su biblioteca ';
+  if (details.startsWith(addedToLibraryPrefix)) {
+    return t('añadió a su biblioteca {game}')
+      .replace('{game}', details.slice(addedToLibraryPrefix.length));
+  }
+
+  return t(details);
 }
