@@ -891,9 +891,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Playtracking forms & comments area */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           
           {/* Tracking control form */}
           <div onClickCapture={handlePrivateButtonClick} className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl space-y-5">
@@ -1078,6 +1078,66 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             </form>
           </div>
 
+          {/* Write custom review section */}
+          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
+            <h3 className="font-bold text-slate-300 font-display text-sm">{t('Reseñar este juego')}</h3>
+            <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
+              <div>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+                  {t('Rating general (mismo del tracking)')}
+                </label>
+                <div className="flex gap-1.5 bg-[#07090e] p-2 border border-slate-800 rounded-xl justify-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      aria-label={`${star} ${t('estrellas')}`}
+                      aria-pressed={rating === star}
+                      className="min-h-10 min-w-10 flex items-center justify-center hover:scale-110 transition cursor-pointer"
+                    >
+                      <Star className={`w-5 h-5 ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1 text-center">
+                  {t('Este valor es único y se comparte entre tu diario y tu reseña.')}
+                </p>
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  aria-label={t('Título corto de la reseña...')}
+                  placeholder={t('Título corto de la reseña...')}
+                  value={reviewTitle}
+                  required
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  className="w-full bg-[#07090e] border border-slate-800 focus:border-indigo-500 rounded-xl p-2 px-3 text-xs text-white placeholder-slate-650 transition outline-none"
+                />
+              </div>
+
+              <div>
+                <textarea
+                  aria-label={t('Escribe tu opinión crítica detallada del videojuego...')}
+                  placeholder={t('Escribe tu opinión crítica detallada del videojuego...')}
+                  value={reviewContent}
+                  required
+                  rows={4}
+                  onChange={(e) => setReviewContent(e.target.value)}
+                  className="w-full bg-[#07090e] border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-xs text-white placeholder-slate-700 transition outline-none resize-none"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+              >
+                <Send className="w-3.5 h-3.5" /> {t('Publicar Reseña')}
+              </button>
+            </form>
+          </div>
+
           {screenshots.length > 0 && (
             <section className="space-y-4">
               {/* Header */}
@@ -1256,69 +1316,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           </div>
         </div>
 
-        {/* Sidebar details & Write review forms */}
-        <div className="space-y-6">
-          
-          {/* Write custom review section */}
-          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
-            <h3 className="font-bold text-slate-300 font-display text-sm">{t('Reseñar este juego')}</h3>
-            <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
-              <div>
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
-                  {t('Rating general (mismo del tracking)')}
-                </label>
-                <div className="flex gap-1.5 bg-[#07090e] p-2 border border-slate-800 rounded-xl justify-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      aria-label={`${star} ${t('estrellas')}`}
-                      aria-pressed={rating === star}
-                      className="min-h-10 min-w-10 flex items-center justify-center hover:scale-110 transition cursor-pointer"
-                    >
-                      <Star className={`w-5 h-5 ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1 text-center">
-                  {t('Este valor es único y se comparte entre tu diario y tu reseña.')}
-                </p>
-              </div>
-
-              <div>
-                <input
-                  type="text"
-                  aria-label={t('Título corto de la reseña...')}
-                  placeholder={t('Título corto de la reseña...')}
-                  value={reviewTitle}
-                  required
-                  onChange={(e) => setReviewTitle(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-indigo-500 rounded-xl p-2 px-3 text-xs text-white placeholder-slate-650 transition outline-none"
-                />
-              </div>
-
-              <div>
-                <textarea
-                  aria-label={t('Escribe tu opinión crítica detallada del videojuego...')}
-                  placeholder={t('Escribe tu opinión crítica detallada del videojuego...')}
-                  value={reviewContent}
-                  required
-                  rows={4}
-                  onChange={(e) => setReviewContent(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-xs text-white placeholder-slate-700 transition outline-none resize-none"
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
-              >
-                <Send className="w-3.5 h-3.5" /> {t('Publicar Reseña')}
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
 
       {/* Add to Custom List modal */}
