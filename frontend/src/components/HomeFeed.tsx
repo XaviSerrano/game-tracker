@@ -137,7 +137,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         id: uid,
         username: t('usuario'),
         avatar:
-          'https://api.dicebear.com/7.x/pixel-art/svg?seed=user',
+          '/default-avatar.svg',
         bio: ''
       }
     );

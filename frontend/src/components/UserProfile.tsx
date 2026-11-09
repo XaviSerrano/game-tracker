@@ -3,6 +3,9 @@ import { User, Review, Game, CustomList } from '../types.ts';
 import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
+import { AvatarCropper } from './AvatarCropper.tsx';
+
+const DEFAULT_AVATAR = '/default-avatar.svg';
 
 interface UserProfileProps {
   userId: string;
@@ -49,6 +52,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   // Edit profile states
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
@@ -257,6 +261,20 @@ const filteredSocialUsers = socialUsers.filter(
     (u.bio || '').toLowerCase().includes(socialSearch.toLowerCase())
 );
 
+const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+const file = e.target.files?.[0];
+e.target.value = '';
+if (!file) return;
+
+if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+  setEditMessage(`Error: ${t('Formato de imagen no válido.')}`);
+  return;
+}
+
+setEditMessage('');
+setAvatarFile(file);
+};
+
 const handleUpdateProfile = async (
 e: React.FormEvent
 ) => {
@@ -390,6 +408,17 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         )}
       </div>
     </Dialog>
+  )}
+
+  {avatarFile && (
+    <AvatarCropper
+      file={avatarFile}
+      onCancel={() => setAvatarFile(null)}
+      onConfirm={(dataUrl) => {
+        setEditAvatar(dataUrl);
+        setAvatarFile(null);
+      }}
+    />
   )}
 
   {/* Social Connections Modal */}
@@ -564,7 +593,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           src={profile.avatar}
           alt={profile.username}
           referrerPolicy="no-referrer"
-          className="w-20 h-20 rounded-full border-2 border-blue-500/20 bg-[#07090e] p-1 shadow-lg"
+          className="w-20 h-20 rounded-full border-2 border-blue-500/20 bg-[#07090e] object-cover shadow-lg"
         />
 
         <div className="space-y-1.5 max-w-sm">
@@ -684,17 +713,40 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
         <div className="space-y-1.5">
           <label htmlFor="profile-avatar" className="block text-xs font-semibold text-slate-400">
-            Pixel Avatar seed
+            {t('Foto de perfil')}
           </label>
 
-          <input
-            id="profile-avatar"
-            type="text"
-            value={editAvatar}
-            onChange={(e) => setEditAvatar(e.target.value)}
-            placeholder={t('Ingresa url de tu foto...')}
-            className="w-full bg-[#07090e] border border-slate-800 rounded-lg p-2 text-xs text-white outline-none"
-          />
+          <div className="flex items-center gap-3">
+            <img
+              src={editAvatar || DEFAULT_AVATAR}
+              alt=""
+              className="h-14 w-14 rounded-full border border-slate-800 bg-[#07090e] object-cover"
+            />
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="profile-avatar"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleAvatarFile}
+                className="sr-only"
+              />
+              <label
+                htmlFor="profile-avatar"
+                className="cursor-pointer rounded-lg bg-slate-850 px-3.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#e5b974]"
+              >
+                {t('Elegir imagen')}
+              </label>
+              {editAvatar && editAvatar !== DEFAULT_AVATAR && (
+                <button
+                  type="button"
+                  onClick={() => setEditAvatar(DEFAULT_AVATAR)}
+                  className="rounded-lg px-3.5 py-1.5 text-[11px] font-semibold text-slate-400 hover:text-white"
+                >
+                  {t('Quitar')}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-2">

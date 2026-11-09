@@ -13,8 +13,11 @@ const MAX_ACTIVE_SESSIONS_PER_USER = 5;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 const MIN_PASSWORD_LENGTH = 8;
 const SESSION_COOKIE_NAME = 'gt_session';
+const DEFAULT_AVATAR = '/default-avatar.svg';
+const MAX_AVATAR_LENGTH = 200_000;
+const AVATAR_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
 
-app.use(express.json());
+app.use(express.json({ limit: '300kb' }));
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
@@ -289,7 +292,7 @@ const authenticate = async (req: AuthenticatedRequest, res: express.Response, ne
 // --- ENDPOINTS DE AUTENTICACIÓN ---
 
 app.post('/api/auth/register', registerRateLimit, async (req, res) => {
-  const { username, email, password, bio, avatar } = req.body;
+  const { username, email, password, bio } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
   }
@@ -315,7 +318,7 @@ app.post('/api/auth/register', registerRateLimit, async (req, res) => {
     id,
     username: normalizedUsername,
     email: normalizedEmail,
-    avatar: avatar || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${normalizedUsername}`,
+    avatar: DEFAULT_AVATAR,
     bio: bio || 'Hola! Soy nuevo en GameTracker.',
     createdAt: new Date().toISOString()
   };
@@ -463,6 +466,15 @@ app.put('/api/users/profile', authenticate, async (req: AuthenticatedRequest, re
   const user = req.currUser!;
   const { username, bio, avatar } = req.body;
 
+  if (avatar !== undefined && avatar !== '') {
+    if (
+      typeof avatar !== 'string' ||
+      avatar.length > MAX_AVATAR_LENGTH ||
+      (avatar !== DEFAULT_AVATAR && !AVATAR_DATA_URL.test(avatar))
+    ) {
+      return res.status(400).json({ error: 'La imagen de perfil no es válida (PNG, JPG o WebP, máx. 150 KB).' });
+    }
+  }
   if (username && username.toLowerCase() !== user.username.toLowerCase()) {
     const existing = await db.getUserByUsername(username);
     if (existing) {
@@ -884,7 +896,7 @@ app.get('/api/reviews/:gameId', async (req, res) => {
     return {
       ...r,
       rating: tracking?.rating ?? 0,
-      author: author || { username: 'desconocido', avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=unknown' }
+      author: author || { username: 'desconocido', avatar: DEFAULT_AVATAR }
     };
   }));
 

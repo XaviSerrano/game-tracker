@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Compass, Gamepad2, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
+import { ArrowLeft, Compass, Eye, EyeOff, Gamepad2, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
 import { User } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
@@ -14,6 +14,51 @@ type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
+interface PasswordInputProps {
+  id: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  className: string;
+  confirmation?: boolean;
+  autoComplete: 'current-password' | 'new-password';
+}
+
+const PasswordInput: React.FC<PasswordInputProps> = ({ id, placeholder, value, onChange, className, confirmation = false, autoComplete }) => {
+  const { t } = useLanguage();
+  const [visible, setVisible] = useState(false);
+  const label = confirmation
+    ? t(visible ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña')
+    : t(visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  const Icon = visible ? EyeOff : Eye;
+
+  return (
+    <div className="relative">
+      <input
+        type={visible ? 'text' : 'password'}
+        id={id}
+        name={confirmation ? 'confirmPassword' : 'password'}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${className} pr-14 sm:pr-14`}
+      />
+      <button
+        type="button"
+        aria-label={label}
+        aria-controls={id}
+        title={label}
+        onClick={() => setVisible(previous => !previous)}
+        className="absolute right-0 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#e5b974]"
+      >
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
+
 export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers, notice }) => {
   const { t } = useLanguage();
   const fieldLabelClassName = 'mb-2 block text-base font-medium text-slate-300 sm:text-xs';
@@ -23,7 +68,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [avatar, setAvatar] = useState('https://api.dicebear.com/7.x/pixel-art/svg?seed=merlin');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
@@ -110,7 +154,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, email, password, bio, avatar })
+        body: JSON.stringify({ username, email, password, bio })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -295,13 +339,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
                 <label htmlFor="login-password" className={fieldLabelClassName}>
                   {t('Contraseña')}
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   id="login-password"
                   placeholder={t('Tu contraseña')}
-                  required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={setPassword}
+                  autoComplete="current-password"
                   className={fieldClassName}
                 />
               </div>
@@ -362,13 +405,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               <label htmlFor="register-password" className={fieldLabelClassName}>
                 {t('Contraseña')}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 id="register-password"
                 placeholder={t('Mínimo 8 caracteres')}
-                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                autoComplete="new-password"
                 className={fieldClassName}
               />
             </div>
@@ -377,13 +419,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               <label htmlFor="register-confirm-password" className={fieldLabelClassName}>
                 {t('Confirmar Contraseña')}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 id="register-confirm-password"
                 placeholder={t('Repite tu contraseña')}
-                required
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={setConfirmPassword}
+                autoComplete="new-password"
+                confirmation
                 className={fieldClassName}
               />
             </div>
@@ -400,33 +442,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
                 onChange={(e) => setBio(e.target.value)}
                 className={`${fieldClassName} min-h-24 resize-none`}
               ></textarea>
-            </div>
-
-            <div>
-              <label className={fieldLabelClassName}>
-                {t('Elige tu Pixel Avatar')}
-              </label>
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {['merlin', 'snickers', 'shadow', 'mittens', 'king', 'coco', 'leo'].map(seed => {
-                  const url = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
-                  return (
-                    <button
-                      key={seed}
-                      type="button"
-                      aria-pressed={avatar === url}
-                      onClick={() => setAvatar(url)}
-                      className={`flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 p-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${avatar === url ? 'border-[#d9a352] bg-[#d9a352]/10' : 'border-slate-800 hover:border-slate-600'}`}
-                    >
-                      <img
-                        src={url}
-                        alt={seed}
-                        referrerPolicy="no-referrer"
-                        className="size-10 rounded-full"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             <button
@@ -487,13 +502,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               <label htmlFor="reset-password" className={fieldLabelClassName}>
                 {t('Nueva Contraseña')}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 id="reset-password"
                 placeholder={t('Mínimo 8 caracteres')}
-                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                autoComplete="new-password"
                 className={fieldClassName}
               />
             </div>
@@ -502,13 +516,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               <label htmlFor="reset-confirm-password" className={fieldLabelClassName}>
                 {t('Confirmar Nueva Contraseña')}
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 id="reset-confirm-password"
                 placeholder={t('Repite la nueva contraseña')}
-                required
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={setConfirmPassword}
+                autoComplete="new-password"
+                confirmation
                 className={fieldClassName}
               />
             </div>

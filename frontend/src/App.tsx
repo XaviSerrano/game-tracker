@@ -89,10 +89,10 @@ export default function App() {
         const usersListRes = await fetch('/api/games'); // helper to ping server. We know seed users exist.
         // Let's resolve with preseeded profiles manually or through a clean local query if server was launched
         const mockGamers: User[] = [
-          { id: "user_alex", username: "alex_gamer", email: "alex@gametracker.com", avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=alex", bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.", createdAt: "" },
-          { id: "user_sam", username: "vance_retro", email: "sam@gametracker.com", avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=sam", bio: "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.", createdAt: "" },
-          { id: "user_lucia", username: "lucia_indie", email: "lucia@gametracker.com", avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=lucia", bio: "Indie games advocate. Pixel art, cozy farm simulators, and rogue-lites make my day.", createdAt: "" },
-          { id: "user_marcos", username: "marcos_rpg", email: "marcos@gametracker.com", avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=marcos", bio: "JRPG player & completionist. Elden Ring was brilliant, but Chrono Trigger is art.", createdAt: "" }
+          { id: "user_alex", username: "alex_gamer", email: "alex@gametracker.com", avatar: "/default-avatar.svg", bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.", createdAt: "" },
+          { id: "user_sam", username: "vance_retro", email: "sam@gametracker.com", avatar: "/default-avatar.svg", bio: "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.", createdAt: "" },
+          { id: "user_lucia", username: "lucia_indie", email: "lucia@gametracker.com", avatar: "/default-avatar.svg", bio: "Indie games advocate. Pixel art, cozy farm simulators, and rogue-lites make my day.", createdAt: "" },
+          { id: "user_marcos", username: "marcos_rpg", email: "marcos@gametracker.com", avatar: "/default-avatar.svg", bio: "JRPG player & completionist. Elden Ring was brilliant, but Chrono Trigger is art.", createdAt: "" }
         ];
         setAllUsers(mockGamers);
       }

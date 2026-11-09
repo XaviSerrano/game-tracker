@@ -233,6 +233,9 @@ export async function initDb(): Promise<void> {
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS screenshots TEXT NOT NULL DEFAULT '[]'`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "averagePlaytimeHours" DOUBLE PRECISION`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "timeToBeat" TEXT NOT NULL DEFAULT '{}'`);
+  await pool.query(
+    `UPDATE users SET avatar = '/default-avatar.svg' WHERE avatar = '' OR avatar LIKE 'https://api.dicebear.com/%'`
+  );
   await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "addedAt" TEXT`);
   await pool.query(`UPDATE "userGames" SET "addedAt" = "updatedAt" WHERE "addedAt" IS NULL`);
 
