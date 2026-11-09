@@ -448,7 +448,13 @@ app.get('/api/users', async (req, res) => {
   const query = typeof req.query.search === 'string' ? req.query.search.trim() : '';
   if (!query) return res.json([]);
 
-  res.json(await db.searchUsersByUsername(query));
+  const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  const token = getCookie(req, SESSION_COOKIE_NAME) || bearerToken;
+  const currentUser = token ? await db.getUserBySessionToken(token) : null;
+
+  const users = await db.searchUsersByUsername(query);
+  res.json(currentUser ? users.filter(user => user.id !== currentUser.id) : users);
 });
 
 app.get('/api/users/:id', async (req, res) => {

@@ -8,7 +8,6 @@ import {
   Star,
   ChevronRight
 } from 'lucide-react';
-import { SpotlightPanel } from './SpotlightPanel.tsx';
 import { ParticleBackdrop } from './ParticleBackdrop.tsx';
 import { ShimmerText } from './ShimmerText.tsx';
 import { translateActivityDetails, useLanguage } from '../i18n.tsx';
@@ -276,7 +275,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
     <div className="space-y-6 pb-20 selection:bg-[#dca94f] selection:text-black">
 
       {/* HERO */}
-      <SpotlightPanel className="relative overflow-hidden bg-gradient-to-r from-[#0d1320] via-[#101522] to-[#080b10] border border-slate-800 p-6 rounded-2xl">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0d1320] via-[#101522] to-[#080b10] border border-slate-800 p-6 rounded-2xl">
         <ParticleBackdrop
           className="opacity-40"
           count={18}
@@ -342,7 +341,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             </button>
           </div>
         </div>
-      </SpotlightPanel>
+      </div>
 
       {/* FEED */}
       <div className="space-y-4">

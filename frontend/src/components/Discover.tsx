@@ -2,10 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Gamepad2, RefreshCw, Search, SlidersHorizontal, Users } from 'lucide-react';
 import { Game, GameStatus, User } from '../types.ts';
 import { GameCard } from './GameCard.tsx';
-import { ParticleBackdrop } from './ParticleBackdrop.tsx';
-import { ShimmerText } from './ShimmerText.tsx';
-import { SpotlightPanel } from './SpotlightPanel.tsx';
-import { TiltCard } from './TiltCard.tsx';
 import { useLanguage } from '../i18n.tsx';
 
 interface DiscoverProps {
@@ -232,7 +228,10 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
         setLoading(true);
         try {
-          const response = await fetch(`/api/users?search=${encodeURIComponent(username)}`, { signal: controller.signal });
+          const response = await fetch(`/api/users?search=${encodeURIComponent(username)}`, {
+            signal: controller.signal,
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined
+          });
           const data = await response.json();
           if (!response.ok) throw new Error(data?.error || 'No se pudieron buscar los usuarios.');
           setUsers(Array.isArray(data) ? data : []);
@@ -427,8 +426,8 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   };
 
   const renderGameCard = (game: Game) => (
-    <TiltCard key={game.igdbId} className="rounded-xl">
       <GameCard
+        key={game.igdbId}
         game={game}
         onSelectGame={onSelectGame}
         userGameStatus={libraryStatuses.get(game.igdbId)}
@@ -436,7 +435,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         onToggleWishlist={!libraryStatuses.has(game.igdbId) || libraryStatuses.get(game.igdbId) === 'WISHLIST' ? handleQuickWishlist : undefined}
         savingWishlistGameId={savingWishlistGameId}
       />
-    </TiltCard>
   );
 
   const showHome = !hasActiveFilters && !isUserSearch;
@@ -453,20 +451,19 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
-      <SpotlightPanel className="relative space-y-5 overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-[#0f121d] via-[#111317] to-[#0b0c0e] p-5 md:p-7">
-        <ParticleBackdrop className="opacity-60" count={14} />
-        <div className="relative">
-          <h2 className="text-2xl font-bold font-display tracking-tight text-white">
-            {t('Descubrir')} <ShimmerText>{t('Videojuegos')}</ShimmerText>
+      <section className="space-y-5 border-b border-slate-800 pb-6">
+        <div>
+          <h2 className="font-display text-2xl font-bold tracking-tight text-white md:text-3xl">
+            {t('Descubrir')} {t('Videojuegos')}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
             {t('Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.')}
           </p>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative flex gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex max-w-3xl flex-wrap gap-2 sm:flex-nowrap">
           <label htmlFor="discover-search" className="sr-only">{t('Buscar videojuegos o usuarios')}</label>
-          <div className="relative min-w-0 flex-1">
+          <div className="relative min-w-0 basis-full sm:flex-1">
             <Search aria-hidden="true" className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
             <input
               id="discover-search"
@@ -474,7 +471,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               placeholder={t('Busca juegos o @usuarios...')}
               value={filters.query}
               onChange={event => updateFilters({ query: event.target.value })}
-              className="w-full rounded-xl border border-slate-800 bg-[#0f121d] py-3 pl-11 pr-4 text-xs text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-700 bg-[#111317] py-3 pl-11 pr-4 text-sm text-slate-200 outline-none placeholder:text-slate-400 focus:border-[#d9a352]"
             />
           </div>
           <button type="submit" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
@@ -486,7 +483,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               aria-label={showFilters ? t('Ocultar filtros') : t('Mostrar filtros')}
               aria-expanded={showFilters}
               onClick={() => setShowFilters(open => !open)}
-              className={`rounded-xl border px-3.5 py-3 transition ${showFilters ? 'border-blue-500/30 bg-slate-800 text-blue-300' : 'border-slate-800 bg-[#0f121d] text-slate-400 hover:text-white'}`}
+              className={`rounded-xl border px-3.5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${showFilters ? 'border-[#d9a352]/50 bg-slate-800 text-[#e5b974]' : 'border-slate-700 bg-[#111317] text-slate-300 hover:text-white'}`}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </button>
@@ -534,7 +531,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             </label>
           </div>
         )}
-      </SpotlightPanel>
+      </section>
 
       {taxonomyError && (
         <div role="status" className="flex flex-wrap items-center gap-2 text-xs text-amber-300">

@@ -753,69 +753,79 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
-      <Breadcrumbs
-        items={
-          breadcrumbParentLabel === t('Inicio')
-            ? [
-                {
-                  label: t('Inicio'),
-                  onClick: onGoHome
-                },
-                {
-                  label: game.name
-                }
-              ]
-            : [
-                {
-                  label: t('Inicio'),
-                  onClick: onGoHome
-                },
-                {
-                  label: breadcrumbParentLabel,
-                  onClick: onGoBackToParent
-                },
-                {
-                  label: game.name
-                }
-              ]
-        }
-      />
-      {/* Back navigaton top link */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white mb-2 transition cursor-pointer group"
-      >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition" />
-        {t('Volver a')} {breadcrumbParentLabel}
-      </button>
+      <div className="relative isolate overflow-hidden pb-8 pt-24 md:pb-12 md:pt-28">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-full max-h-[34rem] overflow-hidden">
+          <img
+            src={screenshots[0] || game.cover}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="absolute -inset-4 h-[calc(100%+2rem)] w-[calc(100%+2rem)] object-cover object-center opacity-75 blur-md"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0b0d12]/45 via-[#0b0d12]/65 to-[#0b0d12]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d12]/70 via-[#0b0d12]/30 to-transparent" />
+        </div>
 
-      {/* Game Header panel */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-slate-900 to-[#121625] border border-slate-850 p-6 rounded-2xl md:p-8">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row gap-6 items-start">
+        <div className="pointer-events-none absolute inset-x-0 top-4 z-10 mx-auto w-[calc(100%-2rem)] md:w-4/5">
+          <Breadcrumbs
+            className="pointer-events-auto absolute left-0 top-0"
+            items={
+              breadcrumbParentLabel === t('Inicio')
+                ? [
+                    {
+                      label: t('Inicio'),
+                      onClick: onGoHome
+                    },
+                    {
+                      label: game.name
+                    }
+                  ]
+                : [
+                    {
+                      label: t('Inicio'),
+                      onClick: onGoHome
+                    },
+                    {
+                      label: breadcrumbParentLabel,
+                      onClick: onGoBackToParent
+                    },
+                    {
+                      label: game.name
+                    }
+                  ]
+            }
+          />
+          <button
+            type="button"
+            onClick={onBack}
+            className="pointer-events-auto absolute left-0 top-8 inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white group"
+          >
+            <ArrowLeft className="w-4 h-4 transition group-hover:-translate-x-0.5" />
+            {t('Volver a')} {breadcrumbParentLabel}
+          </button>
+        </div>
+
+        <div className="mx-auto flex w-[calc(100%-2rem)] flex-col gap-6 md:w-4/5 md:flex-row md:items-start md:gap-8">
           <img
             src={game.cover}
             alt={game.name}
             referrerPolicy="no-referrer"
-            className="w-40 h-54 rounded-xl object-cover shadow-2xl border border-slate-850 flex-shrink-0 mx-auto md:mx-0"
+            className="aspect-[3/4] w-36 shrink-0 rounded-lg object-cover shadow-xl md:w-44"
           />
-          <div className="flex-1 min-w-0 space-y-4 text-center md:text-left">
+          <div className="min-w-0 flex-1 space-y-4 text-left">
             <div>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-1 text-slate-500 text-xs">
-                <span>{game.releaseDate ? new Date(game.releaseDate).getFullYear() : t('Desconocido')}</span>
+              <div className="flex flex-wrap items-center gap-1 text-xs text-slate-300">
+                <span>{game.releaseDate && game.releaseDate !== 'Unknown' && !Number.isNaN(new Date(game.releaseDate).getTime()) ? new Date(game.releaseDate).getFullYear() : t('Desconocido')}</span>
               </div>
               <h1 className="text-2xl md:text-4xl font-bold font-display text-white tracking-tight mt-1.5">
                 {game.name}
               </h1>
             </div>
 
-            <p className="text-slate-400 text-xs leading-relaxed md:max-w-2xl">
+            <p className="max-w-3xl text-sm leading-7 text-slate-200">
               {game.summary}
             </p>
 
-            <div className="flex flex-wrap justify-center md:justify-start gap-1.5 pt-1">
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {game.genres.map(genre => (
                 <a
                   key={genre}
@@ -827,26 +837,25 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               ))}
             </div>
 
-            <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
-              <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="border-t border-white/15 pt-4">
+              <div className="mb-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">{t('Tiempo de juego')}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{t('Estimación orientativa de IGDB')}</p>
+                  <p className="text-xs font-semibold text-slate-200">{t('Tiempo de juego')}</p>
+                  <p className="mt-1 text-xs text-slate-400">{t('Estimación orientativa de IGDB')}</p>
                 </div>
-                <Clock className="h-5 w-5 text-cyan-300/80" />
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.07] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">{t('Historia')}</p>
-                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.hastily ?? '--'}{game.timeToBeat?.hastily != null && <span className="ml-1 text-xs font-semibold text-blue-200/70">h</span>}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-xs text-slate-300">{t('Historia')}</p>
+                  <p className="mt-1 text-lg font-semibold leading-none text-white">{game.timeToBeat?.hastily ?? '--'}{game.timeToBeat?.hastily != null && <span className="ml-1 text-xs font-semibold text-slate-300">h</span>}</p>
                 </div>
-                <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">{t('Normal')}</p>
-                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.normally ?? '--'}{game.timeToBeat?.normally != null && <span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span>}</p>
+                <div>
+                  <p className="text-xs text-slate-300">{t('Normal')}</p>
+                  <p className="mt-1 text-lg font-semibold leading-none text-white">{game.timeToBeat?.normally ?? '--'}{game.timeToBeat?.normally != null && <span className="ml-1 text-xs font-semibold text-slate-300">h</span>}</p>
                 </div>
-                <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.09] px-3 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300">{t('Completista')}</p>
-                  <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat?.completely ?? '--'}{game.timeToBeat?.completely != null && <span className="ml-1 text-xs font-semibold text-violet-200/70">h</span>}</p>
+                <div>
+                  <p className="text-xs text-slate-300">{t('Completista')}</p>
+                  <p className="mt-1 text-lg font-semibold leading-none text-white">{game.timeToBeat?.completely ?? '--'}{game.timeToBeat?.completely != null && <span className="ml-1 text-xs font-semibold text-slate-300">h</span>}</p>
                 </div>
               </div>
             </div>
@@ -854,7 +863,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             {game.platforms.length > 0 && (
               <div className="space-y-2 pt-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Plataformas')}</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                <div className="flex flex-wrap gap-2">
                   {game.platforms.map(platform => {
                     const style = getPlatformStyle(platform);
                     return (
@@ -879,9 +888,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           </div>
 
           {game.rating && (
-            <div className="self-center md:self-start bg-[#07090e] border border-slate-800 p-4 rounded-xl text-center flex-shrink-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">IGDB Score</span>
-              <div className="flex items-center gap-1 text-yellow-400 justify-center mt-1">
+            <div className="shrink-0 self-start text-left">
+              <span className="block text-xs font-semibold text-slate-300">IGDB Score</span>
+              <div className="mt-1 flex items-center gap-1 text-yellow-400">
                 <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                 <span className="text-2xl font-black font-display text-white">{game.rating}</span>
                 <span className="text-xs text-slate-600">/100</span>
@@ -891,12 +900,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Playtracking forms & comments area */}
-        <div className="space-y-6">
+      <div className="mx-auto w-[calc(100%-2rem)] md:w-4/5">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
+          <div className="min-w-0 space-y-8">
           
           {/* Tracking control form */}
-          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl space-y-5">
+          <div onClickCapture={handlePrivateButtonClick} className="space-y-5 border-t border-slate-800 pt-6">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-blue-400" />
@@ -1079,7 +1088,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           </div>
 
           {/* Write custom review section */}
-          <div onClickCapture={handlePrivateButtonClick} className="bg-[#0d101a] border border-slate-850 p-5 rounded-2xl space-y-4">
+          <div onClickCapture={handlePrivateButtonClick} className="space-y-4 border-t border-slate-800 pt-6">
             <h3 className="font-bold text-slate-300 font-display text-sm">{t('Reseñar este juego')}</h3>
             <form onSubmit={handleSubmitReview} className="space-y-3 text-left">
               <div>
@@ -1138,6 +1147,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             </form>
           </div>
 
+          </div>
+          <div className="min-w-0 space-y-8">
           {screenshots.length > 0 && (
             <section className="space-y-4">
               {/* Header */}
@@ -1169,7 +1180,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     src={screenshots[selectedScreenshot]}
                     alt={`${game.name} screenshot ${selectedScreenshot + 1}`}
                     referrerPolicy="no-referrer"
-                    className="w-full aspect-video object-cover transition duration-500 group-hover:scale-[1.02]"
+                    className="w-full aspect-video object-cover"
                   />
 
                   {/* Gradient overlay */}
@@ -1251,7 +1262,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             </h3>
 
             {reviews.length === 0 ? (
-              <div className="p-8 bg-[#0f121d]/50 border border-slate-850 rounded-xl text-center space-y-1 text-slate-500">
+              <div className="space-y-1 border-t border-slate-800 py-6 text-center text-slate-500">
                 <MessageSquare className="w-6 h-6 mx-auto text-slate-700" />
                 <p className="text-xs">{t('No hay reseñas para este juego todavía. ¡Comparte tu opinión tú mismo!')}</p>
               </div>
@@ -1260,7 +1271,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 {reviews.map(rev => (
                   <div
                     key={rev.id}
-                    className="bg-[#0f121d] border border-slate-850 p-4 rounded-xl space-y-3 block"
+                    className="block space-y-3 border-t border-slate-800 py-4"
                   >
                     <div className="flex items-center justify-between">
                       <button
@@ -1313,6 +1324,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
 

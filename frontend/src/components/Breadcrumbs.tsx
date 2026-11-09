@@ -9,9 +9,10 @@ export interface BreadcrumbItem {
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
+  className?: string;
 }
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className = '' }) => {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -32,7 +33,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
 
   return (
     <>
-      <nav aria-label="Breadcrumb" className="mb-6">
+      <nav aria-label="Breadcrumb" className={className}>
         <ol className="flex items-center gap-1.5">
           {items.map((item, index) => (
             <React.Fragment key={`${item.label}-${index}`}>

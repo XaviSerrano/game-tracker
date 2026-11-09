@@ -6,6 +6,8 @@ import { LanguageSelector } from './LanguageSelector.tsx';
 
 interface OnboardingProps {
   onLogin: (user: User) => void;
+  onGoHome: () => void;
+  initialMode?: 'login' | 'register';
   preseededUsers: User[];
   notice?: string;
 }
@@ -59,12 +61,12 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ id, placeholder, value, o
   );
 };
 
-export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers, notice }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initialMode = 'login', preseededUsers, notice }) => {
   const { t } = useLanguage();
   const fieldLabelClassName = 'mb-2 block text-base font-medium text-slate-300 sm:text-xs';
   const fieldClassName = 'w-full min-h-12 rounded-xl border border-slate-800 bg-[#07090e] px-3 py-3 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-[#d9a352] focus:ring-2 focus:ring-[#d9a352]/20 sm:px-4 sm:py-2.5 sm:text-sm';
   const primaryButtonClassName = 'flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#d9a352] px-4 py-3 text-sm font-semibold text-[#17120a] transition hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5 sm:text-xs';
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -260,7 +262,16 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
             <Gamepad2 className="w-8 h-8" />
           </div>
           <h1 className="mb-1 text-balance text-3xl font-semibold font-display tracking-tight text-white">
-            GameTracker
+            <a
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                onGoHome();
+              }}
+              className="rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            >
+              GameTracker
+            </a>
           </h1>
           <p className="max-w-[42ch] text-pretty text-center text-base text-slate-300 sm:text-sm">
             {t('Organiza tus videojuegos, sigue tus progresos y descubre recomendaciones con tus amigos')}

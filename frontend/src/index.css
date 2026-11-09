@@ -45,6 +45,17 @@ body {
   outline-offset: 3px;
 }
 
+#discover-search:focus-visible {
+  outline: none;
+}
+
+@media (forced-colors: active) {
+  #discover-search:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
 @media (max-width: 639px) {
   input, select, textarea {
     font-size: 16px;

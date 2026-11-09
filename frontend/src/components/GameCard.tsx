@@ -89,10 +89,9 @@ export const GameCard: React.FC<GameCardProps> = ({
         border border-slate-800
         hover:border-slate-700
         rounded-xl
-        transition
+        transition-colors
         flex flex-col
         cursor-pointer
-        hover:translate-y-[-2px]
         duration-200
         ${isFeedCard ? 'p-2' : 'p-2.5'}
       `}
@@ -103,10 +102,6 @@ export const GameCard: React.FC<GameCardProps> = ({
           rounded-lg
           overflow-hidden
           border border-slate-900
-          group-hover:shadow-lg
-          group-hover:scale-[1.02]
-          transition
-          duration-200
           aspect-[3/4]
         `}
       >

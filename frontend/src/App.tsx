@@ -26,6 +26,7 @@ import { CustomLists } from './components/CustomLists.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { StatsDashboard } from './components/StatsDashboard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
+import { LandingPage } from './components/LandingPage.tsx';
 
 import { Analytics } from '@vercel/analytics/react';
 import { useLanguage } from './i18n.tsx';
@@ -65,6 +66,7 @@ export default function App() {
   const [gameReturnPath, setGameReturnPath] = useState('/');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState('');
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
 
   // The session is kept in an httpOnly cookie and verified server-side.
   const verifySession = async () => {
@@ -187,6 +189,7 @@ export default function App() {
     setActiveTab('feed');
     setSelectedGameId(null);
     setSelectedUserId(null);
+    window.scrollTo(0, 0);
     navigateTo('/');
   };
 
@@ -195,6 +198,12 @@ export default function App() {
     setSelectedGameId(null);
     setSelectedUserId(null);
     navigateTo('/discover');
+  };
+
+  const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
+    setAuthInitialMode(mode);
+    setAuthNotice('');
+    setAuthModalOpen(true);
   };
 
   const getGameParentLabel = (path: string) => {
@@ -263,50 +272,78 @@ export default function App() {
   if (!currentUser || !token) {
     return (
       <div className="min-h-screen text-slate-200 font-sans">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-850 bg-[#0f121d]/95 px-4 py-3 backdrop-blur md:px-8">
-          <div className="flex items-center gap-2.5">
-            <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
-            <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
-          </div>
-          <div className="flex max-w-full items-center gap-3">
-            <LanguageSelector compact />
-            <button type="button" onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
-              {t('Iniciar sesión / Registrarse')}
-            </button>
-          </div>
-        </header>
-        <main className="mx-auto max-w-6xl px-3 py-5 md:px-5 md:py-7">
-          {isKnownGamePath ? (
-            <GameDetails
-              key={gamePathId}
-              gameId={gamePathId}
-              currentUser={null}
-              token={null}
-              onBack={handleBackFromGame}
-              onSelectUser={() => setAuthModalOpen(true)}
-              onAuthRequired={() => {
-                setAuthNotice(t('Inicia sesión o regístrate para realizar esta acción.'));
-                setAuthModalOpen(true);
-              }}
-              onGoHome={handleGoHome}
-              breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
-              onGoBackToParent={handleBackFromGame}
-            />
-          ) : (
-            <Discover
-              onSelectGame={handleSelectGame}
-              onSelectUser={() => setAuthModalOpen(true)}
-              onAuthRequired={() => setAuthModalOpen(true)}
-            />
-          )}
-        </main>
+        {pathname === '/' ? (
+          <LandingPage
+            onDiscover={handleGoDiscover}
+            onOpenAuth={handleOpenAuth}
+            onGoHome={handleGoHome}
+          />
+        ) : (
+          <>
+            <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-850 bg-[#0f121d]/95 px-4 py-3 backdrop-blur md:px-8">
+              <a
+                href="/"
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleGoHome();
+                }}
+                aria-label={t('Volver al inicio')}
+                className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              >
+                <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
+                <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
+              </a>
+              <div className="flex max-w-full items-center gap-3">
+                <LanguageSelector compact />
+                <button type="button" onClick={() => handleOpenAuth('login')} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
+                  {t('Iniciar sesión / Registrarse')}
+                </button>
+              </div>
+            </header>
+            <main className={isKnownGamePath ? 'w-full pb-5 md:pb-7' : 'mx-auto max-w-6xl px-3 pb-5 md:px-5 md:pb-7'}>
+              {isKnownGamePath ? (
+                <GameDetails
+                  key={gamePathId}
+                  gameId={gamePathId}
+                  currentUser={null}
+                  token={null}
+                  onBack={handleBackFromGame}
+                  onSelectUser={() => handleOpenAuth('login')}
+                  onAuthRequired={() => {
+                    setAuthNotice(t('Inicia sesión o regístrate para realizar esta acción.'));
+                    setAuthModalOpen(true);
+                  }}
+                  onGoHome={handleGoHome}
+                  breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
+                  onGoBackToParent={handleBackFromGame}
+                />
+              ) : (
+                <Discover
+                  onSelectGame={handleSelectGame}
+                  onSelectUser={() => handleOpenAuth('login')}
+                  onAuthRequired={() => handleOpenAuth('login')}
+                />
+              )}
+            </main>
+          </>
+        )}
         {authModalOpen && (
           <Dialog label={t('Iniciar sesión / Registrarse')} onClose={() => { setAuthModalOpen(false); setAuthNotice(''); }}>
             <div className="w-full">
               <button type="button" onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed left-4 top-4 z-[60] inline-flex min-h-12 items-center rounded-full border border-slate-700 bg-[#0f121d] px-3 text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs">
                 {t('Cerrar')}
               </button>
-              <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} notice={authNotice} />
+              <Onboarding
+                onLogin={handleLoginSuccess}
+                onGoHome={() => {
+                  setAuthModalOpen(false);
+                  setAuthNotice('');
+                  handleGoHome();
+                }}
+                initialMode={authInitialMode}
+                preseededUsers={allUsers}
+                notice={authNotice}
+              />
             </div>
           </Dialog>
         )}
@@ -441,15 +478,23 @@ export default function App() {
 
                 {/* Logo */}
                 <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-2.5">
+                  <a
+                    href="/"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleGoHome();
+                    }}
+                    aria-label={t('Volver al inicio')}
+                    className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                  >
                     <div className="p-1.5 bg-blue-600/25 rounded-lg border border-blue-500/20 text-blue-500">
                       <Gamepad2 className="w-5 h-5" />
                     </div>
 
-                    <span className="font-bold text-lg font-display tracking-tight text-white select-none">
+                    <span className="font-bold text-lg font-display tracking-tight text-white">
                       GameTracker
                     </span>
-                  </div>
+                  </a>
 
                   <button
                     type="button"
@@ -541,13 +586,21 @@ export default function App() {
 
       {/* 3. MOBILE HEADER */}
       <header className="lg:hidden flex flex-wrap items-center justify-between gap-3 bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
-        <div className="flex items-center gap-2">
+        <a
+          href="/"
+          onClick={(event) => {
+            event.preventDefault();
+            handleGoHome();
+          }}
+          aria-label={t('Volver al inicio')}
+          className="flex items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+        >
           <Gamepad2 className="w-5 h-5 text-blue-500" />
 
-          <h1 className="font-bold text-sm font-display tracking-tight text-white">
+          <span className="font-bold text-sm font-display tracking-tight text-white">
             GameTracker
-          </h1>
-        </div>
+          </span>
+        </a>
 
         <div className="flex items-center gap-3">
           <LanguageSelector compact />
@@ -584,7 +637,7 @@ export default function App() {
           sidebarOpen ? 'lg:ml-72' : 'lg:ml-0'
         }`}
       >
-        <div className="w-full max-w-6xl mx-auto px-3 py-4 md:px-5 md:py-6">
+        <div className={`w-full mx-auto py-4 md:py-6 ${selectedGameId !== null || isKnownGamePath ? '' : 'max-w-6xl px-3 md:px-5'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={
