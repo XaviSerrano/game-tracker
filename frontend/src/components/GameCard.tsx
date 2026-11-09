@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Game, GameStatus } from '../types.ts';
-import { Bookmark, Star } from 'lucide-react';
+import { Bookmark, Gamepad2, Star } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 
 interface GameCardProps {
@@ -45,6 +45,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   savingWishlistGameId,
 }) => {
   const { t } = useLanguage();
+  const [failedCover, setFailedCover] = useState<string | null>(null);
   const isLoadingWishlist =
     togglingWishlistId === game.igdbId ||
     savingWishlistGameId === game.igdbId;
@@ -85,7 +86,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       className={`
         w-full h-full min-w-0 text-left group
         bg-[#0f121d]
-        border border-slate-850/80
+        border border-slate-800
         hover:border-slate-700
         rounded-xl
         transition
@@ -109,13 +110,20 @@ export const GameCard: React.FC<GameCardProps> = ({
           aspect-[3/4]
         `}
       >
-        <img
-          src={game.cover}
-          alt={game.name}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover"
-        />
+        {game.cover && failedCover !== game.cover ? (
+          <img
+            src={game.cover}
+            alt={game.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setFailedCover(game.cover)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div aria-hidden="true" className="flex h-full w-full items-center justify-center bg-slate-900 text-slate-500">
+            <Gamepad2 className="h-10 w-10" />
+          </div>
+        )}
 
         {/* Wishlist */}
         {onToggleWishlist && !isFeedCard && (
@@ -134,7 +142,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             }
             className={`
               absolute top-2 left-2
-              h-7 w-7
+              h-10 w-10
               rounded-full
               flex items-center justify-center
               transition
@@ -150,7 +158,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           >
             <Bookmark
               className={`
-                w-3.5 h-3.5
+                w-4 h-4
                 ${bookmarkActive ? 'fill-indigo-400 text-indigo-400' : ''}
               `}
             />
@@ -170,7 +178,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           <div className="absolute bottom-2 left-2 right-2 flex justify-between gap-1">
             <span
               className={`
-                text-[8px]
+                text-[10px]
                 font-bold
                 border
                 rounded-full
@@ -193,7 +201,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             </span>
 
             {userGameHours && userGameHours > 0 && (
-              <span className="text-[8px] font-bold bg-black/85 backdrop-blur-md border border-slate-750 rounded-full px-2 py-0.5 font-mono text-slate-300">
+              <span className="text-[10px] font-bold bg-black/85 backdrop-blur-md border border-slate-750 rounded-full px-2 py-0.5 font-mono text-slate-300">
                 {userGameHours}h
               </span>
             )}
@@ -214,9 +222,10 @@ export const GameCard: React.FC<GameCardProps> = ({
             text-white
             group-hover:text-blue-400
             transition
-            truncate
+            line-clamp-2
             leading-snug
-            ${isFeedCard ? 'text-[11px]' : 'text-xs'}
+            min-h-[2lh]
+            ${isFeedCard ? 'text-xs' : 'text-sm'}
           `}
         >
           {game.name}
@@ -226,21 +235,21 @@ export const GameCard: React.FC<GameCardProps> = ({
           <>
             {showFullLibraryCard ? (
               userGameNotes ? (
-                <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 italic">
+                <p className="text-xs text-slate-400 mt-1 line-clamp-1 italic">
                   "{userGameNotes}"
                 </p>
               ) : (
-                <p className="text-[9px] text-slate-500 mt-1 truncate uppercase font-mono">
+                <p className="text-xs text-slate-400 mt-1 truncate uppercase font-mono">
                   {game.genres.slice(0, 1).join(', ') || t('Videojuego')}
                 </p>
               )
             ) : (
               <div className="mt-1 space-y-0.5">
-                <p className="truncate text-[10px] text-slate-500">
+                <p className="min-h-4 truncate text-xs text-slate-400">
                   {game.genres.slice(0, 2).join(', ') || t('Videojuego')}
                 </p>
                 {showDiscoverMeta && (
-                  <p className="truncate text-[9px] text-slate-600">
+                  <p className="min-h-4 truncate text-xs text-slate-400">
                     {[game.releaseDate !== 'Unknown' ? game.releaseDate?.slice(0, 4) : '', game.platforms.slice(0, 2).join(', ')]
                       .filter(Boolean)
                       .join(' · ')}
@@ -252,7 +261,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         )}
 
         {isFeedCard && (
-          <p className="text-[9px] text-slate-500 mt-0.5 truncate">
+          <p className="text-xs text-slate-400 mt-0.5 truncate">
             {game.genres?.slice(0, 1).join(', ') || t('Videojuego')}
           </p>
         )}

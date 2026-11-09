@@ -459,7 +459,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           <h2 className="text-2xl font-bold font-display tracking-tight text-white">
             {t('Descubrir')} <ShimmerText>{t('Videojuegos')}</ShimmerText>
           </h2>
-          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
             {t('Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.')}
           </p>
         </div>
@@ -477,7 +477,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               className="w-full rounded-xl border border-slate-800 bg-[#0f121d] py-3 pl-11 pr-4 text-xs text-slate-200 outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <button type="submit" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-blue-500">
+          <button type="submit" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
             {t('Buscar')}
           </button>
           {!isUserSearch && (

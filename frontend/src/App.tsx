@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Gamepad2,
   Compass,
@@ -30,6 +30,7 @@ import { NotFoundPage } from './components/NotFoundPage.tsx';
 import { Analytics } from '@vercel/analytics/react';
 import { useLanguage } from './i18n.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
+import { Dialog } from './components/Dialog.tsx';
 
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
 const SECTION_PATHS: Record<MainTab, string> = {
@@ -43,6 +44,7 @@ const SECTION_PATHS: Record<MainTab, string> = {
 
 export default function App() {
   const { t } = useLanguage();
+  const reducedMotion = useReducedMotion();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<MainTab>('feed');
@@ -128,10 +130,14 @@ export default function App() {
         onGoHome={() => {
           navigateTo('/');
           setActiveTab('feed');
+          setSelectedGameId(null);
+          setSelectedUserId(null);
         }}
         onSearchGames={() => {
-          navigateTo('/');
+          navigateTo('/discover');
           setActiveTab('discover');
+          setSelectedGameId(null);
+          setSelectedUserId(null);
         }}
       />
     );
@@ -245,7 +251,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#07090e] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
           <Gamepad2 className="w-10 h-10 text-blue-500 animate-bounce mx-auto" />
           <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">{t('CARGANDO GAMETRACKER...')}</p>
@@ -256,15 +262,15 @@ export default function App() {
 
   if (!currentUser || !token) {
     return (
-      <div className="min-h-screen bg-[#07090e] text-slate-200 font-sans">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-850 bg-[#0f121d]/95 px-4 py-3 backdrop-blur md:px-8">
+      <div className="min-h-screen text-slate-200 font-sans">
+        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-slate-850 bg-[#0f121d]/95 px-4 py-3 backdrop-blur md:px-8">
           <div className="flex items-center gap-2.5">
             <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
             <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex max-w-full items-center gap-3">
             <LanguageSelector compact />
-            <button onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500">
+            <button type="button" onClick={() => { setAuthNotice(''); setAuthModalOpen(true); }} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
               {t('Iniciar sesión / Registrarse')}
             </button>
           </div>
@@ -295,12 +301,14 @@ export default function App() {
           )}
         </main>
         {authModalOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm">
-            <button onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed right-5 top-5 z-[60] rounded-full border border-slate-700 bg-[#0f121d] px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
-              {t('Cerrar')}
-            </button>
-            <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} notice={authNotice} />
-          </div>
+          <Dialog label={t('Iniciar sesión / Registrarse')} onClose={() => { setAuthModalOpen(false); setAuthNotice(''); }}>
+            <div className="w-full">
+              <button type="button" onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed left-4 top-4 z-[60] inline-flex min-h-12 items-center rounded-full border border-slate-700 bg-[#0f121d] px-3 text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs">
+                {t('Cerrar')}
+              </button>
+              <Onboarding onLogin={handleLoginSuccess} preseededUsers={allUsers} notice={authNotice} />
+            </div>
+          </Dialog>
         )}
       </div>
     );
@@ -398,19 +406,19 @@ export default function App() {
     { id: 'discover', label: t('Descubrir'), icon: Search },
     { id: 'library', label: t('Biblioteca'), icon: LibIcon },
     { id: 'lists', label: t('Listas'), icon: List },
-    { id: 'stats', label: t('Estadísticas'), icon: BarChart2 },
-    { id: 'profile', label: t('Mi Perfil'), icon: UserIcon },
+    { id: 'stats', label: t('Estadísticas'), mobileLabel: t('Estad.'), icon: BarChart2 },
+    { id: 'profile', label: t('Mi Perfil'), mobileLabel: t('Perfil'), icon: UserIcon },
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-200 flex flex-col lg:flex-row font-sans">
+    <div className="min-h-screen text-slate-200 flex flex-col lg:flex-row font-sans">
       
       {/* 1. DESKTOP SIDEBAR TOGGLE */}
       {!sidebarOpen && (
         <button
           type="button"
           onClick={() => setSidebarOpen(true)}
-          className="hidden md:flex fixed top-5 left-5 z-30 p-2.5 bg-[#0f121d] border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-slate-700 transition cursor-pointer"
+          className="hidden lg:flex fixed top-5 left-5 z-30 p-2.5 bg-[#0f121d] border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-slate-700 transition cursor-pointer"
           aria-label={t('Abrir menú de navegación')}
         >
           <PanelLeftClose className="w-4.5 h-4.5 rotate-180" />
@@ -423,10 +431,10 @@ export default function App() {
           {sidebarOpen && (
             <motion.aside
               key="sidebar-panel"
-              initial={{ x: -280 }}
+              initial={{ x: reducedMotion ? 0 : -280 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              exit={{ x: reducedMotion ? 0 : -280 }}
+              transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
               className="flex flex-col justify-between w-64 bg-[#0f121d] border-r border-slate-850 p-5 fixed top-0 bottom-0 left-0 z-40"
             >
               <div className="space-y-6">
@@ -489,13 +497,14 @@ export default function App() {
                       <a
                         key={item.id}
                         href={SECTION_PATHS[item.id]}
+                        aria-current={active ? 'page' : undefined}
                         onClick={(event) => {
                           event.preventDefault();
                           handleNavigation(item.id);
                         }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
                           active
-                            ? 'bg-blue-600 text-white border-blue-500Shadow'
+                            ? 'bg-blue-600 text-white'
                             : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
                         }`}
                       >
@@ -531,7 +540,7 @@ export default function App() {
       </div>
 
       {/* 3. MOBILE HEADER */}
-      <header className="lg:hidden flex items-center justify-between bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
+      <header className="lg:hidden flex flex-wrap items-center justify-between gap-3 bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
         <div className="flex items-center gap-2">
           <Gamepad2 className="w-5 h-5 text-blue-500" />
 
@@ -571,7 +580,7 @@ export default function App() {
 
       {/* 4. CORE VIEWPORT */}
       <main
-        className={`flex-1 min-w-0 transition-[margin] duration-200 ${
+        className={`flex-1 min-w-0 pb-[env(safe-area-inset-bottom)] lg:pb-0 transition-[margin] duration-200 ${
           sidebarOpen ? 'lg:ml-72' : 'lg:ml-0'
         }`}
       >
@@ -583,10 +592,10 @@ export default function App() {
                 (selectedGameId || '') +
                 (selectedUserId || '')
               }
-              initial={{ opacity: 0, y: 3 }}
+              initial={{ opacity: 0, y: reducedMotion ? 0 : 3 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -3 }}
-              transition={{ duration: 0.18 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : -3 }}
+              transition={{ duration: reducedMotion ? 0 : 0.18 }}
             >
               {renderActiveView()}
             </motion.div>
@@ -595,7 +604,7 @@ export default function App() {
       </main>
 
       {/* 5. MOBILE BOTTOM NAV */}
-      <nav className="flex lg:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 h-16 px-2 py-1 z-20">
+      <nav className="flex lg:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 min-h-16 px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] z-20">
         {navItems.map(item => {
           const active =
             (routeTab || activeTab) === item.id &&
@@ -608,20 +617,22 @@ export default function App() {
             <a
               key={item.id}
               href={SECTION_PATHS[item.id]}
+              aria-current={active ? 'page' : undefined}
+              aria-label={item.label}
               onClick={(event) => {
                 event.preventDefault();
                 handleNavigation(item.id);
               }}
-              className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer text-center relative ${
+              className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 transition cursor-pointer text-center relative ${
                 active
                   ? 'text-blue-500'
-                  : 'text-slate-500 hover:text-slate-350'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Icon className="w-4.5 h-4.5" />
 
-              <span className="text-[9px] font-bold tracking-tight">
-                {item.label}
+              <span className="text-[11px] leading-3 font-semibold tracking-tight sm:text-xs">
+                {'mobileLabel' in item ? item.mobileLabel : item.label}
               </span>
 
               {active && (

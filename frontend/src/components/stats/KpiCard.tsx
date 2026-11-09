@@ -20,17 +20,17 @@ export const KpiCard: React.FC<KpiCardProps> = ({ icon: Icon, label, value, seco
   const colors = ACCENT_CLASSES[accent];
 
   return (
-    <div className="bg-[#0f121d] border border-slate-850 p-4 rounded-2xl flex items-center gap-3.5 relative overflow-hidden transition hover:border-slate-700 hover:translate-y-[-1px] duration-200">
+    <div className="bg-[#0f121d] border border-slate-850 p-4 rounded-2xl flex items-center gap-3.5 relative overflow-hidden">
       <div className={`p-2.5 ${colors.bg} ${colors.text} rounded-xl border ${colors.border} flex-shrink-0`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">{label}</span>
-        <span className="text-xl font-black text-white font-display leading-tight truncate block" title={value}>
+        <span className="text-sm sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{label}</span>
+        <span className="text-xl font-black text-white font-display break-words block" title={value}>
           {value}
         </span>
         {secondary && (
-          <span className="text-[10px] text-slate-500 truncate block mt-0.5">{secondary}</span>
+          <span className="text-sm sm:text-[10px] text-slate-400 block mt-0.5">{secondary}</span>
         )}
       </div>
     </div>

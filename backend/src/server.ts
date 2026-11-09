@@ -734,6 +734,21 @@ app.get('/api/games/genres', async (req, res) => {
   }
 });
 
+// Enlaces directos de tiendas para un juego
+app.get('/api/games/:id/stores', async (req, res) => {
+  const idNum = parseInt(req.params.id);
+  if (isNaN(idNum)) {
+    return res.status(400).json({ error: 'ID de juego inválido' });
+  }
+
+  try {
+    res.json(await IgdbService.getStoreLinks(idNum));
+  } catch (err: any) {
+    console.error('Store links failed:', err);
+    res.json({});
+  }
+});
+
 // Detalle de juego individual (IGDB/Local)
 app.get('/api/games/:id', async (req, res) => {
   const idNum = parseInt(req.params.id);

@@ -18,22 +18,24 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'rating' | 'hours' | 'name' | 'date'>('date');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
 
   const fetchLibrary = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch(`/api/users/${userId}/library`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      if (res.ok) {
-        const data = await res.json();
-        setCompleteLib(data);
-      }
+      if (!res.ok) throw new Error(`Library request failed: ${res.status}`);
+      const data = await res.json();
+      setCompleteLib(data);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -130,17 +132,6 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   };
 
 
-  const getStatusCount = (status: GameStatus | 'ALL') => {
-    if (status === 'ALL') {
-      return completeLib.length;
-    }
-
-    return completeLib.filter(
-      item => item.status === status
-    ).length;
-  };
-
-
   const STATUS_TABS: {
     label: string;
     value: GameStatus | 'ALL';
@@ -160,73 +151,77 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
         <h2 className="text-2xl font-bold font-display text-white tracking-tight">
           {t('Mi Biblioteca Gamer')}
         </h2>
-        <p className="text-slate-400 text-xs">
+        <p className="mt-1 text-base text-slate-400 sm:text-sm">
           {t('Organiza, filtra y analiza el estado actual y horas dedicadas de todos tus progresos de juego')}
         </p>
       </div>
 
       {/* Categories slider */}
+      <div className="flex flex-wrap gap-2">
       {STATUS_TABS.map(tab => (
         <button
           key={tab.value}
+          type="button"
+          aria-pressed={activeTab === tab.value}
           onClick={() => setActiveTab(tab.value)}
-          className={`flex-shrink-0 px-4 py-2 mr-4 rounded-xl text-xs font-semibold cursor-pointer transition border ${
+          className={`min-h-11 px-4 py-2 rounded-xl text-sm sm:text-xs font-semibold cursor-pointer transition border ${
             activeTab === tab.value
-              ? 'bg-blue-600 text-white border-blue-500Shadow'
-              : 'bg-[#0f121d] text-slate-400 border-slate-805 hover:text-white'
+              ? 'bg-blue-600 text-white border-blue-500'
+              : 'bg-[#0f121d] text-slate-400 border-slate-800 hover:text-white'
           }`}
         >
           <span>{tab.label}</span>
-          <span
-            className={`ml-1.5 ${
-              activeTab === tab.value
-                ? 'text-white/80'
-                : 'text-slate-600'
-            }`}
-          >
-            {/* ({getStatusCount(tab.value)}) */}
-          </span>
         </button>
       ))}
+      </div>
 
       {/* Search and Sort panel */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <input
             type="text"
+            aria-label={t('Filtra por título o categoría dentro de tu biblioteca...')}
             placeholder={t('Filtra por título o categoría dentro de tu biblioteca...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl px-4 py-2.5 pl-11 text-xs focus:ring-1 focus:ring-blue-500 transition outline-none"
+            className="w-full min-h-11 bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-400 rounded-xl px-4 py-2.5 pl-11 text-base sm:text-xs focus:ring-1 focus:ring-blue-500 transition outline-none"
           />
           <Search className="absolute left-4 top-3 w-4.5 h-4.5 text-slate-500" />
         </div>
 
-        <div className="flex items-center gap-2 bg-[#07090e] p-1 rounded-xl border border-slate-800">
-          <span className="text-[10px] uppercase font-bold text-slate-500 px-2 tracking-wider flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2 bg-[#07090e] p-1 rounded-xl border border-slate-800">
+          <span className="basis-full sm:basis-auto text-xs sm:text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider flex items-center gap-1">
             <SortAsc className="w-3.5 h-3.5" /> {t('Ordenar:')}
           </span>
           <button
+            type="button"
+            aria-pressed={sortBy === 'date'}
             onClick={() => setSortBy('date')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'date' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'date' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
             {t('Fecha')}
           </button>
           <button
+            type="button"
+            aria-pressed={sortBy === 'rating'}
             onClick={() => setSortBy('rating')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'rating' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'rating' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
             Rating
           </button>
           <button
+            type="button"
+            aria-pressed={sortBy === 'hours'}
             onClick={() => setSortBy('hours')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'hours' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'hours' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
             {t('Horas')}
           </button>
           <button
+            type="button"
+            aria-pressed={sortBy === 'name'}
             onClick={() => setSortBy('name')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${sortBy === 'name' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'name' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
           >
             A-Z
           </button>
@@ -250,7 +245,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           </span>
         </div>
 
-        {searchQuery && (
+        {(searchQuery || activeTab !== 'ALL') && (
           <span className="text-[10px] text-slate-600">
             {t('Filtrado por')} "{searchQuery}"
           </span>
@@ -267,17 +262,22 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             </div>
           ))}
         </div>
+      ) : loadError ? (
+        <div role="alert" className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
+          <p className="text-sm font-semibold text-red-300">{t('No se pudo cargar tu biblioteca.')}</p>
+          <button type="button" onClick={() => void fetchLibrary()} className="mt-4 rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">{t('Reintentar')}</button>
+        </div>
       ) : filteredLib.length === 0 ? (
         <div className="py-12 bg-[#0f121d] border border-slate-800 p-8 rounded-2xl text-center space-y-2">
           <Clock className="w-8 h-8 text-slate-700 mx-auto" />
-          <p className="text-slate-400 text-sm font-semibold">{t('Biblioteca vacía')}</p>
-          <p className="text-slate-500 text-xs max-w-sm mx-auto">
+          <p className="text-base sm:text-sm text-slate-300 font-semibold">{t('Biblioteca vacía')}</p>
+          <p className="text-base sm:text-xs text-slate-400 max-w-sm mx-auto">
             {t('Ninguno de tus registros coincide con el término de búsqueda o categoría actual. ¡Explora el catálogo y añade tu primer tracker!')}
           </p>
           {searchQuery && (
             <button
               onClick={() => { setSearchQuery(''); setActiveTab('ALL'); }}
-              className="px-4 py-2 bg-slate-800 hover:text-white transition text-xs font-semibold rounded-xl text-slate-350 cursor-pointer flex items-center gap-1.5 mx-auto"
+              className="px-4 py-2 bg-slate-800 hover:text-white transition text-xs font-semibold rounded-xl text-slate-300 cursor-pointer flex items-center gap-1.5 mx-auto"
             >
               {t('Reestablecer filtros')}
             </button>

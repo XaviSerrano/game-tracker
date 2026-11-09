@@ -33,12 +33,15 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
   const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     const fetchStats = async () => {
       setLoading(true);
+      setLoadError(false);
 
       try {
         const [statsRes, feedRes] = await Promise.all([
@@ -65,7 +68,10 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
         }
       } catch (err) {
         console.error('Error cargando estadísticas:', err);
-        if (!cancelled) setStats(null);
+        if (!cancelled) {
+          setStats(null);
+          setLoadError(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -76,7 +82,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
     return () => {
       cancelled = true;
     };
-  }, [userId, token]);
+  }, [userId, token, retry]);
 
   const libraryCounts = useMemo<Record<GameStatus, number> | null>(() => {
     if (!stats) return null;
@@ -94,6 +100,15 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
     return <StatsSkeleton />;
   }
 
+  if (loadError) {
+    return (
+      <div role="alert" className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
+        <p className="text-sm font-semibold text-red-300">{t('No se pudieron cargar las estadísticas.')}</p>
+        <button type="button" onClick={() => setRetry(value => value + 1)} className="mt-4 rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">{t('Reintentar')}</button>
+      </div>
+    );
+  }
+
   if (!stats || !libraryCounts) {
     return <StatsEmptyState />;
   }
@@ -104,21 +119,22 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold font-display text-white tracking-tight">{t('Tus estadísticas')}</h2>
-          <p className="text-slate-400 text-xs mt-1">
+          <p className="text-base sm:text-xs text-slate-400 mt-1">
             {t('Análisis visual de tus hábitos, plataformas y horas dedicadas de juego')}
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-900/60 border border-slate-850 rounded-xl p-1 self-start">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-900/60 border border-slate-850 rounded-xl p-1 self-start">
           {TIME_RANGE_OPTIONS.map(option => (
             <button
               key={option.value}
               type="button"
+              aria-pressed={timeRange === option.value}
               onClick={() => setTimeRange(option.value)}
-              className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer whitespace-nowrap ${
+              className={`min-h-11 text-sm sm:min-h-0 sm:text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
                 timeRange === option.value
                   ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  : 'text-slate-400 hover:text-slate-300 border border-transparent'
               }`}
             >
               {t(option.label)}
@@ -128,7 +144,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           icon={Clock}
           label={t('Horas jugadas')}

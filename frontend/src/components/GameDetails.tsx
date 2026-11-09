@@ -11,6 +11,7 @@ import {
 
 import { siAndroid, siApple, siLinux, siPlaystation, siSteam, type SimpleIcon } from 'simple-icons';
 import { DatePicker } from './DatePicker.tsx';
+import { Dialog } from './Dialog.tsx';
 import {
   Star,
   Clock,
@@ -62,6 +63,31 @@ const PROGRESS_PHASE_OPTIONS: Array<{ value: GameStatus; label: string; helper: 
   { value: 'COMPLETED', label: 'Completado', helper: 'Objetivo cumplido', icon: '🏆' },
   { value: 'ABANDONED', label: 'Abandonado', helper: 'Pausado o cancelado', icon: '❌' }
 ];
+
+const getStoreUrl = (platformName: string, gameName: string, stores: Record<string, string>): string => {
+  const normalized = platformName.toLowerCase();
+  const q = encodeURIComponent(gameName);
+
+  if (normalized.includes('playstation') || normalized === 'ps5' || normalized === 'ps4') {
+    return stores.playstation ?? `https://store.playstation.com/search/${q}`;
+  }
+  if (normalized.includes('xbox')) {
+    return stores.xbox ?? `https://www.xbox.com/search?q=${q}`;
+  }
+  if (normalized.includes('nintendo') || normalized === 'switch') {
+    return stores.nintendo ?? `https://www.nintendo.com/search/?q=${q}`;
+  }
+  if (normalized.includes('ios') || normalized.includes('iphone') || normalized.includes('ipad')) {
+    return stores.appstore ?? `https://www.apple.com/search/${q}?src=globalnav`;
+  }
+  if (normalized.includes('android')) {
+    return stores.googleplay ?? `https://play.google.com/store/search?q=${q}&c=apps`;
+  }
+  if (normalized.includes('pc') || normalized.includes('windows') || normalized.includes('linux') || normalized.includes('mac') || normalized.includes('steam')) {
+    return stores.steam ?? stores.gog ?? stores.epic ?? stores.itch ?? `https://store.steampowered.com/search/?term=${q}`;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(`comprar ${gameName} ${platformName}`)}`;
+};
 
 const getPlatformStyle = (platformName: string): PlatformStyle => {
   const normalized = platformName.toLowerCase();
@@ -218,6 +244,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const dateLocale = language === 'en' ? 'en-US' : 'es-ES';
   const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
+  const [storeLinks, setStoreLinks] = useState<Record<string, string>>({});
   const [userGame, setUserGame] = useState<UserGame | null>(null);
   const [reviews, setReviews] = useState<(Review & { author: User })[]>([]);
   const [myLists, setMyLists] = useState<CustomList[]>([]);
@@ -285,6 +312,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       const gameData = await gameRes.json();
       setGame(gameData);
 
+      fetch(`/api/games/${gameId}/stores`)
+        .then(res => (res.ok ? res.json() : {}))
+        .then(setStoreLinks)
+        .catch(() => setStoreLinks({}));
       // Fetch public reviews independently of authentication.
       const reviewsRes = await fetch(`/api/reviews/${gameId}`);
       if (reviewsRes.ok) {
@@ -349,10 +380,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     if (fullscreenScreenshot === null) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setFullscreenScreenshot(null);
-      }
-
       if (event.key === 'ArrowLeft') {
         goToPreviousFullscreenScreenshot();
       }
@@ -364,12 +391,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
 
-    // Evita que el usuario haga scroll detrás del modal
-    document.body.style.overflow = 'hidden';
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
     };
   }, [fullscreenScreenshot, screenshots.length]);
 
@@ -837,9 +860,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     return (
                       <a
                         key={platform}
-                        href={`/discover?platform=${encodeURIComponent(platform)}`}
+                        href={getStoreUrl(platform, game.name, storeLinks)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${style.badgeClass}`}
-                        title={platform}
+                        title={`${t('Comprar en')} ${platform}`}
                       >
                         <PlatformBadgeLogo platform={style} />
                         <span className="text-left leading-none">
@@ -882,6 +907,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   type="button"
                   onClick={handleToggleWishlist}
                   disabled={savingWishlist}
+                  aria-label={isInWishlist ? t('Remover de Wishlist') : t('Añadir a Wishlist')}
+                  aria-pressed={isInWishlist}
                   title={isInWishlist ? t('Remover de Wishlist') : t('Añadir a Wishlist')}
                   className={`p-2 rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
                     isInWishlist
@@ -899,6 +926,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     await loadListMembership();
                   }}
                   title={t('Añadir a lista personalizada')}
+                  aria-label={t('Añadir a lista personalizada')}
                   className="p-2 rounded-xl border border-slate-800 bg-[#07090e] text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 hover:bg-indigo-500/10 transition-all cursor-pointer flex items-center justify-center"
                 >
                   <BookmarkPlus className="w-4 h-4" />
@@ -915,16 +943,18 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
             <form onSubmit={handleSaveTracking} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Fase de Progreso')}</label>
+                <p id="progress-label" className="block text-xs font-semibold text-slate-400">{t('Fase de Progreso')}</p>
                 <div className="relative" ref={progressMenuRef}>
                   <button
                     type="button"
+                    aria-labelledby="progress-label progress-value"
+                    aria-expanded={progressMenuOpen}
                     onClick={() => setProgressMenuOpen(prev => !prev)}
                     className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition flex items-center justify-between"
                   >
                     <span className="flex items-center gap-2">
                       <span className="text-sm">{selectedProgressOption.icon}</span>
-                      <span className="text-left">
+                      <span id="progress-value" className="text-left">
                         <span className="font-semibold text-slate-200 block">{selectedProgressOption.label}</span>
                         <span className="text-[10px] text-slate-500 block mt-0.5">{selectedProgressOption.helper}</span>
                       </span>
@@ -940,6 +970,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                           <button
                             key={option.value}
                             type="button"
+                            aria-pressed={active}
                             onClick={() => {
                               setStatus(option.value);
                               setProgressMenuOpen(false);
@@ -976,7 +1007,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                         key={star}
                         type="button"
                         onClick={() => setRating(star)}
-                        className="p-0.5 hover:scale-110 transition cursor-pointer"
+                        aria-label={`${star} ${t('estrellas')}`}
+                        aria-pressed={rating === star}
+                        className="min-h-10 min-w-10 flex items-center justify-center hover:scale-110 transition cursor-pointer"
                       >
                         <Star className={`w-5 h-5 ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
                       </button>
@@ -989,10 +1022,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                <label htmlFor="hours-played" className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-600" /> {t('Horas Jugadas')}
                 </label>
                 <input
+                  id="hours-played"
                   type="number"
                   min="0"
                   step="0.5"
@@ -1004,16 +1038,17 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
               <div className="space-y-1.5 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <label htmlFor="started-at" className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" /> {t('Empezado el')}
                   </label>
-                  <DatePicker value={startedAt} onChange={setStartedAt} placeholder={t('Selecciona inicio')} />
+                  <DatePicker id="started-at" value={startedAt} onChange={setStartedAt} placeholder={t('Selecciona inicio')} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <label htmlFor="completed-at" className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" /> {t('Completado el')}
                   </label>
                   <DatePicker
+                    id="completed-at"
                     value={completedAt}
                     onChange={setCompletedAt}
                     placeholder={t('Selecciona fin')}
@@ -1023,8 +1058,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
 
               <div className="space-y-1.5 col-span-1 md:col-span-2">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Notas privadas de juego')}</label>
+                <label htmlFor="game-notes" className="block text-xs font-semibold text-slate-400">{t('Notas privadas de juego')}</label>
                 <textarea
+                  id="game-notes"
                   placeholder={t('Escribe anotaciones de tus progresos actuales, builds preferidas, jefes difíciles, o recordatorios...')}
                   value={notes}
                   rows={2}
@@ -1149,7 +1185,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
           {/* Public comments / reviews */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
+            <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
               <MessageSquare className="w-4 h-4 text-indigo-400" />
               {t('Reseñas de la Comunidad')} ({reviews.length})
             </h3>
@@ -1211,7 +1247,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                         </div>
                       )}
                       <h4 className="text-xs font-bold text-slate-200">{rev.title}</h4>
-                      <p className="text-xs text-slate-450 leading-relaxed">{rev.content}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">{rev.content}</p>
                     </div>
                   </div>
                 ))}
@@ -1237,7 +1273,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className="p-0.5 hover:scale-110 transition cursor-pointer"
+                      aria-label={`${star} ${t('estrellas')}`}
+                      aria-pressed={rating === star}
+                      className="min-h-10 min-w-10 flex items-center justify-center hover:scale-110 transition cursor-pointer"
                     >
                       <Star className={`w-5 h-5 ${rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
                     </button>
@@ -1251,6 +1289,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div>
                 <input
                   type="text"
+                  aria-label={t('Título corto de la reseña...')}
                   placeholder={t('Título corto de la reseña...')}
                   value={reviewTitle}
                   required
@@ -1261,6 +1300,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
               <div>
                 <textarea
+                  aria-label={t('Escribe tu opinión crítica detallada del videojuego...')}
                   placeholder={t('Escribe tu opinión crítica detallada del videojuego...')}
                   value={reviewContent}
                   required
@@ -1272,7 +1312,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-indigo-650 hover:bg-indigo-600 border border-indigo-500/20 text-white font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
               >
                 <Send className="w-3.5 h-3.5" /> {t('Publicar Reseña')}
               </button>
@@ -1283,10 +1323,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
       {/* Add to Custom List modal */}
       {listModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setListModalOpen(false)}
-        >
+        <Dialog label={t('Añadir a lista personalizada')} onClose={() => setListModalOpen(false)} closeOnBackdrop>
           <div
             className="w-full max-w-sm bg-[#0f121d] border border-slate-850 rounded-2xl p-5 space-y-3 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
@@ -1298,6 +1335,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <button
                 type="button"
                 onClick={() => setListModalOpen(false)}
+                aria-label={t('Cerrar')}
                 className="text-slate-500 hover:text-slate-300 transition cursor-pointer p-1"
               >
                 <X className="w-4 h-4" />
@@ -1349,9 +1387,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </>
             )}
           </div>
-        </div>
+        </Dialog>
       )}
         {fullscreenScreenshot !== null && (
+          <Dialog label={t('Imágenes del juego')} onClose={() => setFullscreenScreenshot(null)} closeOnBackdrop>
           <div
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
             onClick={() => setFullscreenScreenshot(null)}
@@ -1410,6 +1449,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </button>
             )}
           </div>
+          </Dialog>
         )}
     </div>
   );

@@ -178,8 +178,9 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
           <form onSubmit={handleCreateList} className="space-y-4">
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">{t('Nombre de la lista')}</label>
+              <label htmlFor="list-name" className="block text-xs font-semibold text-slate-400 mb-1.5">{t('Nombre de la lista')}</label>
               <input
+                id="list-name"
                 type="text"
                 required
                 placeholder={t('ej. Mejores RPGs por Turnos, Joyas Ocultas, Indispensables de Switch...')}
@@ -190,25 +191,27 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">{t('Descripción pública o temática')}</label>
+              <label htmlFor="list-description" className="block text-xs font-semibold text-slate-400 mb-1.5">{t('Descripción pública o temática')}</label>
               <textarea
+                id="list-description"
                 placeholder={t('Describe el contexto, objetivos o por qué estos juegos son los indicados para esta lista corporativa...')}
                 value={newListDesc}
                 rows={3}
                 onChange={(e) => setNewListDesc(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-705 transition outline-none resize-none"
+                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 transition outline-none resize-none"
               ></textarea>
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2">{t('Selecciona juegos')} ({selectedGameIds.length})</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 bg-[#07090e] border border-slate-800 rounded-xl">
+              <p id="list-game-selection" className="block text-xs font-semibold text-slate-400 mb-2">{t('Selecciona juegos')} ({selectedGameIds.length})</p>
+              <div role="group" aria-labelledby="list-game-selection" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-2 bg-[#07090e] border border-slate-800 rounded-xl">
                 {catalogGames.map(game => {
                   const active = selectedGameIds.includes(game.igdbId);
                   return (
                     <button
                       type="button"
                       key={game.igdbId}
+                      aria-pressed={active}
                       onClick={() => toggleSelectGame(game.igdbId)}
                       className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-1.5 cursor-pointer ${active ? 'bg-blue-600/10 text-blue-400 border-blue-500/30 font-bold' : 'bg-[#0f121d] border-slate-850 hover:border-slate-700 text-slate-400'}`}
                     >
@@ -267,6 +270,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
               {selectedList.userId === currentUser.id && (
                 <button
                   onClick={() => handleDeleteList(selectedList.id)}
+                  aria-label={t('Eliminar lista')}
                   className="bg-[#07090e] border border-slate-800 hover:bg-red-500/10 text-red-400 p-2 rounded-xl transition cursor-pointer"
                 >
                   <Trash2 className="w-4.5 h-4.5" />
@@ -316,7 +320,8 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                     <button
                       type="button"
                       onClick={() => handleRemoveGameFromList(game.igdbId)}
-                      className="absolute top-4 right-4 p-1.5 rounded-lg bg-black/75 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                      aria-label={`${t('Eliminar de la lista')}: ${game.name}`}
+                      className="absolute top-4 right-4 min-h-10 min-w-10 flex items-center justify-center rounded-lg bg-black/85 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition cursor-pointer"
                       title={t('Eliminar de la lista')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -379,7 +384,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       onClick={() => setSelectedList(list)}
                       className="text-left group cursor-pointer block"
                     >
-                      <h3 className="font-bold text-white group-hover:text-blue-450 transition tracking-tight">
+                      <h3 className="font-bold text-white group-hover:text-blue-400 transition tracking-tight">
                         {list.name}
                       </h3>
                       <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2">{list.description || t('Sin descripción.')}</p>

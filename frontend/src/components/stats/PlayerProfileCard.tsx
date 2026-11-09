@@ -56,9 +56,9 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
               <div className="p-1.5 bg-blue-600/10 text-blue-400 rounded-lg border border-blue-500/15 flex-shrink-0">
                 <row.icon className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs text-slate-400 truncate">{row.label}</span>
+              <span className="text-sm sm:text-xs text-slate-400">{row.label}</span>
             </div>
-            <span className="text-xs font-bold text-white font-display flex-shrink-0 truncate max-w-[45%] text-right">
+            <span className="text-sm sm:text-xs font-bold text-white font-display shrink-0 break-words max-w-[45%] text-right">
               {row.value}
             </span>
           </div>

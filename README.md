@@ -5,7 +5,8 @@ Express API, PostgreSQL, and IGDB.
 
 ## Architecture
 
-- `frontend/` contains only the React/Vite SPA. It is deployed to Vercel.
+- `frontend/` contains only the React/Vite SPA, styled with Tailwind CSS. It is
+  deployed to Vercel.
 - `backend/` contains the Express API, PostgreSQL data layer, and the sole IGDB
   integration. It is deployed to Render.
 - `shared/types.ts` contains types used by both applications.

@@ -3,6 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { TrendingUp } from 'lucide-react';
 import { MonthlyActivityPoint, ActivityMetric, TimeRange } from './types.ts';
 import { useLanguage } from '../../i18n.tsx';
+import { ChartDataTable } from './ChartDataTable.tsx';
 
 interface ActivityChartProps {
   data: MonthlyActivityPoint[];
@@ -43,16 +44,17 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data, timeRange })
           <TrendingUp className="w-4.5 h-4.5 text-blue-400" /> {t('Actividad de juego')}
         </h3>
 
-        <div className="flex items-center gap-1 bg-slate-900/60 border border-slate-850 rounded-xl p-1">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-900/60 border border-slate-850 rounded-xl p-1">
           {(Object.keys(METRIC_CONFIG) as ActivityMetric[]).map(key => (
             <button
               key={key}
               type="button"
+              aria-pressed={metric === key}
               onClick={() => setMetric(key)}
-              className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
+              className={`min-h-11 text-sm sm:min-h-0 sm:text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
                 metric === key
                   ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  : 'text-slate-400 hover:text-slate-300 border border-transparent'
               }`}
             >
               {t(METRIC_CONFIG[key].label)}
@@ -63,7 +65,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data, timeRange })
 
       <div className="h-72 w-full">
         {!hasData ? (
-          <div className="h-full flex items-center justify-center text-xs text-slate-500 text-center px-6">
+          <div className="h-full flex items-center justify-center text-base sm:text-xs text-slate-400 text-center px-6">
             {t('Todavía no hay datos de')} "{t(config.label).toLowerCase()}" {t('en este periodo.')}
           </div>
         ) : (
@@ -76,8 +78,8 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data, timeRange })
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} stroke="#1c1f26" strokeDasharray="3 3" />
-              <XAxis dataKey="label" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
-              <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+              <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#07090e', borderColor: '#1e293b', borderRadius: '12px' }}
                 labelStyle={{ color: '#94a3b8', fontSize: '11px', fontWeight: 'bold' }}
@@ -96,6 +98,14 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data, timeRange })
           </ResponsiveContainer>
         )}
       </div>
+      {hasData && (
+        <ChartDataTable
+          label={t('Actividad de juego')}
+          categoryLabel={t('Mes')}
+          valueLabel={t(config.label)}
+          rows={filteredData.map(point => ({ label: point.label, value: `${point[metric]}${config.suffix}` }))}
+        />
+      )}
     </div>
   );
 };

@@ -45,7 +45,7 @@ export const RecentActivityTimeline: React.FC<RecentActivityTimelineProps> = ({ 
     </h3>
 
     {activities.length === 0 ? (
-      <p className="text-xs text-slate-500 text-center py-6">
+      <p className="text-base sm:text-xs text-slate-400 text-center py-6">
         {t('Aún no tienes actividad registrada. Empieza a jugar, completar o puntuar juegos.')}
       </p>
     ) : (
@@ -58,10 +58,10 @@ export const RecentActivityTimeline: React.FC<RecentActivityTimelineProps> = ({ 
                 <meta.icon className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-slate-300 leading-relaxed truncate">
+                <p className="text-sm sm:text-xs text-slate-300 break-words">
                   {translateActivityDetails(activity.type, activity.details, t)}
                 </p>
-                <span className="text-[10px] text-slate-500">{formatRelativeDate(activity.createdAt, language, t)}</span>
+                <span className="text-xs sm:text-[10px] text-slate-400">{formatRelativeDate(activity.createdAt, language, t)}</span>
               </div>
             </li>
           );

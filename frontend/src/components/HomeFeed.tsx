@@ -45,16 +45,20 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
     useState<Record<number, any>>({});
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchFeed = async () => {
     setLoading(true);
+    setLoadError(false);
 
     try {
       const feedRes = await fetch(
         `/api/social/feed?userId=${currentUser.id}&scope=${feedScope}`
       );
 
+      if (!feedRes.ok) throw new Error(`Feed request failed: ${feedRes.status}`);
       const feedData = await feedRes.json();
+      if (!Array.isArray(feedData)) throw new Error('Invalid feed response');
 
       const safeActivities = Array.isArray(feedData)
         ? feedData
@@ -113,6 +117,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       }
     } catch (err) {
       console.error('Error fetching feed:', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -309,6 +314,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             <button
               type="button"
               onClick={() => setFeedScope('all')}
+              aria-pressed={feedScope === 'all'}
               className={`px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 border ${
                 feedScope === 'all'
                   ? 'bg-[#dca84f] text-[#17120a] border-[#e5b660]'
@@ -324,6 +330,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               onClick={() =>
                 setFeedScope('following')
               }
+              aria-pressed={feedScope === 'following'}
               className={`px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 border ${
                 feedScope === 'following'
                   ? 'bg-[#dca84f] text-[#17120a] border-[#e5b660]'
@@ -389,6 +396,11 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="rounded-xl border border-red-500/20 bg-[#0f1218] p-8 text-center">
+            <p className="text-sm font-semibold text-red-300">{t('No se pudo cargar la actividad.')}</p>
+            <button type="button" onClick={() => void fetchFeed()} className="mt-4 rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">{t('Reintentar')}</button>
           </div>
         ) : activities.length === 0 ? (
           <div className="bg-[#0f1218] border border-slate-800 border-dashed p-10 rounded-xl text-center space-y-2">

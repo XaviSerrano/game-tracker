@@ -21,7 +21,7 @@ export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
       </h3>
 
       {total === 0 ? (
-        <p className="text-xs text-slate-500 text-center py-6">
+        <p className="text-base sm:text-xs text-slate-400 text-center py-6">
           {t('Tu biblioteca está vacía. Añade juegos para ver aquí su desglose.')}
         </p>
       ) : (
@@ -38,7 +38,7 @@ export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
                 <span className="text-lg font-black text-white font-display leading-none">{counts[status]}</span>
                 <span
                   title={label}
-                  className="w-full truncate text-[9px] font-bold uppercase tracking-tight text-slate-400"
+                  className="w-full break-words text-xs sm:text-[9px] font-bold uppercase tracking-tight text-slate-400"
                 >
                   {label}
                 </span>

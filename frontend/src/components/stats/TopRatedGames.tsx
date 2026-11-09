@@ -18,7 +18,7 @@ export const TopRatedGames: React.FC<TopRatedGamesProps> = ({ games, onSelectGam
     </h3>
 
     {games.length === 0 ? (
-      <p className="text-xs text-slate-500 text-center py-6">
+      <p className="text-base sm:text-xs text-slate-400 text-center py-6">
         {t('Puntúa tus juegos de 1 a 5 estrellas para verlos listados aquí.')}
       </p>
     ) : (

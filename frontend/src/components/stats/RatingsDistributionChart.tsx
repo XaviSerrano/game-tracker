@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Star } from 'lucide-react';
 import { RatingBucket } from './types.ts';
 import { useLanguage } from '../../i18n.tsx';
+import { ChartDataTable } from './ChartDataTable.tsx';
 
 interface RatingsDistributionChartProps {
   data: RatingBucket[];
@@ -20,7 +21,7 @@ export const RatingsDistributionChart: React.FC<RatingsDistributionChartProps> =
       </h3>
 
       {totalRated === 0 ? (
-        <p className="text-xs text-slate-500 py-10 text-center">
+        <p className="text-base sm:text-xs text-slate-400 py-10 text-center">
           {t('Puntúa tus juegos de 1 a 5 estrellas para ver aquí cómo se reparten.')}
         </p>
       ) : (
@@ -28,7 +29,7 @@ export const RatingsDistributionChart: React.FC<RatingsDistributionChartProps> =
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
                 cursor={{ fill: 'rgba(234, 179, 8, 0.06)' }}
                 contentStyle={{ backgroundColor: '#07090e', borderColor: '#1e293b', borderRadius: '10px', fontSize: '11px' }}
@@ -42,6 +43,14 @@ export const RatingsDistributionChart: React.FC<RatingsDistributionChartProps> =
             </BarChart>
           </ResponsiveContainer>
         </div>
+      )}
+      {totalRated > 0 && (
+        <ChartDataTable
+          label={t('Distribución de valoraciones')}
+          categoryLabel={t('Valoración')}
+          valueLabel={t('Total')}
+          rows={chartData.map(bucket => ({ label: bucket.label, value: bucket.count }))}
+        />
       )}
     </div>
   );

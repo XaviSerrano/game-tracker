@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Review, Game, CustomList } from '../types.ts';
 import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
+import { Dialog } from './Dialog.tsx';
 
 interface UserProfileProps {
   userId: string;
@@ -332,7 +333,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
   {/* Selected list modal */}
   {selectedList && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+    <Dialog label={selectedList.name} onClose={() => setSelectedList(null)}>
       <div className="max-h-[85vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-slate-800 bg-[#0f121d] p-5 md:p-6">
 
         <div className="flex items-start justify-between gap-4">
@@ -388,12 +389,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           </div>
         )}
       </div>
-    </div>
+    </Dialog>
   )}
 
   {/* Social Connections Modal */}
   {socialModalTab && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-fade-in">
+    <Dialog label={`${t('Conexiones de')} @${profile.username}`} onClose={() => setSocialModalTab(null)}>
       <div className="max-h-[85vh] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-[#0f121d] flex flex-col shadow-2xl">
         {/* Modal Header */}
         <div className="p-4 md:p-5 border-b border-slate-850 flex items-center justify-between bg-[#0b0e17]">
@@ -401,7 +402,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             <Users className="w-5 h-5 text-blue-400" />
             <div>
               <h2 className="text-sm font-bold text-white leading-none">
-                Conexiones de @{profile.username}
+                {t('Conexiones de')} @{profile.username}
               </h2>
               <p className="text-[11px] text-slate-400 mt-1">
                 {socialModalTab === 'followers' ? t('Jugadores que le siguen') : t('Jugadores a los que sigue')}
@@ -411,6 +412,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           <button
             type="button"
             onClick={() => setSocialModalTab(null)}
+            aria-label={t('Cerrar')}
             className="rounded-lg border border-slate-800 p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -421,6 +423,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         <div className="flex border-b border-slate-850 bg-[#0d101a]">
           <button
             type="button"
+            aria-pressed={socialModalTab === 'followers'}
             onClick={() => openSocialModal('followers')}
             className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
               socialModalTab === 'followers'
@@ -432,6 +435,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           </button>
           <button
             type="button"
+            aria-pressed={socialModalTab === 'following'}
             onClick={() => openSocialModal('following')}
             className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
               socialModalTab === 'following'
@@ -449,6 +453,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
+              aria-label={t('Buscar por usuario o biografía...')}
               placeholder={t('Buscar por usuario o biografía...')}
               value={socialSearch}
               onChange={(e) => setSocialSearch(e.target.value)}
@@ -544,7 +549,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           )}
         </div>
       </div>
-    </div>
+    </Dialog>
   )}
 
   {/* Profile main card */}
@@ -649,11 +654,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         )}
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] uppercase font-bold text-slate-500">
+          <label htmlFor="profile-username" className="block text-xs font-semibold text-slate-400">
             {t('Nombre de usuario')}
           </label>
 
           <input
+            id="profile-username"
             type="text"
             required
             value={editUsername}
@@ -663,11 +669,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] uppercase font-bold text-slate-500">
+          <label htmlFor="profile-bio" className="block text-xs font-semibold text-slate-400">
             {t('Biografía')}
           </label>
 
           <textarea
+            id="profile-bio"
             value={editBio}
             rows={2}
             onChange={(e) => setEditBio(e.target.value)}
@@ -676,11 +683,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] uppercase font-bold text-slate-500">
+          <label htmlFor="profile-avatar" className="block text-xs font-semibold text-slate-400">
             Pixel Avatar seed
           </label>
 
           <input
+            id="profile-avatar"
             type="text"
             value={editAvatar}
             onChange={(e) => setEditAvatar(e.target.value)}
@@ -775,7 +783,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-450 leading-relaxed mt-1 line-clamp-3 italic">
+                <p className="text-xs text-slate-400 leading-relaxed mt-1 line-clamp-3 italic">
                   "{rev.content}"
                 </p>
               </div>
@@ -789,7 +797,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
     {/* User public lists */}
     <div className="space-y-4">
 
-      <h3 className="font-semibold text-slate-350 font-display flex items-center gap-1.5">
+      <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
         <Swords className="w-4.5 h-4.5 text-indigo-400" />
         {t('Listas Públicas')} ({lists.length})
       </h3>

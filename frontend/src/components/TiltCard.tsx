@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { useReducedMotion } from 'motion/react';
 
 interface TiltCardProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
   glareColor = 'rgba(217, 163, 82, 0.18)'
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
   const [pointer, setPointer] = useState({ x: 0.5, y: 0.5, active: false });
 
   const cardStyle = useMemo<React.CSSProperties>(() => {
@@ -23,13 +25,13 @@ export const TiltCard: React.FC<TiltCardProps> = ({
     const rotateY = (pointer.x - 0.5) * maxTilt * 2;
 
     return {
-      transform: pointer.active
+      transform: pointer.active && !reducedMotion
         ? `perspective(1200px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale(${scale})`
         : 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale(1)',
       transformStyle: 'preserve-3d',
       willChange: 'transform'
     };
-  }, [maxTilt, pointer, scale]);
+  }, [maxTilt, pointer, reducedMotion, scale]);
 
   const glareStyle = useMemo<React.CSSProperties>(() => ({
     opacity: pointer.active ? 1 : 0,
@@ -39,7 +41,9 @@ export const TiltCard: React.FC<TiltCardProps> = ({
   return (
     <div
       ref={cardRef}
-      className={`relative rounded-xl w-full h-full min-w-0 ${className}`}      onMouseMove={(event) => {
+      className={`relative rounded-xl w-full h-full min-w-0 ${className}`}
+      onMouseMove={(event) => {
+        if (reducedMotion) return;
         const rect = cardRef.current?.getBoundingClientRect();
         if (!rect) return;
 
@@ -60,7 +64,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
         className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-300"
         style={glareStyle}
       />
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 h-full">{children}</div>
     </div>
   );
 };

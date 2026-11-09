@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Sparkles } from 'lucide-react';
 import { DistributionItem } from './types.ts';
 import { useLanguage } from '../../i18n.tsx';
+import { ChartDataTable } from './ChartDataTable.tsx';
 
 interface GenreDistributionChartProps {
   data: DistributionItem[];
@@ -37,7 +38,7 @@ export const GenreDistributionChart: React.FC<GenreDistributionChartProps> = ({ 
       </h3>
 
       {data.length === 0 ? (
-        <p className="text-xs text-slate-500 py-10 text-center">
+        <p className="text-base sm:text-xs text-slate-400 py-10 text-center">
           {t('Registra juegos en tu biblioteca para mapear tus géneros favoritos.')}
         </p>
       ) : (
@@ -71,6 +72,14 @@ export const GenreDistributionChart: React.FC<GenreDistributionChartProps> = ({ 
             </BarChart>
           </ResponsiveContainer>
         </div>
+      )}
+      {data.length > 0 && (
+        <ChartDataTable
+          label={t('Distribución de géneros')}
+          categoryLabel={t('Género')}
+          valueLabel={t('Total')}
+          rows={chartData.map(item => ({ label: t(item.name), value: item.value }))}
+        />
       )}
     </div>
   );

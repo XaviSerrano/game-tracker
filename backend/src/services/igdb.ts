@@ -1603,6 +1603,69 @@ export class IgdbService {
   // GAME DETAILS
   // ==================================================
 
+  // Direct store pages known by IGDB, keyed by store name.
+  static async getStoreLinks(
+    id: number
+  ): Promise<Record<string, string>> {
+    const cacheKey = `stores:${id}`;
+    const cached = cacheGet<Record<string, string>>(cacheKey);
+    if (cached) return cached;
+
+    const token = await getTwitchToken();
+    const { clientId } = getIgdbCredentials();
+
+    const response = await fetchIgdb('https://api.igdb.com/v4/games', {
+      method: 'POST',
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain'
+      },
+      body: `fields websites.url; where id = ${id};`
+    });
+
+    if (!response.ok) {
+      throw new Error(`IGDB stores failed (${response.status})`);
+    }
+
+    const data = await response.json();
+    const websites: any[] = Array.isArray(data) && Array.isArray(data[0]?.websites)
+      ? data[0].websites
+      : [];
+
+    const storeHosts: Array<[string, RegExp]> = [
+      ['steam', /(^|\.)store\.steampowered\.com$/],
+      ['gog', /(^|\.)gog\.com$/],
+      ['epic', /(^|\.)epicgames\.com$/],
+      ['itch', /(^|\.)itch\.io$/],
+      ['playstation', /(^|\.)store\.playstation\.com$/],
+      ['xbox', /(^|\.)xbox\.com$/],
+      ['nintendo', /(^|\.)nintendo\.com$/],
+      ['appstore', /(^|\.)apps\.apple\.com$/],
+      ['googleplay', /(^|\.)play\.google\.com$/]
+    ];
+
+    const links: Record<string, string> = {};
+    for (const site of websites) {
+      if (typeof site?.url !== 'string') continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(site.url);
+      } catch {
+        continue;
+      }
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') continue;
+      for (const [store, pattern] of storeHosts) {
+        if (!links[store] && pattern.test(parsed.hostname)) {
+          links[store] = parsed.toString();
+        }
+      }
+    }
+
+    cacheSet(cacheKey, links, 6 * 60 * 60 * 1000);
+    return links;
+  }
+
   static async getGameDetails(
     id: number
   ): Promise<Game | null> {

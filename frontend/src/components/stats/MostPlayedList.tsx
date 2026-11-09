@@ -19,7 +19,7 @@ export const MostPlayedList: React.FC<MostPlayedListProps> = ({ games, onSelectG
       </h3>
 
       {games.length === 0 ? (
-        <p className="text-xs text-slate-500 text-center py-6">
+        <p className="text-base sm:text-xs text-slate-400 text-center py-6">
           {t('Registra horas de juego en tu biblioteca para ver aquí tu ranking personal.')}
         </p>
       ) : (
@@ -41,7 +41,7 @@ export const MostPlayedList: React.FC<MostPlayedListProps> = ({ games, onSelectG
               />
 
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white truncate">{game.name}</p>
+                <p className="text-sm sm:text-xs font-bold text-white break-words">{game.name}</p>
                 <div className="w-full h-1.5 bg-slate-900 rounded-full mt-2 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"

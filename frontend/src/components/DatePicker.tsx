@@ -3,6 +3,7 @@ import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 
 interface DatePickerProps {
+  id: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -67,14 +68,16 @@ const sameDay = (a: Date, b: Date): boolean => {
   );
 };
 
-export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeholder, disabled = false }) => {
+export const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, placeholder, disabled = false }) => {
   const { t, language } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const selectedDate = parseIsoDate(value);
   const today = new Date();
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => selectedDate || new Date());
   const [inputValue, setInputValue] = useState<string>(() => selectedDate ? formatDisplayDate(selectedDate, language) : '');
+  const [invalidInput, setInvalidInput] = useState(false);
 
   useEffect(() => {
     if (disabled && open) {
@@ -131,6 +134,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
   const commitManualInput = () => {
     const trimmed = inputValue.trim();
     if (!trimmed) {
+      setInvalidInput(false);
       onChange('');
       setInputValue('');
       return;
@@ -138,24 +142,35 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
 
     const parsed = parseManualDate(trimmed, language);
     if (!parsed) {
+      setInvalidInput(true);
       setInputValue(selectedDate ? formatDisplayDate(selectedDate, language) : '');
       return;
     }
 
+    setInvalidInput(false);
     onChange(toIsoDate(parsed));
     setViewDate(parsed);
     setInputValue(formatDisplayDate(parsed, language));
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative" ref={containerRef} onKeyDown={(event) => {
+      if (event.key === 'Escape' && open) {
+        event.stopPropagation();
+        setOpen(false);
+        calendarButtonRef.current?.focus();
+      }
+    }}>
       <div className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2 text-xs text-white outline-none focus-within:border-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
         <input
+          id={id}
           type="text"
           disabled={disabled}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onBlur={commitManualInput}
+          onChange={(e) => { setInputValue(e.target.value); setInvalidInput(false); }}
+          aria-invalid={invalidInput}
+          aria-describedby={invalidInput ? `${id}-error` : undefined}
+          onBlur={() => { if (!invalidInput) commitManualInput(); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -166,18 +181,23 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
           className="flex-1 bg-transparent text-xs text-white placeholder:text-slate-500 outline-none disabled:cursor-not-allowed"
         />
         <button
+          ref={calendarButtonRef}
           type="button"
           disabled={disabled}
           onClick={() => setOpen(prev => !prev)}
           className="p-1 rounded-md hover:bg-slate-800 transition text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={t('Abrir calendario')}
+          aria-expanded={open}
+          aria-controls={open ? `${id}-calendar` : undefined}
         >
           <Calendar className="w-3.5 h-3.5" />
         </button>
       </div>
 
+      {invalidInput && <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-300">{t('Fecha no válida.')} {language === 'en' ? 'MM/DD/YYYY' : 'DD/MM/AAAA'}</p>}
+
       {open && !disabled && (
-        <div className="absolute z-30 mt-2 w-72 bg-[#07090e] border border-slate-800 rounded-xl p-3 shadow-2xl">
+        <div id={`${id}-calendar`} className="absolute z-30 mt-2 w-72 max-w-full bg-[#07090e] border border-slate-800 rounded-xl p-3 shadow-2xl">
           <div className="flex items-center justify-between mb-2">
             <button
               type="button"
@@ -218,7 +238,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                 <button
                   key={toIsoDate(dateCell)}
                   type="button"
+                  aria-label={dateCell.toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { dateStyle: 'full' })}
+                  aria-pressed={isSelected}
                   onClick={() => {
+                    setInvalidInput(false);
                     onChange(toIsoDate(dateCell));
                     setInputValue(formatDisplayDate(dateCell, language));
                     setOpen(false);

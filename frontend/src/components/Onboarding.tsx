@@ -16,6 +16,9 @@ const DEMO_ACCOUNT_PASSWORD = 'demo1234';
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers, notice }) => {
   const { t } = useLanguage();
+  const fieldLabelClassName = 'mb-2 block text-base font-medium text-slate-300 sm:text-xs';
+  const fieldClassName = 'w-full min-h-12 rounded-xl border border-slate-800 bg-[#07090e] px-3 py-3 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-[#d9a352] focus:ring-2 focus:ring-[#d9a352]/20 sm:px-4 sm:py-2.5 sm:text-sm';
+  const primaryButtonClassName = 'flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#d9a352] px-4 py-3 text-sm font-semibold text-[#17120a] transition hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5 sm:text-xs';
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -200,40 +203,40 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
   const isReset = mode === 'reset';
 
   return (
-    <div className="relative min-h-screen bg-[#07090e] flex flex-col items-center justify-center p-4 selection:bg-blue-600 selection:text-white">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center p-4 antialiased selection:bg-[#d9a352]/40 selection:text-white">
       <div className="absolute right-4 top-4">
         <LanguageSelector compact />
       </div>
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="pointer-events-none absolute left-1/4 top-1/4 h-72 w-72 rounded-full bg-[#d9a352]/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-72 w-72 rounded-full bg-[#e5b974]/5 blur-3xl"></div>
 
-      <div className="w-full max-w-md bg-[#0f121d] border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative z-10">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0f121d] p-5 shadow-2xl sm:p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="p-3 bg-blue-600/20 text-blue-500 rounded-2xl mb-3 border border-blue-500/30">
+          <div className="mb-3 rounded-2xl border border-[#d9a352]/25 bg-[#d9a352]/10 p-3 text-[#e5b974]">
             <Gamepad2 className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold font-display tracking-tight text-white mb-1">
+          <h1 className="mb-1 text-balance text-3xl font-semibold font-display tracking-tight text-white">
             GameTracker
           </h1>
-          <p className="text-slate-400 text-sm text-center">
+          <p className="max-w-[42ch] text-pretty text-center text-base text-slate-300 sm:text-sm">
             {t('Organiza tus videojuegos, sigue tus progresos y descubre recomendaciones con tus amigos')}
           </p>
         </div>
 
         {notice && (
-          <div role="alert" className="mb-4 p-3 bg-blue-950/30 border border-blue-500/20 text-blue-300 text-xs rounded-xl">
+          <div role="alert" className="mb-4 rounded-xl border border-blue-500/20 bg-blue-950/30 p-3 text-base text-blue-300 sm:text-xs">
             {notice}
           </div>
         )}
 
         {error && (
-          <div className="mb-4 p-3 bg-red-950/40 border border-red-500/30 text-red-400 text-xs rounded-xl">
+          <div role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-base text-red-400 sm:text-xs">
             {t(error)}
           </div>
         )}
 
         {infoMessage && (
-          <div className="mb-4 p-3 bg-blue-950/30 border border-blue-500/20 text-blue-300 text-xs rounded-xl space-y-2">
+          <div className="mb-4 space-y-2 rounded-xl border border-blue-500/20 bg-blue-950/30 p-3 text-base text-blue-300 sm:text-xs">
             <p>{t(infoMessage)}</p>
             {debugResetUrl && (
               <a
@@ -247,18 +250,18 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
         )}
 
         {!isForgot && !isReset && (
-          <div className="flex bg-[#07090e] p-1 rounded-xl">
+          <div className="flex rounded-xl border border-slate-800 bg-[#07090e] p-1">
             <button
               type="button"
               onClick={() => switchMode('login')}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${!isRegister ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs ${!isRegister ? 'border border-[#d9a352]/20 bg-[#d9a352]/10 text-[#e5b974]' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <Compass className="w-3.5 h-3.5" /> {t('Iniciar sesión')}
             </button>
             <button
               type="button"
               onClick={() => switchMode('register')}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 ${isRegister ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs ${isRegister ? 'border border-[#d9a352]/20 bg-[#d9a352]/10 text-[#e5b974]' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <UserPlus className="w-3.5 h-3.5" /> {t('Crear cuenta')}
             </button>
@@ -274,37 +277,39 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
             <form onSubmit={(e) => { e.preventDefault(); handleSignIn(email, password); }} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                <label htmlFor="login-email" className={fieldLabelClassName}>
                   {t('Correo Electrónico')}
                 </label>
                 <input
                   type="email"
+                  id="login-email"
                   placeholder={t('ejemplo@correo.com')}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                  className={fieldClassName}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                <label htmlFor="login-password" className={fieldLabelClassName}>
                   {t('Contraseña')}
                 </label>
                 <input
                   type="password"
+                  id="login-password"
                   placeholder={t('Tu contraseña')}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                  className={fieldClassName}
                 />
               </div>
 
               <button
                 type="button"
                 onClick={() => switchMode('forgot')}
-                className="text-xs text-blue-400 hover:text-blue-300 transition cursor-pointer"
+                className="cursor-pointer text-sm text-blue-400 transition hover:text-blue-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:text-xs"
               >
                 {t('¿Has olvidado tu contraseña?')}
               </button>
@@ -312,7 +317,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className={primaryButtonClassName}
               >
                 <LogIn className="w-4 h-4" />
                 {loading ? t('Entrando...') : t('Iniciar Sesión')}
@@ -324,76 +329,81 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="register-username" className={fieldLabelClassName}>
                 {t('Nombre de Usuario')}
               </label>
               <input
                 type="text"
+                id="register-username"
                 placeholder={t('ej. ezio_auditore')}
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="register-email" className={fieldLabelClassName}>
                 {t('Correo Electrónico')}
               </label>
               <input
                 type="email"
+                id="register-email"
                 placeholder={t('ejemplo@correo.com')}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="register-password" className={fieldLabelClassName}>
                 {t('Contraseña')}
               </label>
               <input
                 type="password"
+                id="register-password"
                 placeholder={t('Mínimo 8 caracteres')}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="register-confirm-password" className={fieldLabelClassName}>
                 {t('Confirmar Contraseña')}
               </label>
               <input
                 type="password"
+                id="register-confirm-password"
                 placeholder={t('Repite tu contraseña')}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="register-bio" className={fieldLabelClassName}>
                 {t('Biografía')}
               </label>
               <textarea
+                id="register-bio"
                 placeholder={t('Cuéntanos un poco sobre tus gustos gamer...')}
                 value={bio}
                 rows={2}
                 onChange={(e) => setBio(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none resize-none"
+                className={`${fieldClassName} min-h-24 resize-none`}
               ></textarea>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className={fieldLabelClassName}>
                 {t('Elige tu Pixel Avatar')}
               </label>
               <div className="flex gap-3 overflow-x-auto pb-1">
@@ -403,14 +413,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
                     <button
                       key={seed}
                       type="button"
+                      aria-pressed={avatar === url}
                       onClick={() => setAvatar(url)}
-                      className={`flex-shrink-0 p-1 rounded-full border-2 transition ${avatar === url ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800'}`}
+                      className={`flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 p-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${avatar === url ? 'border-[#d9a352] bg-[#d9a352]/10' : 'border-slate-800 hover:border-slate-600'}`}
                     >
                       <img
                         src={url}
                         alt={seed}
                         referrerPolicy="no-referrer"
-                        className="w-9 h-9 rounded-full"
+                        className="size-10 rounded-full"
                       />
                     </button>
                   );
@@ -421,7 +432,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className={primaryButtonClassName}
             >
               <UserPlus className="w-4 h-4" />
               {loading ? t('Registrando...') : t('Crear mi Diario Gamer')}
@@ -434,29 +445,30 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
             <button
               type="button"
               onClick={() => switchMode('login')}
-              className="text-xs text-slate-400 hover:text-slate-200 transition flex items-center gap-1"
+              className="flex items-center gap-1 text-sm text-slate-400 transition hover:text-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> {t('Volver al login')}
             </button>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="forgot-email" className={fieldLabelClassName}>
                 {t('Correo Electrónico')}
               </label>
               <input
                 type="email"
+                id="forgot-email"
                 placeholder={t('ejemplo@correo.com')}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className={primaryButtonClassName}
             >
               <Mail className="w-4 h-4" />
               {loading ? t('Enviando enlace...') : t('Enviar enlace de recuperación')}
@@ -466,43 +478,45 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, preseededUsers,
 
         {mode === 'reset' && (
           <form onSubmit={handleResetPassword} className="space-y-4">
-            <div className="flex items-center gap-2 text-blue-300 text-xs bg-blue-950/20 border border-blue-500/20 rounded-xl p-3">
+            <div className="flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-950/20 p-3 text-base text-blue-300 sm:text-xs">
               <KeyRound className="w-4 h-4" />
               <span>{t('El enlace de recuperación está activo. Define tu nueva contraseña.')}</span>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="reset-password" className={fieldLabelClassName}>
                 {t('Nueva Contraseña')}
               </label>
               <input
                 type="password"
+                id="reset-password"
                 placeholder={t('Mínimo 8 caracteres')}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label htmlFor="reset-confirm-password" className={fieldLabelClassName}>
                 {t('Confirmar Nueva Contraseña')}
               </label>
               <input
                 type="password"
+                id="reset-confirm-password"
                 placeholder={t('Repite la nueva contraseña')}
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
+                className={fieldClassName}
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className={primaryButtonClassName}
             >
               <KeyRound className="w-4 h-4" />
               {loading ? t('Actualizando...') : t('Guardar nueva contraseña')}
