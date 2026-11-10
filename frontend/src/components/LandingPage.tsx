@@ -62,9 +62,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             aria-label={t('Volver al inicio')}
             className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
           >
-            <span className="grid size-9 place-items-center rounded-xl border border-[#d9a352]/30 bg-[#d9a352]/10 text-[#e5b974]">
-              <Gamepad2 className="size-5" aria-hidden="true" />
-            </span>
+            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-8 w-auto sm:h-9" />
             <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
           </a>
 
@@ -196,6 +194,26 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 {t('Guarda el hilo de cada partida: desde ese juego que tienes pendiente hasta todo lo que ya has terminado.')}
               </p>
             </div>
+
+            <figure className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-[0_28px_90px_-42px_rgba(217,163,82,0.28)] sm:mt-14">
+              <div aria-hidden="true" className="flex h-11 items-center gap-2 border-b border-white/[0.08] bg-[#111317] px-4">
+                <span className="size-2.5 rounded-full bg-slate-600" />
+                <span className="size-2.5 rounded-full bg-slate-600" />
+                <span className="size-2.5 rounded-full bg-[#d9a352]/80" />
+                <span className="ml-3 h-6 min-w-0 flex-1 truncate rounded-md border border-white/[0.06] bg-[#0b0d12] px-3 text-left text-[0.6875rem] leading-6 text-slate-500">
+                  {t('GameTracker · Vista previa del detalle')}
+                </span>
+              </div>
+              <img
+                src="/game-detail-preview.png"
+                alt={t('Vista previa del detalle de Cyberpunk 2077: portada, descripción, valoración, tiempo de juego, plataformas, diario y galería de imágenes.')}
+                className="block h-auto w-full"
+                loading="lazy"
+              />
+              <figcaption className="border-t border-white/[0.08] px-4 py-3 text-center text-xs text-slate-400 sm:py-4">
+                {t('Cada juego reúne tu progreso, tus valoraciones y sus imágenes en un solo lugar.')}
+              </figcaption>
+            </figure>
 
             <div className="mt-12 grid border-t border-white/[0.09] sm:grid-cols-2 xl:grid-cols-5">
               {features.map(({ icon: Icon, title, description }) => (

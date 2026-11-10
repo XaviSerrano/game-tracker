@@ -1,19 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
-  Gamepad2,
   Compass,
   Library as LibIcon,
   List,
   BarChart2,
   User as UserIcon,
   LogOut,
-  ChevronRight,
-  RefreshCw,
-  Search,
-  Menu,
-  PanelLeftClose,
-  X
+  Search
 } from 'lucide-react';
 
 import { User } from './types.ts';
@@ -51,11 +45,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<MainTab>('feed');
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  // Sidebar toggle: colapsable en desktop, drawer con overlay en móvil.
-  // Por defecto abierto en desktop y cerrado en móvil.
-  const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
-  );
   const [pathname, setPathname] = useState(() =>
     typeof window !== 'undefined' ? window.location.pathname : '/'
   );
@@ -179,9 +168,6 @@ export default function App() {
     setActiveTab(tab);
     setSelectedGameId(null);
     setSelectedUserId(null);
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
     navigateTo(SECTION_PATHS[tab]);
   };
 
@@ -233,10 +219,6 @@ export default function App() {
     navigateTo(`/game/${gameId}`);
     setSelectedGameId(null);
     setSelectedUserId(null);
-
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
   };
 
   const handleBackFromGame = () => {
@@ -262,7 +244,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Gamepad2 className="w-10 h-10 text-blue-500 animate-bounce mx-auto" />
+          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-12 w-auto animate-bounce mx-auto" />
           <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">{t('CARGANDO GAMETRACKER...')}</p>
         </div>
       </div>
@@ -290,7 +272,7 @@ export default function App() {
                 aria-label={t('Volver al inicio')}
                 className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
               >
-                <span className="rounded-lg border border-blue-500/20 bg-blue-600/25 p-1.5 text-blue-400"><Gamepad2 className="h-5 w-5" /></span>
+                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-7 w-auto" />
                 <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
               </a>
               <div className="flex max-w-full items-center gap-3">
@@ -300,7 +282,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <main className={isKnownGamePath ? 'w-full pb-5 md:pb-7' : 'mx-auto max-w-6xl px-3 pb-5 md:px-5 md:pb-7'}>
+            <main className={isKnownGamePath ? 'w-full pb-5 md:pb-7' : pathname.startsWith('/discover') ? 'mx-auto max-w-[96rem] px-3 pb-5 md:px-6 md:pb-7' : 'mx-auto max-w-6xl px-3 pb-5 md:px-5 md:pb-7'}>
               {isKnownGamePath ? (
                 <GameDetails
                   key={gamePathId}
@@ -447,197 +429,88 @@ export default function App() {
     { id: 'profile', label: t('Mi Perfil'), mobileLabel: t('Perfil'), icon: UserIcon },
   ] as const;
 
+  const isNavItemActive = (id: MainTab) =>
+    (routeTab || activeTab) === id && selectedGameId === null && selectedUserId === null;
+
   return (
-    <div className="min-h-screen text-slate-200 flex flex-col lg:flex-row font-sans">
+    <div className="min-h-screen text-slate-200 flex flex-col font-sans">
       
-      {/* 1. DESKTOP SIDEBAR TOGGLE */}
-      {!sidebarOpen && (
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          className="hidden lg:flex fixed top-5 left-5 z-30 p-2.5 bg-[#0f121d] border border-slate-800 rounded-xl text-slate-300 hover:text-white hover:border-slate-700 transition cursor-pointer"
-          aria-label={t('Abrir menú de navegación')}
-        >
-          <PanelLeftClose className="w-4.5 h-4.5 rotate-180" />
-        </button>
-      )}
+      {/* 1. TOP HEADER (mismo formato que la landing) */}
+      <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0b0d12]/95 backdrop-blur-md">
+        <div className="mx-auto flex min-h-16 w-full max-w-[86rem] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+          <a
+            href="/"
+            onClick={(event) => {
+              event.preventDefault();
+              handleGoHome();
+            }}
+            aria-label={t('Volver al inicio')}
+            className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+          >
+            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-8 w-auto sm:h-9" />
+            <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
+          </a>
 
-      {/* 2. SIDEBAR - SOLO DESKTOP */}
-      <div className="hidden lg:block">
-        <AnimatePresence>
-          {sidebarOpen && (
-            <motion.aside
-              key="sidebar-panel"
-              initial={{ x: reducedMotion ? 0 : -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: reducedMotion ? 0 : -280 }}
-              transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
-              className="flex flex-col justify-between w-64 bg-[#0f121d] border-r border-slate-850 p-5 fixed top-0 bottom-0 left-0 z-40"
-            >
-              <div className="space-y-6">
+          <nav aria-label={t('Navegación principal')} className="hidden items-center gap-7 md:flex">
+            {navItems.filter(item => item.id !== 'profile').map(item => {
+              const active = isNavItemActive(item.id);
 
-                {/* Logo */}
-                <div className="flex items-center justify-between px-2">
-                  <a
-                    href="/"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      handleGoHome();
-                    }}
-                    aria-label={t('Volver al inicio')}
-                    className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
-                  >
-                    <div className="p-1.5 bg-blue-600/25 rounded-lg border border-blue-500/20 text-blue-500">
-                      <Gamepad2 className="w-5 h-5" />
-                    </div>
-
-                    <span className="font-bold text-lg font-display tracking-tight text-white">
-                      GameTracker
-                    </span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => setSidebarOpen(false)}
-                    className="p-1 text-slate-500 hover:text-white transition cursor-pointer"
-                    aria-label={t('Cerrar menú de navegación')}
-                  >
-                    <PanelLeftClose className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* User profile */}
-                <div className="p-3 bg-[#07090e]/60 border border-slate-850/65 rounded-xl">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={currentUser.avatar}
-                      alt={currentUser.username}
-                      referrerPolicy="no-referrer"
-                      className="w-9 h-9 rounded-full border border-slate-800"
-                    />
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">
-                        @{currentUser.username}
-                      </p>
-
-                      <p className="text-[10px] text-slate-500 truncate">
-                        {t('Miembro activo')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Navigation */}
-                <nav className="space-y-1">
-                  {navItems.map(item => {
-                    const active =
-                      (routeTab || activeTab) === item.id &&
-                      selectedGameId === null &&
-                      selectedUserId === null;
-
-                    const Icon = item.icon;
-
-                    return (
-                      <a
-                        key={item.id}
-                        href={SECTION_PATHS[item.id]}
-                        aria-current={active ? 'page' : undefined}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          handleNavigation(item.id);
-                        }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition duration-150 cursor-pointer ${
-                          active
-                            ? 'bg-blue-600 text-white'
-                            : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-4 h-4" />
-                          <span>{item.label}</span>
-                        </div>
-
-                        {active && (
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        )}
-                      </a>
-                    );
-                  })}
-                </nav>
-              </div>
-
-              {/* Logout */}
-              <div className="space-y-3">
-                <LanguageSelector />
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition cursor-pointer"
+              return (
+                <a
+                  key={item.id}
+                  href={SECTION_PATHS[item.id]}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    handleNavigation(item.id);
+                  }}
+                  className={`border-b-2 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974] ${
+                    active
+                      ? 'border-[#e5b974] text-white'
+                      : 'border-transparent text-slate-300 hover:text-white'
+                  }`}
                 >
-                  <LogOut className="w-4.5 h-4.5" />
-                  {t('Cerrar Sesión')}
-                </button>
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
-      </div>
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
 
-      {/* 3. MOBILE HEADER */}
-      <header className="lg:hidden flex flex-wrap items-center justify-between gap-3 bg-[#0f121d] border-b border-slate-850 px-4 py-3 sticky top-0 left-0 right-0 z-20">
-        <a
-          href="/"
-          onClick={(event) => {
-            event.preventDefault();
-            handleGoHome();
-          }}
-          aria-label={t('Volver al inicio')}
-          className="flex items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
-        >
-          <Gamepad2 className="w-5 h-5 text-blue-500" />
-
-          <span className="font-bold text-sm font-display tracking-tight text-white">
-            GameTracker
-          </span>
-        </a>
-
-        <div className="flex items-center gap-3">
-          <LanguageSelector compact />
-          {/* Profile */}
-          <button
-            type="button"
-            onClick={() => handleNavigation('profile')}
-            className="p-1 rounded-full border border-slate-800"
-            aria-label={t('Mi perfil')}
-          >
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.username}
-              referrerPolicy="no-referrer"
-              className="w-6 h-6 rounded-full"
-            />
-          </button>
-
-          {/* Logout */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="p-1.5 text-red-400"
-            aria-label={t('Cerrar sesión')}
-          >
-            <LogOut className="w-4.5 h-4.5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <LanguageSelector compact />
+            <button
+              type="button"
+              onClick={() => handleNavigation('profile')}
+              aria-current={isNavItemActive('profile') ? 'page' : undefined}
+              aria-label={t('Mi perfil')}
+              className={`flex min-h-10 items-center gap-2 rounded-xl px-1.5 text-sm font-semibold transition hover:bg-white/[0.06] hover:text-white sm:px-3 ${
+                isNavItemActive('profile') ? 'bg-white/[0.06] text-white' : 'text-slate-200'
+              }`}
+            >
+              <img
+                src={currentUser.avatar}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="size-7 rounded-full border border-slate-800"
+              />
+              <span className="hidden max-w-[10rem] truncate lg:inline">@{currentUser.username}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label={t('Cerrar sesión')}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/[0.06] hover:text-white sm:px-4 sm:text-sm"
+            >
+              <LogOut className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{t('Cerrar Sesión')}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* 4. CORE VIEWPORT */}
-      <main
-        className={`flex-1 min-w-0 pb-[env(safe-area-inset-bottom)] lg:pb-0 transition-[margin] duration-200 ${
-          sidebarOpen ? 'lg:ml-72' : 'lg:ml-0'
-        }`}
-      >
-        <div className={`w-full mx-auto py-4 md:py-6 ${selectedGameId !== null || isKnownGamePath ? '' : 'max-w-6xl px-3 md:px-5'}`}>
+      {/* 2. CORE VIEWPORT */}
+      <main className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+        <div className={`w-full mx-auto py-4 md:py-6 ${selectedGameId !== null || isKnownGamePath ? '' : (routeTab || activeTab) === 'discover' ? 'max-w-[96rem] px-3 md:px-6' : 'max-w-6xl px-3 md:px-5'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={
@@ -657,7 +530,7 @@ export default function App() {
       </main>
 
       {/* 5. MOBILE BOTTOM NAV */}
-      <nav className="flex lg:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 min-h-16 px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] z-20">
+      <nav aria-label={t('Navegación principal')} className="flex md:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 min-h-16 px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] z-20">
         {navItems.map(item => {
           const active =
             (routeTab || activeTab) === item.id &&

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Compass, Eye, EyeOff, Gamepad2, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
+import { ArrowLeft, Compass, Eye, EyeOff, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
 import { User } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
@@ -258,9 +258,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0f121d] p-5 shadow-2xl sm:p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="mb-3 rounded-2xl border border-[#d9a352]/25 bg-[#d9a352]/10 p-3 text-[#e5b974]">
-            <Gamepad2 className="w-8 h-8" />
-          </div>
+          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="mb-3 h-16 w-auto" />
           <h1 className="mb-1 text-balance text-3xl font-semibold font-display tracking-tight text-white">
             <a
               href="/"

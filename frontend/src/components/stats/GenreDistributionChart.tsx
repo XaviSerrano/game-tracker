@@ -1,35 +1,36 @@
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Sparkles } from 'lucide-react';
 import { DistributionItem } from './types.ts';
 import { useLanguage } from '../../i18n.tsx';
-import { ChartDataTable } from './ChartDataTable.tsx';
 
 interface GenreDistributionChartProps {
   data: DistributionItem[];
+  totalGames: number;
 }
 
-const MAX_VISIBLE_GENRES = 8;
-const COLORS = ['#3b82f6', '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb923c', '#64748b'];
+const MAX_VISIBLE_GENRES = 6;
+const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
 
-function groupDistribution(data: DistributionItem[]): DistributionItem[] {
-  const sorted = [...data].sort((a, b) => b.value - a.value);
+const byValueThenName = (a: DistributionItem, b: DistributionItem) =>
+  b.value - a.value || a.name.localeCompare(b.name);
 
-  if (sorted.length <= MAX_VISIBLE_GENRES) {
-    return sorted;
-  }
-
-  const visible = sorted.slice(0, MAX_VISIBLE_GENRES);
-  const rest = sorted.slice(MAX_VISIBLE_GENRES);
-  const othersTotal = rest.reduce((total, item) => total + item.value, 0);
-
-  return [...visible, { name: 'Otros', value: othersTotal }];
-}
-
-export const GenreDistributionChart: React.FC<GenreDistributionChartProps> = ({ data }) => {
+export const GenreDistributionChart: React.FC<GenreDistributionChartProps> = ({ data, totalGames }) => {
   const { t } = useLanguage();
-  const chartData = useMemo(() => groupDistribution(data).reverse(), [data]);
-  const chartHeight = Math.max(chartData.length * 32, 160);
+
+  const { visible, hiddenCount } = useMemo(() => {
+    const sorted = [...data].sort(byValueThenName);
+    const base = Math.max(totalGames, ...sorted.map(item => item.value), 1);
+    const shown = sorted.slice(0, MAX_VISIBLE_GENRES);
+
+    return {
+      visible: shown.map(item => ({
+        ...item,
+        percent: Math.round((item.value / base) * 100),
+        width: (item.value / base) * 100
+      })),
+      hiddenCount: sorted.length - shown.length
+    };
+  }, [data, totalGames]);
 
   return (
     <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl flex flex-col">
@@ -42,44 +43,37 @@ export const GenreDistributionChart: React.FC<GenreDistributionChartProps> = ({ 
           {t('Registra juegos en tu biblioteca para mapear tus géneros favoritos.')}
         </p>
       ) : (
-        <div className="w-full mt-3" style={{ height: chartHeight }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-              <XAxis type="number" hide allowDecimals={false} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tickFormatter={(name: string) => t(name)}
-                stroke="#94a3b8"
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                width={100}
-              />
-              <Tooltip
-                cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
-                contentStyle={{ backgroundColor: '#07090e', borderColor: '#1e293b', borderRadius: '10px', fontSize: '11px' }}
-                formatter={(value: number) => [`${value} ${t(value === 1 ? 'juego' : 'juegos')}`, t('Total')]}
-              />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
-                {chartData.map((entry, index) => (
-                  <Cell
-                    key={entry.name}
-                    fill={entry.name === 'Otros' ? '#475569' : COLORS[index % COLORS.length]}
+        <>
+          <ul className="mt-4 space-y-3">
+            {visible.map((item, index) => (
+              <li key={item.name}>
+                <div className="flex items-baseline justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate font-medium text-slate-200" title={t(item.name)}>
+                    {t(item.name)}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-slate-400">
+                    <span className="font-semibold text-slate-200">{item.value}</span>
+                    <span className="ml-1.5">{item.percent}%</span>
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-800/70">
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500"
+                    style={{
+                      width: `${Math.max(item.width, 2)}%`,
+                      backgroundColor: COLORS[index % COLORS.length]
+                    }}
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-      {data.length > 0 && (
-        <ChartDataTable
-          label={t('Distribución de géneros')}
-          categoryLabel={t('Género')}
-          valueLabel={t('Total')}
-          rows={chartData.map(item => ({ label: t(item.name), value: item.value }))}
-        />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-3 text-[11px] leading-snug text-slate-500">
+            {hiddenCount > 0 && `+${hiddenCount} ${t('géneros más')} · `}
+            {t('% sobre los juegos de tu biblioteca; un juego puede tener varios géneros.')}
+          </p>
+        </>
       )}
     </div>
   );

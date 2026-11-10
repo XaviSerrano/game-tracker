@@ -53,6 +53,12 @@ cookie.
 | PUT | `/api/lists/:id` | Update an owned list | Yes |
 | DELETE | `/api/lists/:id` | Delete an owned list | Yes |
 
+For `/api/games/search`, the `newest` and `rating` sorts only include games
+released already or due within 14 days, with at least one meaningful IGDB
+interest signal: 25 ratings, 10 hypes, or 25 follows. The `rating` sort also
+requires at least 100 ratings so its score is meaningful. Results are ordered by
+release date or rating, respectively.
+
 ## IGDB behavior
 
 All game discovery requests use the single Node service. It caches the Twitch

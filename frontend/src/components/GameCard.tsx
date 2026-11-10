@@ -85,24 +85,21 @@ export const GameCard: React.FC<GameCardProps> = ({
       onKeyDown={handleCardKeyDown}
       className={`
         w-full h-full min-w-0 text-left group
-        bg-[#0f121d]
-        border border-slate-800
-        hover:border-slate-700
         rounded-xl
         transition-colors
         flex flex-col
         cursor-pointer
         duration-200
-        ${isFeedCard ? 'p-2' : 'p-2.5'}
+        focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]
+        ${isFeedCard ? 'p-2 bg-[#0f121d] border border-slate-800 hover:border-slate-700' : ''}
       `}
     >
       <div
         className={`
           relative
-          rounded-lg
           overflow-hidden
-          border border-slate-900
           aspect-[3/4]
+          ${isFeedCard ? 'rounded-lg border border-slate-900' : 'rounded-xl bg-slate-900'}
         `}
       >
         {game.cover && failedCover !== game.cover ? (
@@ -208,7 +205,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       <div
         className={`
           flex-1 min-w-0
-          ${isFeedCard ? 'mt-2' : 'mt-3.5'}
+          ${isFeedCard ? 'mt-2' : 'mt-2.5'}
         `}
       >
         <h3

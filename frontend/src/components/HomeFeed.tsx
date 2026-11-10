@@ -235,7 +235,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               </div>
 
               <p className="text-xs leading-relaxed text-slate-300 italic">
-                "{translateActivityDetails(act.type, act.details, t)}"
+                {translateActivityDetails(act.type, act.details, t).replace(/^[^:"]*(?::(?! ")[^:"]*)*: (?=")/, '')}
               </p>
             </div>
           )}

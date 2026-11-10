@@ -1,9 +1,8 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { Star } from 'lucide-react';
 import { RatingBucket } from './types.ts';
 import { useLanguage } from '../../i18n.tsx';
-import { ChartDataTable } from './ChartDataTable.tsx';
 
 interface RatingsDistributionChartProps {
   data: RatingBucket[];
@@ -25,9 +24,13 @@ export const RatingsDistributionChart: React.FC<RatingsDistributionChartProps> =
           {t('Puntúa tus juegos de 1 a 5 estrellas para ver aquí cómo se reparten.')}
         </p>
       ) : (
-        <div className="h-48 w-full mt-3">
+        <div
+          className="h-48 w-full mt-3"
+          role="img"
+          aria-label={`${t('Distribución de valoraciones')}: ${chartData.map(bucket => `${bucket.label} ${bucket.count}`).join(', ')}`}
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 18, right: 10, left: -20, bottom: 0 }}>
               <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
@@ -39,18 +42,11 @@ export const RatingsDistributionChart: React.FC<RatingsDistributionChartProps> =
                 {chartData.map(bucket => (
                   <Cell key={bucket.stars} fill={bucket.stars >= 4 ? '#eab308' : bucket.stars === 3 ? '#f59e0b' : '#64748b'} />
                 ))}
+                <LabelList dataKey="count" position="top" fill="#cbd5e1" fontSize={11} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      )}
-      {totalRated > 0 && (
-        <ChartDataTable
-          label={t('Distribución de valoraciones')}
-          categoryLabel={t('Valoración')}
-          valueLabel={t('Total')}
-          rows={chartData.map(bucket => ({ label: bucket.label, value: bucket.count }))}
-        />
       )}
     </div>
   );

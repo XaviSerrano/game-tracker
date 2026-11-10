@@ -1160,11 +1160,11 @@ class GameDatabase {
       ? Math.round((totalHours / gamesWithHours.length) * 10) / 10
       : 0;
 
-    // Juegos "empezados" = todo lo que no es solo wishlist. Sirve de base
-    // para calcular qué proporción se termina.
-    const startedCount = userGames.length - wishlistCount;
-    const completionRate = startedCount > 0
-      ? Math.round((completedCount / startedCount) * 100)
+    const completionRateDenominator =
+      playedCount + completedCount + playingCount + abandonedCount;
+    const completionRateNumerator = playedCount + completedCount;
+    const completionRate = completionRateDenominator > 0
+      ? Math.round((completionRateNumerator / completionRateDenominator) * 100)
       : 0;
 
     const ratedGames = userGames.filter(ug => ug.rating > 0);
@@ -1205,7 +1205,7 @@ class GameDatabase {
     const genreCounts: Record<string, number> = {};
 
     gamesDetails.forEach(game => {
-      game.genres.forEach(genre => {
+      new Set(game.genres).forEach(genre => {
         genreCounts[genre] =
           (genreCounts[genre] || 0) + 1;
       });

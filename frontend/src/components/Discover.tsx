@@ -18,7 +18,7 @@ interface DiscoverFilters {
   yearFrom: string;
   yearTo: string;
   minRating: string;
-  sort: 'relevance' | 'newest' | 'rating' | 'popularity';
+  sort: 'relevance' | 'newest' | 'rating';
   page: number;
 }
 
@@ -49,7 +49,7 @@ const readFiltersFromUrl = (): DiscoverFilters => {
     yearFrom: params.get('yearFrom') || '',
     yearTo: params.get('yearTo') || '',
     minRating: params.get('minRating') || '',
-    sort: ['relevance', 'newest', 'rating', 'popularity'].includes(params.get('sort') || '')
+    sort: ['relevance', 'newest', 'rating'].includes(params.get('sort') || '')
       ? params.get('sort') as DiscoverFilters['sort']
       : 'relevance',
     page: Math.max(0, Number.parseInt(params.get('page') || '0', 10) || 0)
@@ -70,7 +70,7 @@ const makeSearchParams = (filters: DiscoverFilters) => {
 };
 
 const GameSkeletons: React.FC<{ count?: number }> = ({ count = 8 }) => (
-  <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+  <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
     {Array.from({ length: count }, (_, index) => (
       <div key={index} className="animate-pulse rounded-xl border border-slate-850 bg-[#0f121d] p-2.5">
         <div className="aspect-[3/4] rounded-lg bg-slate-800" />
@@ -514,7 +514,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
                 <option value="relevance">{t('Relevancia')}</option>
                 <option value="newest">{t('Más recientes')}</option>
                 <option value="rating">{t('Mejor valorados')}</option>
-                <option value="popularity">{t('Más populares')}</option>
               </select>
             </label>
             <label className="space-y-1.5 text-[11px] font-semibold text-slate-400">
@@ -556,7 +555,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           </div>
           {loadingHome && <GameSkeletons count={15} />}
           {popularGames.length > 0 && (
-            <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {popularGames.map(renderGameCard)}
             </div>
           )}
@@ -621,7 +620,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           ) : games.length > 0 ? (
             <>
               <p aria-live="polite" className="text-xs text-slate-500">{games.length} {t('resultados cargados')}</p>
-              <div className={`mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 transition-opacity sm:max-w-none sm:grid-cols-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ${loading ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 transition-opacity sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 ${loading ? 'opacity-60' : 'opacity-100'}`}>
                 {games.map(renderGameCard)}
               </div>
               {hasMore && (

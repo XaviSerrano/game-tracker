@@ -155,8 +155,8 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
 
         <KpiCard
           icon={Trophy}
-          label={t('Juegos completados')}
-          value={`${stats.completedCount}`}
+          label={t('Jugados / Completados')}
+          value={`${stats.completedCount + stats.playedCount}`}
           secondary={`${stats.completionRate}% ${t('de ratio de finalización')}`}
           accent="emerald"
         />
@@ -193,7 +193,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
           averageHoursPerGame={stats.averageHoursPerGame}
           completionRate={stats.completionRate}
         />
-        <GenreDistributionChart data={stats.genresDistribution} />
+        <GenreDistributionChart data={stats.genresDistribution} totalGames={stats.totalGames} />
         <RatingsDistributionChart data={stats.ratingsDistribution} />
       </div>
 

@@ -260,7 +260,7 @@ export default function App() {
             Iniciar sesión / Registrarse
           </button>
         </header>
-        <main className="mx-auto max-w-6xl px-3 py-5 md:px-5 md:py-7">
+        <main className="mx-auto max-w-6xl px-3 pb-5 md:px-5 md:pb-7">
           <div className="mb-5 rounded-2xl border border-blue-500/15 bg-blue-500/5 px-4 py-3 text-center text-xs text-slate-300">
             Explora GameTracker libremente. Te pediremos iniciar sesión cuando quieras guardar, seguir o crear contenido.
           </div>

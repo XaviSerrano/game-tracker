@@ -46,6 +46,9 @@ const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
 const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const TAXONOMY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CORE_GAME_TYPES = '(0,4,8,9,10)';
+const DISCOVER_QUALITY_FILTER = '(total_rating_count >= 25 | hypes >= 10 | follows >= 25)';
+const MIN_RATING_VOTES = 100;
+const UPCOMING_RELEASE_WINDOW_SECONDS = 14 * 24 * 60 * 60;
 const IGDB_REQUEST_INTERVAL_MS = 250;
 const igdbInFlight = new Map<string, Promise<Response>>();
 let igdbRequestQueue: Promise<void> = Promise.resolve();
@@ -604,8 +607,17 @@ export class IgdbService {
     if (typeof options.minRating === 'number' && options.minRating > 0) {
       filters.push(`total_rating >= ${Math.min(100, Math.max(0, options.minRating))}`);
     }
+    if (options.sort === 'newest' || options.sort === 'rating') {
+      const releaseCutoff = Math.floor(Date.now() / 1000) + UPCOMING_RELEASE_WINDOW_SECONDS;
+      filters.push(`first_release_date != null & first_release_date <= ${releaseCutoff}`, DISCOVER_QUALITY_FILTER);
+    }
+    if (options.sort === 'rating') {
+      filters.push(`total_rating_count >= ${MIN_RATING_VOTES}`);
+    }
 
     const where = `where ${filters.join(' & ')};`;
+    const sortClause = options.sort === 'newest' ? 'sort first_release_date desc;'
+      : options.sort === 'rating' ? 'sort total_rating desc;' : '';
     const fields = `
       fields
         id,
@@ -633,7 +645,7 @@ export class IgdbService {
       'Content-Type': 'text/plain'
     };
     const escapedQuery = escapeIgdbString(query);
-    const primaryBody = `${query ? `search "${escapedQuery}";` : ''}${fields}${where}limit ${candidateLimit};`;
+    const primaryBody = `${query ? `search "${escapedQuery}";` : ''}${fields}${where}${sortClause}limit ${candidateLimit};`;
     const primaryResponse = await fetchIgdb('https://api.igdb.com/v4/games', {
       method: 'POST',
       headers,
@@ -656,7 +668,7 @@ export class IgdbService {
       const fallbackTerms = [...new Set([query, normalizeSearchText(query)])];
       for (const term of fallbackTerms) {
         const partialQuery = escapeIgdbString(term);
-        const fallbackBody = `${fields}where ${filters.join(' & ')} & name ~ *"${partialQuery}"*;limit ${candidateLimit};`;
+        const fallbackBody = `${fields}where ${filters.join(' & ')} & name ~ *"${partialQuery}"*;${sortClause}limit ${candidateLimit};`;
         const fallbackResponse = await fetchIgdb('https://api.igdb.com/v4/games', {
           method: 'POST',
           headers,
@@ -678,9 +690,14 @@ export class IgdbService {
 
     let games = [...candidates.values()].map((item) => mapIgdbGame(item));
     if (options.sort === 'newest') {
-      games.sort((a, b) => Date.parse(b.releaseDate || '') - Date.parse(a.releaseDate || ''));
+      games.sort((a, b) => {
+        const releaseDateDifference = Date.parse(b.releaseDate) - Date.parse(a.releaseDate);
+        if (Number.isFinite(releaseDateDifference) && releaseDateDifference !== 0) return releaseDateDifference;
+        return (b.popularity || 0) - (a.popularity || 0) || (b.rating || 0) - (a.rating || 0);
+      });
     } else if (options.sort === 'rating') {
-      games.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.popularity || 0) - (a.popularity || 0));
+      games.sort((a, b) => (b.rating || 0) - (a.rating || 0)
+        || (b.popularity || 0) - (a.popularity || 0));
     } else if (options.sort === 'popularity') {
       games.sort((a, b) => (b.popularity || 0) - (a.popularity || 0) || (b.rating || 0) - (a.rating || 0));
     } else if (options.sort === 'name') {

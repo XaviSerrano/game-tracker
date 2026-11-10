@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-11-09T15:40:46.341Z",
+        "reason": "Keep the existing project-wide font as part of the established visual identity."
+      }
+    ]
+  }
+}

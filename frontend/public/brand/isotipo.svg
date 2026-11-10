@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 470" role="img" aria-labelledby="title desc">
+<title id="title">Gamepad logo</title>
+<desc id="desc">Gamepad-inspired scalable vector logo.</desc>
+<defs>
+
+<linearGradient id="shell" x1="0" y1="0" x2="0.85" y2="1">
+  <stop offset="0" stop-color="#8d82ff"/>
+  <stop offset=".48" stop-color="#5142d6"/>
+  <stop offset="1" stop-color="#241c83"/>
+</linearGradient>
+<linearGradient id="face" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#776cff"/><stop offset="1" stop-color="#3527ad"/>
+</linearGradient>
+<linearGradient id="white" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#b9c4e5"/>
+</linearGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#36f4e4"/><stop offset="1" stop-color="#00a99f"/>
+</linearGradient>
+<linearGradient id="yellow" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#ffe56b"/><stop offset="1" stop-color="#f5a900"/>
+</linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+  <feOffset dy="8"/><feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer>
+  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+
+</defs>
+<g transform="translate(0,22) scale(1,1)"><path d="M150 118 C190 76 280 54 400 54 C520 54 610 76 650 118
+C704 111 741 145 755 207 L785 356 C797 421 766 449 715 443
+C674 438 655 390 633 330 L596 286 C570 306 540 327 507 344
+C472 363 432 374 400 374 C368 374 328 363 293 344
+C260 327 230 306 204 286 L167 330 C145 390 126 438 85 443
+C34 449 3 421 15 356 L45 207 C59 145 96 111 150 118 Z"
+fill="url(#shell)" stroke="#211a78" stroke-width="12" stroke-linejoin="round" filter="url(#shadow)"/><path d="M150 118 C220 91 310 80 400 80 C490 80 580 91 650 118" fill="none" stroke="#c2bbff" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+<path d="M95 190 C105 145 151 132 190 154 C226 174 240 218 224 254 C209 290 166 303 129 282 C92 260 83 226 95 190Z" fill="url(#face)" stroke="#30258e" stroke-width="8"/>
+<path d="M705 190 C695 145 649 132 610 154 C574 174 560 218 576 254 C591 290 634 303 671 282 C708 260 717 226 705 190Z" fill="url(#face)" stroke="#30258e" stroke-width="8"/>
+<circle cx="160" cy="218" r="45" fill="#28245f" stroke="#171445" stroke-width="9"/>
+<circle cx="160" cy="218" r="34" fill="url(#white)" stroke="#8c98c4" stroke-width="5"/>
+<circle cx="160" cy="218" r="20" fill="none" stroke="#9da9cf" stroke-width="5"/>
+<circle cx="160" cy="218" r="8" fill="#e8edff"/>
+<path d="M105 333 h34 v-34 h30 v34 h34 v30 h-34 v34 h-30 v-34 h-34Z" fill="url(#white)" stroke="#22205c" stroke-width="9" stroke-linejoin="round"/>
+<circle cx="400" cy="230" r="16" fill="url(#white)" stroke="#29215f" stroke-width="6"/>
+<circle cx="605" cy="168" r="24" fill="url(#white)" stroke="#28205f" stroke-width="7"/>
+<text x="605" y="177" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#777fa8">Y</text>
+<circle cx="685" cy="226" r="25" fill="url(#white)" stroke="#28205f" stroke-width="7"/>
+<text x="685" y="235" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#777fa8">X</text>
+<circle cx="594" cy="255" r="27" fill="#ed3046" stroke="#7d183c" stroke-width="7"/>
+<text x="594" y="264" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#fff">B</text>
+<circle cx="650" cy="215" r="38" fill="url(#cyan)" stroke="#075b79" stroke-width="8"/>
+<text x="650" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="900" fill="#087d87">A</text>
+<circle cx="510" cy="344" r="37" fill="url(#yellow)" stroke="#9b5a08" stroke-width="8"/>
+<text x="510" y="356" text-anchor="middle" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="#9b5a08">C</text>
+</g>
+</svg>
