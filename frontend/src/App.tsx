@@ -56,6 +56,7 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState('');
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
+  const resetTokenInUrl = new URLSearchParams(window.location.search).get('resetToken');
 
   // The session is kept in an httpOnly cookie and verified server-side.
   const verifySession = async () => {
@@ -239,6 +240,24 @@ export default function App() {
     setSelectedUserId(uId);
     setSelectedGameId(null);
   };
+
+  if (resetTokenInUrl) {
+    return (
+      <div className="min-h-screen text-slate-200 font-sans">
+        <Onboarding
+          onLogin={handleLoginSuccess}
+          onGoHome={() => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('resetToken');
+            window.history.replaceState({}, '', url.toString());
+            handleGoHome();
+          }}
+          initialMode="login"
+          preseededUsers={allUsers}
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

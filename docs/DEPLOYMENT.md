@@ -47,7 +47,7 @@ Configure these values in the Render service environment:
 | `DATABASE_SSL_CA` | No | PEM-encoded CA certificate if the PostgreSQL provider uses a private CA; do not use an unverified certificate. |
 | `IGDB_CLIENT_ID` | Yes | Twitch Developer application client ID |
 | `IGDB_CLIENT_SECRET` | Yes | Keep private; backend only |
-| `PUBLIC_APP_URL` | Recommended | Public Vercel URL used in reset links |
+| `PUBLIC_APP_URL` | Yes | Public frontend URL used in password-reset links. Required in production; local development defaults to `http://localhost:3000`. |
 | `SMTP_HOST` | For email delivery | SMTP server |
 | `SMTP_PORT` | No | Defaults to `587` |
 | `SMTP_SECURE` | No | Set `true` when SMTP requires implicit TLS |

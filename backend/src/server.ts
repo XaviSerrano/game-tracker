@@ -17,6 +17,18 @@ const SESSION_COOKIE_NAME = 'gt_session';
 const DEFAULT_AVATAR = '/default-avatar.svg';
 const MAX_AVATAR_LENGTH = 200_000;
 const AVATAR_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+const configuredPublicAppUrl = process.env.PUBLIC_APP_URL?.trim();
+const publicAppUrl =
+  configuredPublicAppUrl || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
+
+if (!publicAppUrl) {
+  throw new Error('PUBLIC_APP_URL debe estar configurada en producción para generar enlaces de recuperación.');
+}
+
+const parsedPublicAppUrl = new URL(publicAppUrl);
+if (parsedPublicAppUrl.protocol !== 'http:' && parsedPublicAppUrl.protocol !== 'https:') {
+  throw new Error('PUBLIC_APP_URL debe usar el protocolo HTTP o HTTPS.');
+}
 
 app.use(express.json({ limit: '300kb' }));
 app.get('/health', (_req, res) => {
@@ -242,18 +254,14 @@ const resetPasswordRateLimit = createRateLimiter(
   (req) => getRequestIp(req)
 );
 
-const buildResetUrl = (req: express.Request, token: string) => {
-  const publicAppUrl = process.env.PUBLIC_APP_URL?.replace(/\/$/, '');
-  if (publicAppUrl) {
-    return `${publicAppUrl}/?resetToken=${encodeURIComponent(token)}`;
-  }
-
-  const host = req.get('host');
-  return `${req.protocol}://${host}/?resetToken=${encodeURIComponent(token)}`;
+const buildResetUrl = (token: string) => {
+  const resetUrl = new URL('/', parsedPublicAppUrl);
+  resetUrl.searchParams.set('resetToken', token);
+  return resetUrl.toString();
 };
 
-const sendPasswordResetEmail = async (req: express.Request, user: User, rawToken: string) => {
-  const resetUrl = buildResetUrl(req, rawToken);
+const sendPasswordResetEmail = async (user: User, rawToken: string) => {
+  const resetUrl = buildResetUrl(rawToken);
   await authMailer.transport.sendMail({
     from: authMailer.from,
     to: user.email,
@@ -384,7 +392,7 @@ app.post('/api/auth/forgot-password', forgotPasswordRateLimit, async (req, res) 
     );
 
     const authUserForEmail = (await db.getUser(authUser.id))!;
-    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(req, authUserForEmail, rawToken);
+    const { resetUrl, usingDebugMailer } = await sendPasswordResetEmail(authUserForEmail, rawToken);
     recordSecurityEvent(req, 'PASSWORD_RESET_REQUESTED', 'email_sent', authUser.id);
     res.json({
       ...genericResponse,
