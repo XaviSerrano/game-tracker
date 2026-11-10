@@ -43,7 +43,8 @@ Configure these values in the Render service environment:
 
 | Variable | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | Yes | Managed PostgreSQL connection string |
+| `DATABASE_URL` | Yes | Managed PostgreSQL connection string. Remote connections verify the server certificate using Node.js's trusted CAs. |
+| `DATABASE_SSL_CA` | No | PEM-encoded CA certificate if the PostgreSQL provider uses a private CA; do not use an unverified certificate. |
 | `IGDB_CLIENT_ID` | Yes | Twitch Developer application client ID |
 | `IGDB_CLIENT_SECRET` | Yes | Keep private; backend only |
 | `PUBLIC_APP_URL` | Recommended | Public Vercel URL used in reset links |

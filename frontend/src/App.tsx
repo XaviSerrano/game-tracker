@@ -244,7 +244,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
-          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-12 w-auto animate-bounce mx-auto" />
+          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-10 w-auto animate-bounce mx-auto" />
           <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">{t('CARGANDO GAMETRACKER...')}</p>
         </div>
       </div>
@@ -272,7 +272,7 @@ export default function App() {
                 aria-label={t('Volver al inicio')}
                 className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
               >
-                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-7 w-auto" />
+                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-5 w-auto" />
                 <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
               </a>
               <div className="flex max-w-full items-center gap-3">
@@ -447,7 +447,7 @@ export default function App() {
             aria-label={t('Volver al inicio')}
             className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
           >
-            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-8 w-auto sm:h-9" />
+            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
             <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
           </a>
 

@@ -18,6 +18,27 @@ interface LandingPageProps {
   onGoHome: () => void;
 }
 
+const phoneScreens = [
+  {
+    src: '/screens/mobile-feed.png',
+    alt: 'Pantalla de inicio de GameTracker con la actividad reciente de la comunidad.',
+    caption: 'Actividad de la comunidad',
+    offset: 'sm:mt-10'
+  },
+  {
+    src: '/screens/mobile-game-detail.png',
+    alt: 'Detalle de un juego en GameTracker con descripción, géneros, tiempo de juego y plataformas.',
+    caption: 'Cada juego, al detalle',
+    offset: ''
+  },
+  {
+    src: '/screens/mobile-stats.png',
+    alt: 'Estadísticas de GameTracker con los juegos más jugados y el resumen de la biblioteca.',
+    caption: 'Tus estadísticas',
+    offset: 'sm:mt-10'
+  }
+] as const;
+
 const features = [
   {
     icon: LibraryBig,
@@ -62,7 +83,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             aria-label={t('Volver al inicio')}
             className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
           >
-            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-8 w-auto sm:h-9" />
+            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
             <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
           </a>
 
@@ -222,6 +243,34 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                   <h3 className="mt-5 text-base font-bold text-white">{t(title)}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">{t(description)}</p>
                 </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="movil-titulo" className="relative overflow-hidden border-t border-white/[0.07]">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_at_50%_100%,rgba(217,163,82,0.10),transparent_65%)]" />
+          <div className="relative mx-auto w-full max-w-[86rem] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+            <div className="max-w-3xl">
+              <h2 id="movil-titulo" className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-5xl">
+                {t('Tu biblioteca, siempre en el bolsillo.')}
+              </h2>
+              <p className="mt-5 max-w-[64ch] text-base leading-7 text-slate-300">
+                {t('Consulta la actividad de la comunidad, repasa cada juego y revisa tus estadísticas desde cualquier pantalla.')}
+              </p>
+            </div>
+
+            <div className="group/phones -mx-5 mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 pb-6 pt-4 sm:mx-auto sm:mt-16 sm:grid sm:max-w-5xl sm:grid-cols-3 sm:items-start sm:gap-8 sm:overflow-visible sm:px-0 lg:gap-12">
+              {phoneScreens.map(({ src, alt, caption, offset }) => (
+                <figure
+                  key={src}
+                  className={`w-[68%] shrink-0 snap-center transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none sm:w-auto sm:hover:-translate-y-3 sm:group-hover/phones:not-hover:opacity-50 ${offset}`}
+                >
+                  <div className="overflow-hidden rounded-[2rem] border-[6px] border-[#22262e] bg-[#0b0d12] shadow-[0_30px_70px_-30px_rgba(0,0,0,0.9)] ring-1 ring-white/10 sm:rounded-[2.25rem]">
+                    <img src={src} alt={t(alt)} loading="lazy" className="block h-auto w-full" />
+                  </div>
+                  <figcaption className="mt-4 text-center text-sm font-semibold text-slate-300">{t(caption)}</figcaption>
+                </figure>
               ))}
             </div>
           </div>

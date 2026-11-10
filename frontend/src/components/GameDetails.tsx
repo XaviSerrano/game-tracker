@@ -283,6 +283,26 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   const screenshots = game?.screenshots ?? [];
 
+  const [translatedSummary, setTranslatedSummary] = useState<{ gameId: number; language: string; text: string } | null>(null);
+  const displayedSummary =
+    translatedSummary && translatedSummary.gameId === game?.igdbId && translatedSummary.language === language
+      ? translatedSummary.text
+      : game?.summary ?? '';
+
+  useEffect(() => {
+    if (language !== 'es' || !game?.igdbId || !game.summary) return;
+    const controller = new AbortController();
+    fetch(`/api/games/${game.igdbId}/summary?lang=es`, { signal: controller.signal })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.translated && typeof data.summary === 'string') {
+          setTranslatedSummary({ gameId: game.igdbId, language: 'es', text: data.summary });
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [game?.igdbId, game?.summary, language]);
+
   const requireSession = () => {
     if (currentUser && token) return false;
     onAuthRequired?.();
@@ -822,7 +842,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             </div>
 
             <p className="max-w-3xl text-sm leading-7 text-slate-200">
-              {game.summary}
+              {displayedSummary}
             </p>
 
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -850,7 +870,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   <p className="mt-1 text-lg font-semibold leading-none text-white">{game.timeToBeat?.hastily ?? '--'}{game.timeToBeat?.hastily != null && <span className="ml-1 text-xs font-semibold text-slate-300">h</span>}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-300">{t('Normal')}</p>
+                  <p className="text-xs text-slate-300">{t('Historia + extras')}</p>
                   <p className="mt-1 text-lg font-semibold leading-none text-white">{game.timeToBeat?.normally ?? '--'}{game.timeToBeat?.normally != null && <span className="ml-1 text-xs font-semibold text-slate-300">h</span>}</p>
                 </div>
                 <div>
@@ -1008,7 +1028,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Mi rating (Puntuación)')}</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">{t('Rating')}</label>
                 <div className="flex bg-[#07090e] border border-slate-800 rounded-xl p-1.5 items-center justify-between">
                   <div className="flex gap-1 pl-1">
                     {[1, 2, 3, 4, 5].map((star) => (

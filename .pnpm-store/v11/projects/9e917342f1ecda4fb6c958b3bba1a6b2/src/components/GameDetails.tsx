@@ -795,7 +795,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   )}
                   {game.timeToBeat.normally && (
                     <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.09] px-3 py-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Normal</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Historia + extras</p>
                       <p className="mt-1 text-lg font-black leading-none text-white">{game.timeToBeat.normally}<span className="ml-1 text-xs font-semibold text-emerald-200/70">h</span></p>
                     </div>
                   )}
@@ -949,7 +949,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Mi rating (Puntuación)</label>
+                <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Rating</label>
                 <div className="flex bg-[#07090e] border border-slate-800 rounded-xl p-1.5 items-center justify-between">
                   <div className="flex gap-1 pl-1">
                     {[1, 2, 3, 4, 5].map((star) => (

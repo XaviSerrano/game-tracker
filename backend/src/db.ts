@@ -94,13 +94,25 @@ if (!connectionString) {
   );
 }
 
-// Render (y la mayoría de proveedores gestionados) requieren SSL para
-// conexiones externas, pero una Postgres local no lo soporta por defecto.
-const isLocalConnection = /localhost|127\.0\.0\.1/.test(connectionString);
+const databaseUrl = new URL(connectionString);
+const isLocalConnection = ['localhost', '127.0.0.1', '[::1]'].includes(databaseUrl.hostname);
 
+// Keep SSL verification under application control; pg URL SSL options can disable it.
+for (const key of [...databaseUrl.searchParams.keys()]) {
+  if (key.toLowerCase().startsWith('ssl')) {
+    databaseUrl.searchParams.delete(key);
+  }
+}
+
+const databaseSslCa = process.env.DATABASE_SSL_CA;
 const pool = new Pool({
-  connectionString,
-  ssl: isLocalConnection ? false : { rejectUnauthorized: false }
+  connectionString: databaseUrl.toString(),
+  ssl: isLocalConnection
+    ? false
+    : {
+        rejectUnauthorized: true,
+        ...(databaseSslCa ? { ca: databaseSslCa } : {})
+      }
 });
 
 pool.on('error', (err) => {

@@ -4,6 +4,7 @@ import express from 'express';
 import nodemailer from 'nodemailer';
 import { db, initDb } from './db.ts';
 import { IgdbService } from './services/igdb.ts';
+import { translateText } from './services/translate.ts';
 import type { Activity, ActivityType, User, UserGame, CustomList, Review } from '../../shared/types.ts';
 
 const app = express();
@@ -764,6 +765,37 @@ app.get('/api/games/:id/stores', async (req, res) => {
   } catch (err: any) {
     console.error('Store links failed:', err);
     res.json({});
+  }
+});
+
+// Descripción traducida de un juego (IGDB solo ofrece resúmenes en inglés)
+app.get('/api/games/:id/summary', async (req, res) => {
+  const idNum = parseInt(req.params.id);
+  if (isNaN(idNum)) {
+    return res.status(400).json({ error: 'ID de juego inválido' });
+  }
+
+  const lang = req.query.lang === 'es' ? 'es' : null;
+
+  try {
+    const game = await IgdbService.getGameDetails(idNum);
+    if (!game) {
+      return res.status(404).json({ error: 'Juego no encontrado' });
+    }
+
+    const summary = game.summary?.trim() ?? '';
+    if (!lang || !summary || summary === 'No summary available.') {
+      return res.json({ summary: game.summary ?? '', translated: false });
+    }
+
+    try {
+      res.json({ summary: await translateText(summary, lang, `${idNum}:${summary.length}`), translated: true });
+    } catch (err) {
+      console.error('Summary translation failed:', err);
+      res.json({ summary: game.summary, translated: false });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -258,7 +258,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0f121d] p-5 shadow-2xl sm:p-8">
         <div className="flex flex-col items-center mb-8">
-          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="mb-3 h-16 w-auto" />
+          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="mb-4 h-10 w-auto" />
           <h1 className="mb-1 text-balance text-3xl font-semibold font-display tracking-tight text-white">
             <a
               href="/"

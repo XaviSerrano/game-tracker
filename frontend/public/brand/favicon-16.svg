@@ -1,15 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 120" role="img" aria-labelledby="title desc">
-<title id="title">Gamepad logo</title>
-<desc id="desc">Gamepad-inspired scalable vector logo.</desc>
-<defs>
-
-<linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#887cff"/><stop offset="1" stop-color="#29208c"/></linearGradient>
-
-</defs>
-<path d="M22 25 Q32 12 64 12 Q96 12 106 25 Q123 22 128 43 L136 79 Q139 99 123 101 Q110 103 101 84 L91 73 Q78 84 64 84 Q50 84 37 73 L27 84 Q18 103 5 101 Q-11 99 -8 79 L0 43 Q5 22 22 25Z" transform="translate(8,4)" fill="url(#f)" stroke="#17145b" stroke-width="5" stroke-linejoin="round"/>
-<circle cx="39" cy="49" r="13" fill="#f4f5ff" stroke="#28205f" stroke-width="5"/>
-<path d="M24 78h10V68h10v10h10v10H44v10H34V88H24Z" fill="#f4f5ff" stroke="#28205f" stroke-width="3" stroke-linejoin="round"/>
-<circle cx="91" cy="48" r="14" fill="#00c9bd" stroke="#075b79" stroke-width="4"/>
-<circle cx="75" cy="68" r="7" fill="#f4b400" stroke="#704600" stroke-width="3"/>
-<circle cx="109" cy="70" r="7" fill="#ef3348" stroke="#7d183c" stroke-width="3"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges">
+  <title>Mando retro - favicon 16</title>
+  <rect x="0" y="3" width="16" height="10" rx="5" fill="#9CA3AF"/>
+  <g fill="#fff">
+    <rect x="2" y="7" width="5" height="2"/>
+    <rect x="3.5" y="5.5" width="2" height="5"/>
+  </g>
+  <rect x="11" y="5.5" width="2" height="2" fill="#FF4D63"/>
+  <rect x="9" y="8.5" width="2" height="2" fill="#FFD23F"/>
 </svg>

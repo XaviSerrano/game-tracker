@@ -1,57 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
-<title id="title">Gamepad logo</title>
-<desc id="desc">Gamepad-inspired scalable vector logo.</desc>
-<defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" width="480" height="240" role="img" aria-label="Mando retro">
+  <title>Mando retro - logo principal</title>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F1F1F3"/>
+      <stop offset="1" stop-color="#C9C9CF"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A9A9AF"/>
+      <stop offset="1" stop-color="#8A8A91"/>
+    </linearGradient>
+    <linearGradient id="dpad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5A5A62"/>
+      <stop offset="1" stop-color="#3A3A41"/>
+    </linearGradient>
+    <radialGradient id="blue" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#6C93F2"/><stop offset="1" stop-color="#2450C2"/></radialGradient>
+    <radialGradient id="green" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#58C97A"/><stop offset="1" stop-color="#1F8A41"/></radialGradient>
+    <radialGradient id="red" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#F2677A"/><stop offset="1" stop-color="#C41E31"/></radialGradient>
+    <radialGradient id="yellow" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFE07A"/><stop offset="1" stop-color="#E0B01B"/></radialGradient>
+  </defs>
 
-<linearGradient id="shell" x1="0" y1="0" x2="0.85" y2="1">
-  <stop offset="0" stop-color="#8d82ff"/>
-  <stop offset=".48" stop-color="#5142d6"/>
-  <stop offset="1" stop-color="#241c83"/>
-</linearGradient>
-<linearGradient id="face" x1="0" y1="0" x2="1" y2="1">
-  <stop offset="0" stop-color="#776cff"/><stop offset="1" stop-color="#3527ad"/>
-</linearGradient>
-<linearGradient id="white" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#b9c4e5"/>
-</linearGradient>
-<linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#36f4e4"/><stop offset="1" stop-color="#00a99f"/>
-</linearGradient>
-<linearGradient id="yellow" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#ffe56b"/><stop offset="1" stop-color="#f5a900"/>
-</linearGradient>
-<filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-  <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
-  <feOffset dy="8"/><feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer>
-  <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-</filter>
+  <!-- cuerpo -->
+  <path d="M110 36H370A84 84 0 0 1 454 120A84 84 0 0 1 370 204C330 204 310 176 240 176C170 176 150 204 110 204A84 84 0 0 1 26 120A84 84 0 0 1 110 36Z"
+        fill="url(#body)" stroke="#8E8E96" stroke-width="4" stroke-linejoin="round"/>
 
-</defs>
-<g><path d="M150 118 C190 76 280 54 400 54 C520 54 610 76 650 118
-C704 111 741 145 755 207 L785 356 C797 421 766 449 715 443
-C674 438 655 390 633 330 L596 286 C570 306 540 327 507 344
-C472 363 432 374 400 374 C368 374 328 363 293 344
-C260 327 230 306 204 286 L167 330 C145 390 126 438 85 443
-C34 449 3 421 15 356 L45 207 C59 145 96 111 150 118 Z"
-fill="url(#shell)" stroke="#211a78" stroke-width="12" stroke-linejoin="round" filter="url(#shadow)"/><path d="M150 118 C220 91 310 80 400 80 C490 80 580 91 650 118" fill="none" stroke="#c2bbff" stroke-width="7" stroke-linecap="round" opacity=".8"/>
-<path d="M95 190 C105 145 151 132 190 154 C226 174 240 218 224 254 C209 290 166 303 129 282 C92 260 83 226 95 190Z" fill="url(#face)" stroke="#30258e" stroke-width="8"/>
-<path d="M705 190 C695 145 649 132 610 154 C574 174 560 218 576 254 C591 290 634 303 671 282 C708 260 717 226 705 190Z" fill="url(#face)" stroke="#30258e" stroke-width="8"/>
-<circle cx="160" cy="218" r="45" fill="#28245f" stroke="#171445" stroke-width="9"/>
-<circle cx="160" cy="218" r="34" fill="url(#white)" stroke="#8c98c4" stroke-width="5"/>
-<circle cx="160" cy="218" r="20" fill="none" stroke="#9da9cf" stroke-width="5"/>
-<circle cx="160" cy="218" r="8" fill="#e8edff"/>
-<path d="M105 333 h34 v-34 h30 v34 h34 v30 h-34 v34 h-30 v-34 h-34Z" fill="url(#white)" stroke="#22205c" stroke-width="9" stroke-linejoin="round"/>
-<circle cx="400" cy="230" r="16" fill="url(#white)" stroke="#29215f" stroke-width="6"/>
-<circle cx="605" cy="168" r="24" fill="url(#white)" stroke="#28205f" stroke-width="7"/>
-<text x="605" y="177" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#777fa8">Y</text>
-<circle cx="685" cy="226" r="25" fill="url(#white)" stroke="#28205f" stroke-width="7"/>
-<text x="685" y="235" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#777fa8">X</text>
-<circle cx="594" cy="255" r="27" fill="#ed3046" stroke="#7d183c" stroke-width="7"/>
-<text x="594" y="264" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#fff">B</text>
-<circle cx="650" cy="215" r="38" fill="url(#cyan)" stroke="#075b79" stroke-width="8"/>
-<text x="650" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="900" fill="#087d87">A</text>
-<circle cx="510" cy="344" r="37" fill="url(#yellow)" stroke="#9b5a08" stroke-width="8"/>
-<text x="510" y="356" text-anchor="middle" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="#9b5a08">C</text>
-</g>
-<text x="400" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="900" letter-spacing="7" fill="#e9e8ff">GAMEPAD</text>
+  <!-- base cruceta -->
+  <circle cx="110" cy="120" r="56" fill="#DADADF" stroke="#B4B4BB" stroke-width="2"/>
+  <!-- cruceta -->
+  <g fill="url(#dpad)">
+    <rect x="94" y="78" width="32" height="84" rx="7"/>
+    <rect x="68" y="104" width="84" height="32" rx="7"/>
+  </g>
+  <circle cx="110" cy="120" r="6" fill="#2C2C32"/>
+
+  <!-- select / start -->
+  <g fill="#6B6B73">
+    <rect x="178" y="122" width="44" height="16" rx="8" transform="rotate(-35 200 130)"/>
+    <rect x="228" y="122" width="44" height="16" rx="8" transform="rotate(-35 250 130)"/>
+  </g>
+
+  <!-- placa botones -->
+  <circle cx="370" cy="120" r="66" fill="url(#plate)"/>
+  <rect x="338" y="104" width="64" height="32" rx="16" transform="rotate(-45 370 120)" fill="#C9C9CF" opacity=".55"/>
+
+  <!-- botones: X arriba, Y izquierda, A derecha, B abajo -->
+  <circle cx="370" cy="86"  r="17" fill="url(#blue)"/>
+  <circle cx="336" cy="120" r="17" fill="url(#green)"/>
+  <circle cx="404" cy="120" r="17" fill="url(#red)"/>
+  <circle cx="370" cy="154" r="17" fill="url(#yellow)"/>
 </svg>
