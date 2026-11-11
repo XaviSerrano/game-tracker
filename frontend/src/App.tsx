@@ -38,7 +38,7 @@ const SECTION_PATHS: Record<MainTab, string> = {
 };
 
 export default function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const reducedMotion = useReducedMotion();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -114,6 +114,46 @@ export default function App() {
   const routeTab = (Object.entries(SECTION_PATHS).find(([, path]) => path === pathname)?.[0] || null) as MainTab | null;
   const isNotFoundPath = pathname !== '/' && !isGamePath && !routeTab;
   const showGameNotFound = isGamePath && !isKnownGamePath;
+
+  useEffect(() => {
+    const titles: Record<MainTab, string> = {
+      feed: t('Tu actividad de videojuegos | GameTracker'),
+      discover: t('Descubre videojuegos y encuentra tu próximo juego | GameTracker'),
+      library: t('Biblioteca de videojuegos | GameTracker'),
+      lists: t('Listas de videojuegos | GameTracker'),
+      stats: t('Estadísticas de videojuegos | GameTracker'),
+      profile: t('Perfil de jugador | GameTracker')
+    };
+    const pageTitle = pathname === '/'
+      ? t(currentUser ? 'Tu actividad de videojuegos | GameTracker' : 'Organiza tu colección de videojuegos | GameTracker')
+      : pathname === '/discover'
+        ? titles.discover
+        : isKnownGamePath
+          ? t('Ficha de videojuego | GameTracker')
+          : isNotFoundPath || showGameNotFound
+            ? t('Página no encontrada | GameTracker')
+            : routeTab
+              ? titles[routeTab]
+              : t('Página no encontrada | GameTracker');
+    const description = pathname === '/discover'
+      ? t('Explora videojuegos por género, plataforma, año y valoración. Descubre próximos lanzamientos y encuentra tu siguiente aventura en el catálogo de GameTracker.')
+      : isNotFoundPath || showGameNotFound
+        ? t('No encontramos la página que buscas. Explora el catálogo de videojuegos de GameTracker.')
+        : isKnownGamePath
+          ? t('Descubre información, plataformas, valoraciones y reseñas de videojuegos en GameTracker.')
+          : t('Organiza tu colección de videojuegos, registra tus partidas y horas, crea listas y descubre qué jugar después con GameTracker.');
+    const isPublicRoute = pathname === '/' || pathname === '/discover' || isKnownGamePath;
+    const isIndexable = isPublicRoute && !currentUser;
+
+    document.title = pageTitle;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="robots"]')?.setAttribute('content', isIndexable ? 'index,follow' : 'noindex,follow');
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', pageTitle);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:locale"]')?.setAttribute('content', language === 'es' ? 'es_ES' : 'en_US');
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', pageTitle);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+  }, [currentUser, isKnownGamePath, isNotFoundPath, language, pathname, routeTab, showGameNotFound, t]);
 
   if (isNotFoundPath || showGameNotFound) {
     return (

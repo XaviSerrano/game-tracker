@@ -271,6 +271,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [libraryReady, setLibraryReady] = useState(false);
   const progressPhaseOptions = PROGRESS_PHASE_OPTIONS.map(option => ({
     ...option,
     label: t(option.label),
@@ -288,6 +289,26 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     translatedSummary && translatedSummary.gameId === game?.igdbId && translatedSummary.language === language
       ? translatedSummary.text
       : game?.summary ?? '';
+
+  useEffect(() => {
+    if (!game) return;
+
+    const suffix = language === 'es'
+      ? 'ficha, plataformas y valoraciones'
+      : 'details, platforms, and ratings';
+    const title = `${game.name}: ${suffix} | GameTracker`;
+    const fullDescription = displayedSummary || t('Descubre información, plataformas, valoraciones y reseñas de videojuegos en GameTracker.');
+    const description = fullDescription.length > 160
+      ? `${fullDescription.slice(0, 157).trimEnd()}...`
+      : fullDescription;
+
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+  }, [displayedSummary, game, language, t]);
 
   useEffect(() => {
     if (language !== 'es' || !game?.igdbId || !game.summary) return;
@@ -320,6 +341,15 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const fetchGameData = async () => {
     setLoading(true);
     setErrorMessage(null);
+    setLibraryReady(false);
+    setUserGame(null);
+    setIsInWishlist(false);
+    setStatus('WISHLIST');
+    setRating(0);
+    setHoursPlayed(0);
+    setNotes('');
+    setStartedAt('');
+    setCompletedAt('');
     try {
       // 1. Fetch game details
       const gameRes = await fetch(`/api/games/${gameId}`);
@@ -356,8 +386,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             setNotes(found.notes);
             setStartedAt(found.startedAt || '');
             setCompletedAt(found.completedAt || '');
-            setIsInWishlist(found.status === 'WISHLIST');
+            setIsInWishlist(found.isInWishlist);
           }
+          setLibraryReady(true);
+        } else {
+          setMessage(`Error: ${t('No se pudo cargar tu biblioteca.')}`);
         }
 
         const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`, {
@@ -372,6 +405,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       }
     } catch (err) {
       console.error(err);
+      if (currentUser && token) setMessage(`Error: ${t('No se pudo cargar tu biblioteca.')}`);
     } finally {
       setLoading(false);
     }
@@ -442,6 +476,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       
       setUserGame(data);
       setStatus(nextStatus);
+      setIsInWishlist(data.isInWishlist);
       setMessage(successMessage);
       setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
@@ -456,88 +491,35 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   const handleToggleWishlist = async () => {
     if (savingWishlist) return;
+    if (requireSession()) return;
 
     setSavingWishlist(true);
     setMessage('');
 
     try {
-      if (isInWishlist) {
-        // Eliminar de wishlist
-        const res = await fetch(`/api/library/${gameId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.ok) {
-          setIsInWishlist(false);
-          setUserGame(null);
-          setStatus('WISHLIST');
-          setRating(0);
-          setHoursPlayed(0);
-          setNotes('');
-          setStartedAt('');
-          setCompletedAt('');
-          setMessage(t('Juego removido de tu wishlist.'));
-          setTimeout(() => setMessage(''), 3000);
-        }
-      } else {
-        // Añadir a wishlist
+      if (!isInWishlist && !userGame) {
         const importRes = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
         const importData = await importRes.json();
         if (!importRes.ok) {
           throw new Error(importData?.error || 'No se pudo importar el juego.');
         }
-
-        const saveRes = await fetch('/api/library', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ gameId, status: 'WISHLIST' })
-        });
-        const saveData = await saveRes.json();
-        if (!saveRes.ok) {
-          throw new Error(saveData?.error || 'No se pudo añadir a wishlist.');
-        }
-
-        setIsInWishlist(true);
-        setUserGame(saveData);
-        setStatus(saveData.status);
-        setMessage(t('¡Juego añadido a tu wishlist!'));
-        setTimeout(() => setMessage(''), 3000);
       }
+      const saveRes = await fetch(`/api/library/${gameId}/wishlist`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ enabled: !isInWishlist })
+      });
+      const saveData = await saveRes.json();
+      if (!saveRes.ok) throw new Error(saveData?.error || 'No se pudo actualizar la wishlist.');
+      setIsInWishlist(!isInWishlist);
+      setUserGame(saveData.userGame);
+      if (saveData.userGame) setStatus(saveData.userGame.status);
+      setMessage(isInWishlist ? t('Juego removido de tu wishlist.') : t('¡Juego añadido a tu wishlist!'));
+      setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
       setMessage(`Error: ${t(err.message)}`);
     } finally {
       setSavingWishlist(false);
-    }
-  };
-
-  const handleDeleteTracking = async () => {
-    if (!window.confirm(t('¿Seguro que deseas eliminar este juego de tu biblioteca?'))) return;
-    try {
-      const res = await fetch(`/api/library/${gameId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        setUserGame(null);
-        setIsInWishlist(false);
-        setStatus('WISHLIST');
-        setRating(0);
-        setHoursPlayed(0);
-        setNotes('');
-        setStartedAt('');
-        setCompletedAt('');
-        setMessage(t('Juego eliminado de tu biblioteca.'));
-        setTimeout(() => setMessage(''), 3000);
-      }
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -880,6 +862,25 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
             </div>
 
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-4 border-t border-white/15 pt-4 sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="text-xs text-slate-400">{t('Desarrolladora')}</dt>
+                <dd className="mt-1 break-words text-sm text-slate-200">{game.developers?.join(', ') || t('Desconocido')}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-slate-400">{t('Distribuidora')}</dt>
+                <dd className="mt-1 break-words text-sm text-slate-200">{game.publishers?.join(', ') || t('Desconocido')}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs text-slate-400">{t('Fecha de lanzamiento')}</dt>
+                <dd className="mt-1 text-sm text-slate-200">
+                  {game.releaseDate && game.releaseDate !== 'Unknown' && !Number.isNaN(new Date(game.releaseDate).getTime())
+                    ? new Intl.DateTimeFormat(dateLocale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(game.releaseDate))
+                    : t('Desconocido')}
+                </dd>
+              </div>
+            </dl>
+
             {game.platforms.length > 0 && (
               <div className="space-y-2 pt-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Plataformas')}</p>
@@ -935,7 +936,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleWishlist}
-                  disabled={savingWishlist}
+                  disabled={savingWishlist || (!!currentUser && !!token && !libraryReady)}
                   aria-label={isInWishlist ? t('Remover de Wishlist') : t('Añadir a Wishlist')}
                   aria-pressed={isInWishlist}
                   title={isInWishlist ? t('Remover de Wishlist') : t('Añadir a Wishlist')}

@@ -115,14 +115,14 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
       <main>
         <section className="relative border-b border-white/[0.06]">
           <div aria-hidden="true" className="pointer-events-none absolute -right-36 top-8 size-[28rem] rounded-full bg-[#d9a352]/[0.045] blur-3xl" />
-          <div className="relative mx-auto grid w-full max-w-[86rem] items-center gap-14 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-12 lg:py-28">
+          <div className="relative mx-auto grid w-full max-w-[86rem] items-center gap-14 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[minmax(0,9fr)_minmax(0,11fr)] lg:gap-16 lg:px-12 lg:py-28">
             <div className="max-w-2xl">
               <h1 className="text-balance text-5xl font-extrabold leading-[1.04] tracking-[-0.045em] text-white sm:text-6xl xl:text-7xl">
-                {t('Tu historia gamer, en un solo lugar.')}
-                <span className="mt-2 block text-[#e5b974]">{t('A tu manera.')}</span>
+                {t('Organiza tu colección de videojuegos.')}
+                <span className="mt-2 block text-[#e5b974]">{t('Descubre qué jugar después.')}</span>
               </h1>
               <p className="mt-7 max-w-[56ch] text-pretty text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
-                {t('Organiza lo que juegas, sigue tus progresos y descubre tu próximo juego junto a otros jugadores.')}
+                {t('Organiza tu colección de videojuegos, registra tu progreso y descubre tu próximo juego junto a otros jugadores.')}
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <button
@@ -145,9 +145,8 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
               <p className="mt-5 text-sm text-slate-400">{t('Tu colección, tu ritmo, tus próximas aventuras.')}</p>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[38rem] lg:mx-0 lg:ml-auto">
-              <div aria-hidden="true" className="pointer-events-none absolute -inset-5 rounded-[2rem] border border-[#d9a352]/10 sm:-inset-7" />
-              <div className="relative overflow-hidden rounded-3xl border border-[#d9a352]/20 bg-[#111317] p-5 shadow-[0_24px_70px_-28px_rgba(217,163,82,0.28)] sm:p-7">
+            <div className="relative mx-auto w-full max-w-[38rem] lg:mx-0 lg:max-w-none">
+              <div>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <span className="grid size-11 place-items-center rounded-xl bg-[#d9a352]/10 text-[#e5b974]">
@@ -158,46 +157,19 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                       <p className="mt-1 text-xs text-slate-400">{t('Todo lo que juegas, en orden.')}</p>
                     </div>
                   </div>
-                  <span className="grid size-10 place-items-center rounded-full border border-white/10 text-slate-300">
-                    <Search className="size-4" aria-hidden="true" />
-                  </span>
                 </div>
 
-                <div className="mt-7 flex flex-wrap gap-2" aria-label={t('Estados de juego')}>
-                  {[
-                    ['Jugando', 'bg-[#d9a352]/15 text-[#f0c77f]'],
-                    ['Pendientes', 'bg-slate-700/50 text-slate-300'],
-                    ['Completados', 'bg-emerald-500/10 text-emerald-300']
-                  ].map(([label, className]) => (
-                    <span key={label} className={`rounded-full px-3 py-1.5 text-xs font-semibold ${className}`}>
-                      {t(label)}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-6 border-t border-white/[0.08] pt-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{t('Explora a tu ritmo')}</p>
-                      <p className="mt-2 text-sm font-semibold text-white">{t('De lo pendiente a lo inolvidable.')}</p>
-                    </div>
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl border border-[#d9a352]/20 bg-[#d9a352]/[0.07] text-[#e5b974]">
-                      <Gamepad2 className="size-6" aria-hidden="true" />
-                    </span>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {['RPG', 'Aventura', 'Indie', 'Estrategia'].map((genre) => (
-                      <span key={genre} className="rounded-lg border border-white/[0.08] px-2.5 py-1.5 text-xs text-slate-400">
-                        {t(genre)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <img
+                  src="/library-preview.png"
+                  alt={t('Vista previa de la biblioteca de GameTracker con filtros y una colección de videojuegos.')}
+                  width="1092"
+                  height="768"
+                  className="mt-6 block h-auto w-full rounded-xl border border-white/[0.08]"
+                />
               </div>
-              <div className="relative mt-4 flex items-center justify-between gap-4 px-1 text-xs text-slate-400">
-                <span>{t('Una biblioteca que crece contigo.')}</span>
+              <div className="relative mt-4 flex items-center justify-end gap-4 px-1 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5 text-[#e5b974]">
-                  <span className="size-1.5 rounded-full bg-[#d9a352]" aria-hidden="true" />
+                  <span className="size-1.5 rounded-full bg-[#d9a352]" aria-hidden="true"/>
                   {t('Hecha para jugar a tu manera')}
                 </span>
               </div>
@@ -273,6 +245,38 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 </figure>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="listas-titulo" className="border-t border-white/[0.07]">
+          <div className="mx-auto grid w-full max-w-[86rem] items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:px-12 lg:py-24">
+            <div>
+              <h2 id="listas-titulo" className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-4xl">
+                {t('Tus juegos, tus listas.')}
+              </h2>
+              <p className="mt-5 max-w-[52ch] text-base leading-7 text-slate-300">
+                {t('Crea colecciones temáticas para ordenar tus juegos como más sentido tenga para ti.')}
+              </p>
+              <p className="mt-4 max-w-[52ch] text-base leading-7 text-slate-400">
+                {t('Reúne tus próximos juegos, tus favoritos o los títulos que quieras recordar en una lista propia.')}
+              </p>
+            </div>
+            <figure className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-[0_28px_90px_-42px_rgba(217,163,82,0.28)]">
+              <div aria-hidden="true" className="flex h-11 items-center gap-2 border-b border-white/[0.08] bg-[#111317] px-4">
+                <span className="size-2.5 rounded-full bg-slate-600" />
+                <span className="size-2.5 rounded-full bg-slate-600" />
+                <span className="size-2.5 rounded-full bg-[#d9a352]/80" />
+                <span className="ml-3 h-6 min-w-0 flex-1 truncate rounded-md border border-white/[0.06] bg-[#0b0d12] px-3 text-left text-[0.6875rem] leading-6 text-slate-500">
+                  {t('GameTracker · Vista previa de listas')}
+                </span>
+              </div>
+              <img
+                src="/custom-list-preview.png"
+                alt={t('Ejemplo de una lista personalizada con cinco videojuegos.')}
+                className="block h-auto w-full"
+                loading="lazy"
+              />
+            </figure>
           </div>
         </section>
 

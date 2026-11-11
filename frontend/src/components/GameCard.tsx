@@ -21,6 +21,8 @@ interface GameCardProps {
 
   // Callbacks
   onSelectGame: (gameId: number) => void;
+  onManageStatus?: (game: Game) => void;
+  statusActionDisabled?: boolean;
   onToggleWishlist?: (
     gameId: number,
     e: React.MouseEvent<HTMLButtonElement>
@@ -40,6 +42,8 @@ export const GameCard: React.FC<GameCardProps> = ({
   variant = 'default',
   showDiscoverMeta = false,
   onSelectGame,
+  onManageStatus,
+  statusActionDisabled = false,
   onToggleWishlist,
   togglingWishlistId,
   savingWishlistGameId,
@@ -53,9 +57,8 @@ export const GameCard: React.FC<GameCardProps> = ({
   const showFullLibraryCard = userGameStatus !== undefined;
   const isFeedCard = variant === 'feed';
 
-  const bookmarkActive = showFullLibraryCard
-    ? userGameStatus === 'WISHLIST'
-    : isInWishlist;
+  const bookmarkActive = isInWishlist ?? userGameStatus === 'WISHLIST';
+  const hasProgress = userGameStatus !== undefined && userGameStatus !== 'WISHLIST';
   const statusLabels: Record<GameStatus, string> = {
     WISHLIST: t('Pendiente'),
     PLAYING: t('Jugando'),
@@ -122,6 +125,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           <button
             type="button"
             aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
+            aria-pressed={bookmarkActive}
             onClick={(e) => {
               e.stopPropagation();
               onToggleWishlist(game.igdbId, e);
@@ -141,10 +145,11 @@ export const GameCard: React.FC<GameCardProps> = ({
               cursor-pointer
               disabled:cursor-not-allowed
               disabled:opacity-60
+              bg-black/85
               ${
                 bookmarkActive
-                  ? 'bg-indigo-500/20 border border-indigo-500/40 text-indigo-300'
-                  : 'bg-black/85 border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40'
+                  ? 'border border-indigo-500/40 text-indigo-300'
+                  : 'border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40'
               }
             `}
           >
@@ -154,6 +159,22 @@ export const GameCard: React.FC<GameCardProps> = ({
                 ${bookmarkActive ? 'fill-indigo-400 text-indigo-400' : ''}
               `}
             />
+          </button>
+        )}
+
+        {onManageStatus && !isFeedCard && (
+          <button
+            type="button"
+            aria-label={`${t('Gestionar estado del juego')}: ${game.name}${hasProgress ? ` (${statusLabels[userGameStatus]})` : ''}`}
+            title={hasProgress ? `${t('Gestionar estado del juego')}: ${statusLabels[userGameStatus]}` : t('Gestionar estado del juego')}
+            disabled={statusActionDisabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onManageStatus(game);
+            }}
+            className={`absolute left-2 ${onToggleWishlist ? 'top-14' : 'top-2'} flex h-10 w-10 items-center justify-center rounded-full border ${hasProgress ? 'border-[#d9a352] bg-[#44351d] text-[#ffdb9d]' : 'border-slate-700 bg-black/85 text-slate-200'} hover:border-[#d9a352]/60 hover:text-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            <Gamepad2 className="size-5" aria-hidden="true" />
           </button>
         )}
 
@@ -168,7 +189,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         {/* Library status */}
         {showFullLibraryCard && (
           <div className="absolute bottom-2 left-2 right-2 flex justify-between gap-1">
-            <span
+            {(userGameStatus !== 'WISHLIST' || bookmarkActive) && <span
               className={`
                 text-[10px]
                 font-bold
@@ -190,9 +211,9 @@ export const GameCard: React.FC<GameCardProps> = ({
               `}
             >
               {statusLabels[userGameStatus]}
-            </span>
+            </span>}
 
-            {userGameHours && userGameHours > 0 && (
+            {userGameHours !== undefined && userGameHours > 0 && (
               <span className="text-[10px] font-bold bg-black/85 backdrop-blur-md border border-slate-750 rounded-full px-2 py-0.5 font-mono text-slate-300">
                 {userGameHours}h
               </span>

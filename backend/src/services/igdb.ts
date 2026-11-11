@@ -1702,7 +1702,9 @@ export class IgdbService {
     if (
       local &&
       local.screenshots.length > 0 &&
-      local.timeToBeat !== undefined
+      local.timeToBeat !== undefined &&
+      local.developers !== undefined &&
+      local.publishers !== undefined
     ) {
       return local;
     }
@@ -1733,6 +1735,9 @@ export class IgdbService {
               genres.name,
               platforms.name,
               first_release_date,
+              involved_companies.company.name,
+              involved_companies.developer,
+              involved_companies.publisher,
               total_rating,
               total_rating_count,
               screenshots.url;
@@ -1762,6 +1767,17 @@ export class IgdbService {
 
       const mapped =
         mapIgdbGame(data[0]);
+
+      const companies: Array<{ developer?: boolean; publisher?: boolean; company?: { name?: unknown } }> =
+        Array.isArray(data[0].involved_companies) ? data[0].involved_companies : [];
+      const companyNames = (role: 'developer' | 'publisher'): string[] =>
+        [...new Set(companies
+          .filter(company => company[role] === true)
+          .map(company => company.company?.name)
+          .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+          .map(name => name.trim()))];
+      mapped.developers = companyNames('developer');
+      mapped.publishers = companyNames('publisher');
 
       mapped.timeToBeat =
         await getGameTimeToBeat(

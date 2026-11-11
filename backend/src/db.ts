@@ -151,6 +151,8 @@ export async function initDb(): Promise<void> {
       genres TEXT NOT NULL DEFAULT '[]',
       platforms TEXT NOT NULL DEFAULT '[]',
       "releaseDate" TEXT NOT NULL DEFAULT '',
+      developers TEXT,
+      publishers TEXT,
       rating DOUBLE PRECISION DEFAULT 0,
       popularity DOUBLE PRECISION DEFAULT 0,
       "averagePlaytimeHours" DOUBLE PRECISION,
@@ -162,6 +164,7 @@ export async function initDb(): Promise<void> {
       "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       "gameId" INTEGER NOT NULL REFERENCES games("igdbId") ON DELETE CASCADE,
       status TEXT NOT NULL,
+      "isInWishlist" BOOLEAN,
       rating DOUBLE PRECISION NOT NULL DEFAULT 0,
       "hoursPlayed" DOUBLE PRECISION NOT NULL DEFAULT 0,
       "startedAt" TEXT,
@@ -245,10 +248,16 @@ export async function initDb(): Promise<void> {
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS screenshots TEXT NOT NULL DEFAULT '[]'`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "averagePlaytimeHours" DOUBLE PRECISION`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "timeToBeat" TEXT NOT NULL DEFAULT '{}'`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS developers TEXT`);
+  await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS publishers TEXT`);
   await pool.query(
     `UPDATE users SET avatar = '/default-avatar.svg' WHERE avatar = '' OR avatar LIKE 'https://api.dicebear.com/%'`
   );
   await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "addedAt" TEXT`);
+  await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "isInWishlist" BOOLEAN`);
+  await pool.query(`UPDATE "userGames" SET "isInWishlist" = (status = 'WISHLIST') WHERE "isInWishlist" IS NULL`);
+  await pool.query(`ALTER TABLE "userGames" ALTER COLUMN "isInWishlist" SET DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE "userGames" ALTER COLUMN "isInWishlist" SET NOT NULL`);
   await pool.query(`UPDATE "userGames" SET "addedAt" = "updatedAt" WHERE "addedAt" IS NULL`);
 
   console.log('📦 PostgreSQL: esquema verificado/creado correctamente');
@@ -287,6 +296,8 @@ function hydrateGame(row: any): Game {
     genres: parseJson<string[]>(row.genres, []),
     platforms: parseJson<string[]>(row.platforms, []),
     releaseDate: row.releaseDate ?? '',
+    developers: row.developers == null ? undefined : parseJson<string[]>(row.developers, []),
+    publishers: row.publishers == null ? undefined : parseJson<string[]>(row.publishers, []),
     rating: Number(row.rating ?? 0),
     popularity: Number(row.popularity ?? 0),
     averagePlaytimeHours: row.averagePlaytimeHours == null ? undefined : Number(row.averagePlaytimeHours),
@@ -300,6 +311,7 @@ function hydrateUserGame(row: any): UserGame {
     userId: row.userId,
     gameId: Number(row.gameId),
     status: row.status as GameStatus,
+    isInWishlist: row.isInWishlist,
     rating: Number(row.rating ?? 0),
     hoursPlayed: Number(row.hoursPlayed ?? 0),
     startedAt: row.startedAt ?? null,
@@ -745,9 +757,9 @@ class GameDatabase {
       `
         INSERT INTO games (
           "igdbId", name, slug, cover, summary, genres, platforms,
-          "releaseDate", rating, popularity, "averagePlaytimeHours", "timeToBeat", screenshots
+          "releaseDate", rating, popularity, "averagePlaytimeHours", "timeToBeat", screenshots, developers, publishers
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT ("igdbId")
         DO UPDATE SET
           name = excluded.name,
@@ -761,7 +773,9 @@ class GameDatabase {
           popularity = excluded.popularity,
           "averagePlaytimeHours" = excluded."averagePlaytimeHours",
           "timeToBeat" = excluded."timeToBeat",
-          screenshots = excluded.screenshots
+          screenshots = excluded.screenshots,
+          developers = COALESCE(excluded.developers, games.developers),
+          publishers = COALESCE(excluded.publishers, games.publishers)
       `,
       [
         game.igdbId,
@@ -776,7 +790,9 @@ class GameDatabase {
         game.popularity ?? 0,
         game.averagePlaytimeHours ?? null,
         serializeJson(game.timeToBeat),
-        serializeJson(game.screenshots)
+        serializeJson(game.screenshots),
+        game.developers === undefined ? null : serializeJson(game.developers),
+        game.publishers === undefined ? null : serializeJson(game.publishers)
       ]
     );
 
@@ -808,7 +824,6 @@ class GameDatabase {
       `SELECT * FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2`,
       [userId, gameId]
     );
-
     return rows[0] ? hydrateUserGame(rows[0]) : null;
   }
 
@@ -820,13 +835,13 @@ class GameDatabase {
       updatedAt
     };
 
-    await this.pool.query(
+    const { rows } = await this.pool.query(
       `
         INSERT INTO "userGames" (
           "userId", "gameId", status, rating, "hoursPlayed",
-          "startedAt", "completedAt", notes, "updatedAt", "addedAt"
+          "startedAt", "completedAt", notes, "updatedAt", "addedAt", "isInWishlist"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ON CONFLICT ("userId", "gameId")
         DO UPDATE SET
           status = excluded.status,
@@ -836,6 +851,7 @@ class GameDatabase {
           "completedAt" = excluded."completedAt",
           notes = excluded.notes,
           "updatedAt" = excluded."updatedAt"
+        RETURNING *
       `,
       [
         updatedUserGame.userId,
@@ -847,11 +863,12 @@ class GameDatabase {
         updatedUserGame.completedAt ?? null,
         updatedUserGame.notes ?? '',
         updatedAt,
-        updatedAt
+        updatedAt,
+        updatedUserGame.isInWishlist
       ]
     );
 
-    return updatedUserGame;
+    return hydrateUserGame(rows[0]);
   }
 
   async deleteUserGame(
@@ -864,6 +881,33 @@ class GameDatabase {
     );
 
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async setWishlist(userId: string, gameId: number, enabled: boolean): Promise<UserGame | null> {
+    if (!enabled) {
+      const deleted = await this.pool.query(
+        `DELETE FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2 AND status = 'WISHLIST'
+         AND rating = 0 AND "hoursPlayed" = 0 AND notes = '' AND "startedAt" IS NULL AND "completedAt" IS NULL`,
+        [userId, gameId]
+      );
+      if (deleted.rowCount) return null;
+      const { rows } = await this.pool.query(
+        `UPDATE "userGames" SET "isInWishlist" = FALSE, "updatedAt" = $3
+         WHERE "userId" = $1 AND "gameId" = $2 RETURNING *`,
+        [userId, gameId, nowIso()]
+      );
+      return rows[0] ? hydrateUserGame(rows[0]) : null;
+    }
+
+    const now = nowIso();
+    const { rows } = await this.pool.query(
+      `INSERT INTO "userGames" ("userId", "gameId", status, "isInWishlist", "updatedAt", "addedAt")
+       VALUES ($1, $2, 'WISHLIST', TRUE, $3, $3)
+       ON CONFLICT ("userId", "gameId") DO UPDATE SET "isInWishlist" = TRUE, "updatedAt" = excluded."updatedAt"
+       RETURNING *`,
+      [userId, gameId, now]
+    );
+    return hydrateUserGame(rows[0]);
   }
 
   // ==================================================
@@ -1160,7 +1204,7 @@ class GameDatabase {
     const playedCount = userGames.filter(ug => ug.status === 'PLAYED').length;
     const playingCount = userGames.filter(ug => ug.status === 'PLAYING').length;
     const abandonedCount = userGames.filter(ug => ug.status === 'ABANDONED').length;
-    const wishlistCount = userGames.filter(ug => ug.status === 'WISHLIST').length;
+    const wishlistCount = userGames.filter(ug => ug.isInWishlist).length;
 
     const totalHours = userGames.reduce(
       (total, ug) => total + (ug.hoursPlayed || 0),

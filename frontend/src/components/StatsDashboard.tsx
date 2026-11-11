@@ -200,7 +200,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
       {/* Ranking de horas y biblioteca */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MostPlayedList games={stats.mostPlayedGames} onSelectGame={onSelectGame} />
-        <LibrarySummary counts={libraryCounts} />
+        <LibrarySummary counts={libraryCounts} totalGames={stats.totalGames} />
       </div>
 
       {/* Mejor puntuados */}

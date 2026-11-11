@@ -6,13 +6,13 @@ import { useLanguage } from '../../i18n.tsx';
 
 interface LibrarySummaryProps {
   counts: Record<GameStatus, number>;
+  totalGames: number;
 }
 
 const ORDER: GameStatus[] = ['PLAYING', 'PLAYED', 'COMPLETED', 'ABANDONED', 'WISHLIST'];
 
-export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
+export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts, totalGames }) => {
   const { t } = useLanguage();
-  const total = ORDER.reduce((sum, status) => sum + counts[status], 0);
 
   return (
     <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
@@ -20,7 +20,7 @@ export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
         <Library className="w-4.5 h-4.5 text-blue-400" /> {t('Biblioteca')}
       </h3>
 
-      {total === 0 ? (
+      {totalGames === 0 ? (
         <p className="text-base sm:text-xs text-slate-400 text-center py-6">
           {t('Tu biblioteca está vacía. Añade juegos para ver aquí su desglose.')}
         </p>
@@ -28,7 +28,7 @@ export const LibrarySummary: React.FC<LibrarySummaryProps> = ({ counts }) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {ORDER.map(status => {
             const meta = STATUS_META[status];
-            const label = status === 'WISHLIST' ? t('Pendiente') : t(meta.label);
+            const label = status === 'WISHLIST' ? t('Lista de deseos') : t(meta.label);
             return (
               <div
                 key={status}

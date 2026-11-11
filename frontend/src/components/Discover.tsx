@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gamepad2, RefreshCw, Search, SlidersHorizontal, Users } from 'lucide-react';
-import { Game, GameStatus, User } from '../types.ts';
+import { Game, GameStatus, User, UserGame } from '../types.ts';
 import { GameCard } from './GameCard.tsx';
+import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
 
 interface DiscoverProps {
@@ -103,11 +104,13 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [taxonomyRetry, setTaxonomyRetry] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [libraryStatuses, setLibraryStatuses] = useState<Map<number, GameStatus>>(new Map());
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [libraryReady, setLibraryReady] = useState(false);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [libraryRetry, setLibraryRetry] = useState(0);
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
+  const [statusGame, setStatusGame] = useState<Game | null>(null);
   const [shortSearchForced, setShortSearchForced] = useState(false);
   const skipUrlSync = useRef(false);
   const forceShortSearch = useRef(false);
@@ -305,6 +308,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     const loadLibrary = async () => {
       setLibraryReady(false);
       setLibraryStatuses(new Map());
+      setWishlistIds(new Set());
       if (!token) {
         setLoadingLibrary(false);
         return;
@@ -327,6 +331,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             .filter((entry: any) => Number.isSafeInteger(entry?.gameId) && typeof entry?.status === 'string')
             .map((entry: any) => [entry.gameId, entry.status as GameStatus])
         ));
+        setWishlistIds(new Set((data as UserGame[]).filter(entry => entry.isInWishlist).map(entry => entry.gameId)));
         setLibraryReady(true);
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -379,45 +384,38 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     }
     if (savingWishlistGameId !== null) return;
 
-    const status = libraryStatuses.get(gameId);
-    if (status && status !== 'WISHLIST') return;
-
     setSavingWishlistGameId(gameId);
     setQuickActionMessage('');
     try {
-      if (status === 'WISHLIST') {
-        const response = await fetch(`/api/library/${gameId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data?.error || 'No se pudo quitar el juego de la wishlist.');
-        setLibraryStatuses(previous => {
-          const next = new Map(previous);
-          next.delete(gameId);
-          return next;
-        });
-        setQuickActionMessage('Juego quitado de tu wishlist.');
-        return;
+      const enabled = !wishlistIds.has(gameId);
+      if (enabled && !libraryStatuses.has(gameId)) {
+        const importResponse = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+        const importedGame = await importResponse.json();
+        if (!importResponse.ok) throw new Error(importedGame?.error || 'No se pudo guardar el juego.');
       }
-
-      const importResponse = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
-      const importedGame = await importResponse.json();
-      if (!importResponse.ok) throw new Error(importedGame?.error || 'No se pudo guardar el juego.');
-
-      const saveResponse = await fetch('/api/library', {
-        method: 'POST',
+      const saveResponse = await fetch(`/api/library/${gameId}/wishlist`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ gameId, status: 'WISHLIST' })
+        body: JSON.stringify({ enabled })
       });
       const saved = await saveResponse.json();
       if (!saveResponse.ok) throw new Error(saved?.error || 'No se pudo añadir a la wishlist.');
 
-      setLibraryStatuses(previous => new Map(previous).set(gameId, 'WISHLIST'));
-      setQuickActionMessage('Juego añadido a tu wishlist.');
+      setLibraryStatuses(previous => {
+        const next = new Map(previous);
+        if (saved.userGame) next.set(gameId, saved.userGame.status);
+        else next.delete(gameId);
+        return next;
+      });
+      setWishlistIds(previous => {
+        const next = new Set(previous);
+        if (enabled) next.add(gameId); else next.delete(gameId);
+        return next;
+      });
+      setQuickActionMessage(enabled ? 'Juego añadido a tu wishlist.' : 'Juego quitado de tu wishlist.');
     } catch (error) {
       setQuickActionMessage(`Error: ${error instanceof Error ? error.message : 'No se pudo añadir el juego.'}`);
     } finally {
@@ -430,9 +428,22 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         key={game.igdbId}
         game={game}
         onSelectGame={onSelectGame}
+        onManageStatus={() => {
+          if (!token) {
+            onAuthRequired?.();
+          } else if (!libraryReady) {
+            setQuickActionMessage(loadingLibrary
+              ? 'Cargando tu biblioteca. Inténtalo de nuevo en un momento.'
+              : 'Error: No se ha podido comprobar tu biblioteca. Vuelve a intentarlo.');
+          } else if (savingWishlistGameId === null) {
+            setStatusGame(game);
+          }
+        }}
+        statusActionDisabled={savingWishlistGameId !== null}
         userGameStatus={libraryStatuses.get(game.igdbId)}
+        isInWishlist={wishlistIds.has(game.igdbId)}
         showDiscoverMeta
-        onToggleWishlist={!libraryStatuses.has(game.igdbId) || libraryStatuses.get(game.igdbId) === 'WISHLIST' ? handleQuickWishlist : undefined}
+        onToggleWishlist={handleQuickWishlist}
         savingWishlistGameId={savingWishlistGameId}
       />
   );
@@ -553,7 +564,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             <h3 id="discover-popular" className="text-lg font-bold text-white">{t('Populares ahora')}</h3>
             <p className="mt-1 text-xs text-slate-500">{t('Juegos con mayor actividad y valoraciones en IGDB.')}</p>
           </div>
-          {loadingHome && <GameSkeletons count={15} />}
+          {loadingHome && <GameSkeletons count={18} />}
           {popularGames.length > 0 && (
             <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {popularGames.map(renderGameCard)}
@@ -670,6 +681,34 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         </section>
       )}
 
+      {statusGame && token && (
+        <GameStatusDialog
+          game={statusGame}
+          status={libraryStatuses.get(statusGame.igdbId)}
+          token={token}
+          onClose={() => setStatusGame(null)}
+          onSaved={saved => {
+            setLibraryStatuses(previous => new Map(previous).set(saved.gameId, saved.status));
+            setWishlistIds(previous => {
+              const next = new Set(previous);
+              if (saved.isInWishlist) next.add(saved.gameId); else next.delete(saved.gameId);
+              return next;
+            });
+          }}
+          onRemoved={gameId => {
+            setLibraryStatuses(previous => {
+              const next = new Map(previous);
+              next.delete(gameId);
+              return next;
+            });
+            setWishlistIds(previous => {
+              const next = new Set(previous);
+              next.delete(gameId);
+              return next;
+            });
+          }}
+        />
+      )}
     </div>
   );
 };

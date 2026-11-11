@@ -334,7 +334,6 @@ app.post('/api/auth/register', registerRateLimit, async (req, res) => {
 
   const passwordData = hashPassword(password);
   await db.createUser(newUser, passwordData);
-
   await db.addActivity({
     id: `act_${Date.now()}`,
     userId: id,
@@ -629,7 +628,7 @@ app.get('/api/discover/popular', async (req, res) => {
   }
 
   const page = Number(rawPage);
-  const limit = 15;
+  const limit = 18;
   try {
     const games = await IgdbService.getPopularNow(500);
     const start = page * limit;
@@ -884,6 +883,7 @@ app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) =>
     userId: user.id,
     gameId: parseInt(gameId),
     status,
+    isInWishlist: status === 'WISHLIST' || (existing?.isInWishlist ?? false),
     rating: rating !== undefined ? parseInt(rating) : (existing ? existing.rating : 0),
     hoursPlayed: hoursPlayed !== undefined ? parseFloat(hoursPlayed) : (existing ? existing.hoursPlayed : 0),
     notes: notes !== undefined ? notes : (existing ? existing.notes : ''),
@@ -914,6 +914,35 @@ app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) =>
   }
 
   res.json({ ...saved, game });
+});
+
+// La wishlist es independiente del estado de progreso.
+app.put('/api/library/:id/wishlist', authenticate, async (req: AuthenticatedRequest, res) => {
+  const gameId = Number(req.params.id);
+  const { enabled } = req.body;
+  if (!Number.isSafeInteger(gameId) || gameId <= 0 || typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'ID de juego o estado de wishlist inválido.' });
+  }
+  try {
+    const game = await db.getGame(gameId);
+    if (!game) return res.status(404).json({ error: 'Videojuego no encontrado.' });
+    const existing = await db.getUserGame(req.currUser!.id, gameId);
+    const saved = await db.setWishlist(req.currUser!.id, gameId, enabled);
+    if (enabled && !existing?.isInWishlist) {
+      await db.addActivity({
+        id: `act_${crypto.randomUUID()}`,
+        userId: req.currUser!.id,
+        type: 'WISHLIST',
+        gameId,
+        details: `añadió a su wishlist ⭐️ ${game.name}`,
+        createdAt: new Date().toISOString()
+      });
+    }
+    res.json({ userGame: saved ? { ...saved, game } : null });
+  } catch (error) {
+    console.error('Wishlist update failed:', error);
+    res.status(500).json({ error: 'No se pudo actualizar la wishlist.' });
+  }
 });
 
 // Eliminar de biblioteca
@@ -987,6 +1016,7 @@ app.post('/api/reviews', authenticate, async (req: AuthenticatedRequest, res) =>
     userId: user.id,
     gameId: game.igdbId,
     status: existingUg ? existingUg.status : 'PLAYED',
+    isInWishlist: existingUg?.isInWishlist ?? false,
     rating: normalizedRating,
     hoursPlayed: existingUg ? existingUg.hoursPlayed : 0,
     notes: existingUg ? existingUg.notes : '',

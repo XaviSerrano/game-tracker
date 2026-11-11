@@ -22,6 +22,8 @@ export interface Game {
   genres: string[];
   platforms: string[];
   releaseDate: string;
+  developers?: string[];
+  publishers?: string[];
   rating?: number;
   popularity?: number;
   screenshots?: string[];
@@ -35,6 +37,7 @@ export interface UserGame {
   userId: string;
   gameId: number;
   status: GameStatus;
+  isInWishlist: boolean;
   rating: number;
   hoursPlayed: number;
   startedAt: string | null;

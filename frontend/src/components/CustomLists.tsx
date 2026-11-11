@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CustomList, Game, User } from '../types.ts';
 import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
+import { ConfirmDialog } from './ConfirmDialog.tsx';
 
 interface CustomListsProps {
   currentUser: User;
@@ -15,6 +16,9 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   const [lists, setLists] = useState<(CustomList & { author: User, games: Game[] })[]>([]);
   const [selectedList, setSelectedList] = useState<(CustomList & { author: User, games: Game[] }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmation, setConfirmation] = useState<
+    { type: 'list'; id: string } | { type: 'game'; id: number } | null
+  >(null);
 
   // Mode forms
   const [isCreating, setIsCreating] = useState(false);
@@ -84,8 +88,6 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   };
 
   const handleDeleteList = async (listId: string) => {
-    if (!window.confirm(t('¿Seguro de que deseas eliminar esta lista personalizada? This action is irreversible.'))) return;
-
     try {
       const res = await fetch(`/api/lists/${listId}`, {
         method: 'DELETE',
@@ -104,10 +106,6 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
   const handleRemoveGameFromList = async (gameId: number) => {
     if (!selectedList) return;
-
-    if (!window.confirm(t('¿Seguro que quieres eliminar este juego de la lista?'))) {
-      return;
-    }
 
     try {
       const newGameIds = selectedList.games
@@ -168,6 +166,21 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
   return (
     <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+      {confirmation && (
+        <ConfirmDialog
+          title={t(confirmation.type === 'list' ? 'Eliminar lista' : 'Eliminar de la lista')}
+          message={t(confirmation.type === 'list'
+            ? '¿Seguro de que deseas eliminar esta lista personalizada? Esta acción es irreversible.'
+            : '¿Seguro que quieres eliminar este juego de la lista?')}
+          confirmLabel={t(confirmation.type === 'list' ? 'Eliminar lista' : 'Eliminar de la lista')}
+          onCancel={() => setConfirmation(null)}
+          onConfirm={() => {
+            setConfirmation(null);
+            if (confirmation.type === 'list') void handleDeleteList(confirmation.id);
+            else void handleRemoveGameFromList(confirmation.id);
+          }}
+        />
+      )}
       {/* List creation modal form */}
       {isCreating ? (
         <div className="bg-[#0f121d] border border-slate-800 p-6 rounded-2xl space-y-5 animate-fade-in">
@@ -269,7 +282,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
               {selectedList.userId === currentUser.id && (
                 <button
-                  onClick={() => handleDeleteList(selectedList.id)}
+                  onClick={() => setConfirmation({ type: 'list', id: selectedList.id })}
                   aria-label={t('Eliminar lista')}
                   className="bg-[#07090e] border border-slate-800 hover:bg-red-500/10 text-red-400 p-2 rounded-xl transition cursor-pointer"
                 >
@@ -319,9 +332,9 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                   {selectedList.userId === currentUser.id && (
                     <button
                       type="button"
-                      onClick={() => handleRemoveGameFromList(game.igdbId)}
+                      onClick={() => setConfirmation({ type: 'game', id: game.igdbId })}
                       aria-label={`${t('Eliminar de la lista')}: ${game.name}`}
-                      className="absolute top-4 right-4 min-h-10 min-w-10 flex items-center justify-center rounded-lg bg-black/85 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition cursor-pointer"
+                      className="absolute top-4 right-4 min-h-10 min-w-10 flex items-center justify-center rounded-lg bg-black/85 border border-red-500/30 text-red-300 hover:bg-red-500/20 transition cursor-pointer [@media(min-width:1024px)_and_(hover:hover)_and_(pointer:fine)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                       title={t('Eliminar de la lista')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

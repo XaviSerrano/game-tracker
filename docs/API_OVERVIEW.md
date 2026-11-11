@@ -33,7 +33,7 @@ cookie.
 | GET | `/api/social/followers/:userId` | List followers | No |
 | GET | `/api/social/following/:userId` | List followed users | No |
 | GET | `/api/discover/home` | Load IGDB Discover sections | No |
-| GET | `/api/discover/popular?page=0` | Load 15 popular-now games per page | No |
+| GET | `/api/discover/popular?page=0` | Load 18 popular-now games per page | No |
 | GET | `/api/games/search` | Search IGDB with filters and pagination | No |
 | GET | `/api/games` | Compatibility catalog search | No |
 | GET | `/api/games/igdb/search?q=...` | Compatibility IGDB text search | No |
@@ -43,6 +43,7 @@ cookie.
 | GET | `/api/games/:id` | Read a game detail | No |
 | POST | `/api/games/import/:id` | Fetch and persist a game from IGDB | No |
 | POST | `/api/library` | Add or update a library entry | Yes |
+| PUT | `/api/library/:id/wishlist` | Set wishlist membership independently of progress | Yes |
 | DELETE | `/api/library/:id` | Remove a library entry | Yes |
 | GET | `/api/reviews/:gameId` | List a game's reviews | No |
 | POST | `/api/reviews` | Publish a review | Yes |
@@ -71,3 +72,10 @@ remain in the backend environment; never expose them through `VITE_*` variables.
 PostgreSQL is the only supported application database. The Express service
 initializes its schema idempotently at startup. The former FastAPI routes used a
 different, local SQLite database and did not share Express contracts or data.
+
+Library entries include `isInWishlist` independently of `status`. Existing
+`WISHLIST` entries are migrated on startup. To change only wishlist membership,
+send `{ "enabled": true }` or `{ "enabled": false }` to
+`PUT /api/library/:id/wishlist`; the response contains `userGame` (or `null`
+when an otherwise empty wishlist-only entry was removed). Progress, ratings,
+hours, notes and dates are preserved.

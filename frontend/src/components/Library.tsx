@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserGame, Game, GameStatus } from '../types.ts';
 import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
 import { GameCard } from './GameCard.tsx';
+import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
 
 interface LibraryProps {
@@ -19,7 +20,9 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [sortBy, setSortBy] = useState<'rating' | 'hours' | 'name' | 'date'>('date');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [wishlistError, setWishlistError] = useState(false);
   const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
+  const [statusGame, setStatusGame] = useState<(UserGame & { game: Game }) | null>(null);
 
   const fetchLibrary = async () => {
     setLoading(true);
@@ -51,7 +54,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
     // Filter by tab status
     if (activeTab !== 'ALL') {
-      results = results.filter(item => item.status === activeTab);
+      results = results.filter(item => activeTab === 'WISHLIST' ? item.isInWishlist : item.status === activeTab);
     }
 
     // Filter by search query
@@ -83,49 +86,25 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     if (togglingWishlistId !== null) return;
 
     setTogglingWishlistId(gameId);
+    setWishlistError(false);
 
     try {
       const item = completeLib.find(i => i.gameId === gameId);
       if (!item) return;
 
-      if (item.status === 'WISHLIST') {
-        // Remove from wishlist
-        const res = await fetch(`/api/library/${gameId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (res.ok) {
-          setCompleteLib(prev => prev.filter(i => i.gameId !== gameId));
-        }
-      } else {
-        // Change status to wishlist
-        const res = await fetch('/api/library', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ gameId, status: 'WISHLIST' })
-        });
-
-        if (res.ok) {
-          const updated = await res.json();
-          setCompleteLib(prev => {
-            const index = prev.findIndex(i => i.gameId === gameId);
-            if (index !== -1) {
-              const newLib = [...prev];
-              newLib[index] = updated;
-              return newLib;
-            }
-            return prev;
-          });
-        }
-      }
+      const res = await fetch(`/api/library/${gameId}/wishlist`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ enabled: !item.isInWishlist })
+      });
+      if (!res.ok) throw new Error(`Wishlist update failed: ${res.status}`);
+      const { userGame } = await res.json();
+      setCompleteLib(prev => userGame
+        ? prev.map(entry => entry.gameId === gameId ? userGame : entry)
+        : prev.filter(entry => entry.gameId !== gameId));
     } catch (err) {
       console.error(err);
+      setWishlistError(true);
     } finally {
       setTogglingWishlistId(null);
     }
@@ -137,7 +116,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     value: GameStatus | 'ALL';
   }[] = [
     { label: t('Todo'), value: 'ALL' },
-    { label: t('Pendiente (Wishlist) ⭐️'), value: 'WISHLIST' },
+    { label: `${t('Lista de deseos')} ⭐️`, value: 'WISHLIST' },
     { label: t('Jugando 🎮'), value: 'PLAYING' },
     { label: t('Jugados'), value: 'PLAYED' },
     { label: t('Completado 🏆'), value: 'COMPLETED' },
@@ -157,6 +136,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       </div>
 
       {/* Categories slider */}
+      {wishlistError && <p role="alert" className="text-sm text-red-300">{t('No se pudo actualizar la wishlist.')}</p>}
       <div className="flex flex-wrap gap-2">
       {STATUS_TABS.map(tab => (
         <button
@@ -290,15 +270,28 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
               key={item.gameId}
               game={item.game}
               userGameStatus={item.status}
+              isInWishlist={item.isInWishlist}
               userGameRating={item.rating}
               userGameHours={item.hoursPlayed}
               userGameNotes={item.notes}
               onSelectGame={onSelectGame}
+              onManageStatus={() => setStatusGame(item)}
+              statusActionDisabled={togglingWishlistId !== null}
               onToggleWishlist={handleToggleWishlist}
               togglingWishlistId={togglingWishlistId}
             />
           ))}
         </div>
+      )}
+      {statusGame && (
+        <GameStatusDialog
+          game={statusGame.game}
+          status={statusGame.status}
+          token={token}
+          onClose={() => setStatusGame(null)}
+          onSaved={saved => setCompleteLib(previous => previous.map(item => item.gameId === saved.gameId ? saved : item))}
+          onRemoved={gameId => setCompleteLib(previous => previous.filter(item => item.gameId !== gameId))}
+        />
       )}
     </div>
   );
