@@ -1,4 +1,4 @@
-import type { FC, MouseEvent } from 'react';
+﻿import type { FC, MouseEvent } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -20,19 +20,19 @@ interface LandingPageProps {
 
 const phoneScreens = [
   {
-    src: '/screens/mobile-feed.png',
+    src: '/screens/mobile-feed.webp',
     alt: 'Pantalla de inicio de GameTracker con la actividad reciente de la comunidad.',
     caption: 'Actividad de la comunidad',
     offset: 'sm:mt-10'
   },
   {
-    src: '/screens/mobile-game-detail.png',
+    src: '/screens/mobile-game-detail.webp',
     alt: 'Detalle de un juego en GameTracker con descripción, géneros, tiempo de juego y plataformas.',
     caption: 'Cada juego, al detalle',
     offset: ''
   },
   {
-    src: '/screens/mobile-stats.png',
+    src: '/screens/mobile-stats.webp',
     alt: 'Estadísticas de GameTracker con los juegos más jugados y el resumen de la biblioteca.',
     caption: 'Tus estadísticas',
     offset: 'sm:mt-10'
@@ -166,10 +166,11 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 </div>
 
                 <img
-                  src="/library-preview.png"
+                  src="/library-preview.webp"
                   alt={t('Vista previa de la biblioteca de GameTracker con filtros y una colección de videojuegos.')}
-                  width="1092"
-                  height="768"
+                  width="1038"
+                  height="828"
+                  fetchPriority="high"
                   className="mt-6 block h-auto w-full rounded-xl border border-white/[0.08]"
                 />
               </div>
@@ -204,10 +205,13 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 </span>
               </div>
               <img
-                src="/game-detail-preview.png"
+                src="/game-detail-preview.webp"
                 alt={t('Vista previa del detalle de Cyberpunk 2077: portada, descripción, valoración, tiempo de juego, plataformas, diario y galería de imágenes.')}
+                width="1434"
+                height="768"
                 className="block h-auto w-full"
                 loading="lazy"
+                decoding="async"
               />
               <figcaption className="border-t border-white/[0.08] px-4 py-3 text-center text-xs text-slate-400 sm:py-4">
                 {t('Cada juego reúne tu progreso, tus valoraciones y sus imágenes en un solo lugar.')}
@@ -245,7 +249,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                   className={`w-[68%] shrink-0 snap-center transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none sm:w-auto sm:hover:-translate-y-3 sm:group-hover/phones:not-hover:opacity-50 ${offset}`}
                 >
                   <div className="overflow-hidden rounded-[2rem] border-[6px] border-[#22262e] bg-[#0b0d12] shadow-[0_30px_70px_-30px_rgba(0,0,0,0.9)] ring-1 ring-white/10 sm:rounded-[2.25rem]">
-                    <img src={src} alt={t(alt)} loading="lazy" className="block h-auto w-full" />
+                    <img src={src} alt={t(alt)} width="478" height="912" loading="lazy" decoding="async" className="block h-auto w-full" />
                   </div>
                   <figcaption className="mt-4 text-center text-sm font-semibold text-slate-300">{t(caption)}</figcaption>
                 </figure>
@@ -277,10 +281,13 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 </span>
               </div>
               <img
-                src="/custom-list-preview.png"
+                src="/custom-list-preview.webp"
                 alt={t('Ejemplo de una lista personalizada con cinco videojuegos.')}
+                width="1123"
+                height="598"
                 className="block h-auto w-full"
                 loading="lazy"
+                decoding="async"
               />
             </figure>
           </div>
