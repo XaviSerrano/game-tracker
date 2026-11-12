@@ -102,7 +102,7 @@ export default function App() {
 
   const navigateTo = (nextPath: string) => {
     window.history.pushState({}, '', nextPath);
-    setPathname(nextPath);
+    setPathname(window.location.pathname);
   };
 
   const gamePathMatch = pathname.match(/^\/game\/([^/]+)\/?$/);
@@ -484,6 +484,12 @@ export default function App() {
             users={allUsers}
             token={token}
             onDiscover={() => handleNavigation('discover')}
+            onSearchGames={(query) => {
+              setActiveTab('discover');
+              setSelectedGameId(null);
+              setSelectedUserId(null);
+              navigateTo(`/discover?${new URLSearchParams({ q: query })}`);
+            }}
           />
         );
       case 'discover':

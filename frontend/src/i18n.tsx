@@ -69,6 +69,8 @@ const translations: Record<string, string> = Object.fromEntries([
   ['Descubrir Videojuegos', 'Discover Games'] as const,
   ['Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.', 'Explore new releases, find your next game, and search the IGDB catalog.'] as const,
   ['Buscar videojuegos o usuarios', 'Search games or users'] as const,
+  ['Buscar videojuegos', 'Search video games'] as const,
+  ['Busca videojuegos...', 'Search video games...'] as const,
   ['Buscar', 'Search'] as const,
   ['Todos los géneros', 'All genres'] as const,
   ['Cargando géneros...', 'Loading genres...'] as const,

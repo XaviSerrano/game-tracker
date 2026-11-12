@@ -111,9 +111,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const [statusGame, setStatusGame] = useState<Game | null>(null);
-  const [shortSearchForced, setShortSearchForced] = useState(false);
+  const [shortSearchForced, setShortSearchForced] = useState(() => filters.query.trim().length === 1);
   const skipUrlSync = useRef(false);
-  const forceShortSearch = useRef(false);
+  const forceShortSearch = useRef(filters.query.trim().length === 1);
   const isUserSearch = filters.query.trim().startsWith('@');
   const hasActiveFilters = Boolean(
     filters.query.trim() || filters.genreId || filters.platformId || filters.yearFrom

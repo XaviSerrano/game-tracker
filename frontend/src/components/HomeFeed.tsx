@@ -19,6 +19,7 @@ interface HomeFeedProps {
   users: User[];
   token: string;
   onDiscover: () => void;
+  onSearchGames: (query: string) => void;
 }
 
 type FeedActivity = Activity & {
@@ -31,9 +32,11 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
   onSelectGame,
   onSelectUser,
   users,
-  onDiscover
+  onDiscover,
+  onSearchGames
 }) => {
   const { t, language } = useLanguage();
+  const [searchQuery, setSearchQuery] = useState('');
   const [feedScope, setFeedScope] =
     useState<'all' | 'following'>('all');
 
@@ -341,6 +344,31 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             </button>
           </div>
         </div>
+        <form
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const query = searchQuery.trim();
+            if (query) onSearchGames(query);
+          }}
+          className="relative z-10 mt-6 flex max-w-2xl gap-2"
+        >
+          <label htmlFor="home-game-search" className="sr-only">{t('Buscar videojuegos')}</label>
+          <div className="relative min-w-0 flex-1">
+            <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              id="home-game-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={t('Busca videojuegos...')}
+              className="min-h-11 w-full rounded-xl border border-slate-700 bg-[#111317] py-3 pl-11 pr-4 text-base text-slate-200 outline-none placeholder:text-slate-400 focus:border-[#d9a352] sm:text-sm"
+            />
+          </div>
+          <button type="submit" disabled={!searchQuery.trim()} className="min-h-11 rounded-xl bg-[#dca84f] px-4 text-sm font-semibold text-[#17120a] transition hover:bg-[#e8b967] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50">
+            {t('Buscar')}
+          </button>
+        </form>
       </div>
 
       {/* FEED */}
