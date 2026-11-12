@@ -342,22 +342,44 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
       </main>
 
       <footer className="border-t border-white/[0.07]">
-        <div className="mx-auto flex w-full max-w-[86rem] flex-col gap-4 px-5 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
-          <a
-            href="/"
-            onClick={(event) => {
-              event.preventDefault();
-              onGoHome();
-            }}
-            className="font-bold text-slate-300 transition hover:text-white"
-          >
-            GameTracker
-          </a>
-          <p>{t('Tu biblioteca gamer, a tu manera.')}</p>
-          <a href="/discover" onClick={handleDiscover} className="inline-flex items-center gap-1.5 self-start transition hover:text-white sm:self-auto">
-            {t('Descubrir juegos')}
-            <ArrowRight className="size-3.5" aria-hidden="true" />
-          </a>
+        <div className="mx-auto w-full max-w-[86rem] px-5 py-8 sm:px-8 lg:px-12">
+          <div className="flex flex-col gap-7 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-sm">
+              <a
+                href="/"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onGoHome();
+                }}
+                aria-label={t('Volver al inicio')}
+                className="inline-flex items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              >
+                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-7 w-auto" />
+                <span className="text-lg font-extrabold tracking-tight">GameTracker</span>
+              </a>
+              <p className="mt-3 text-sm leading-6 text-slate-400">{t('Tu biblioteca gamer, a tu manera.')}</p>
+            </div>
+
+            <nav aria-label={t('Enlaces del pie de página')} className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-400">
+              <a href="/discover" onClick={handleDiscover} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+                {t('Descubrir juegos')}
+              </a>
+              <a href="#funciones" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+                {t('Funciones')}
+              </a>
+              <a href="#como-funciona" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+                {t('Cómo funciona')}
+              </a>
+              <a href="#" onClick={event => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+                {t('Volver arriba')}
+              </a>
+            </nav>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 GameTracker. {t('Todos los derechos reservados.')}</p>
+            <p>{t('Hecho para quienes siempre tienen una partida pendiente.')}</p>
+          </div>
         </div>
       </footer>
     </div>
