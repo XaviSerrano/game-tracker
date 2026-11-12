@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Compass,
@@ -11,21 +11,21 @@ import {
 } from 'lucide-react';
 
 import { User } from './types.ts';
-import { Onboarding } from './components/Onboarding.tsx';
-import { HomeFeed } from './components/HomeFeed.tsx';
-import { Discover } from './components/Discover.tsx';
-import { GameDetails } from './components/GameDetails.tsx';
-import { Library } from './components/Library.tsx';
-import { CustomLists } from './components/CustomLists.tsx';
-import { UserProfile } from './components/UserProfile.tsx';
-import { StatsDashboard } from './components/StatsDashboard.tsx';
 import { NotFoundPage } from './components/NotFoundPage.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
 
-import { Analytics } from '@vercel/analytics/react';
 import { useLanguage } from './i18n.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { Dialog } from './components/Dialog.tsx';
+
+const Onboarding = lazy(() => import('./components/Onboarding.tsx').then(m => ({ default: m.Onboarding })));
+const HomeFeed = lazy(() => import('./components/HomeFeed.tsx').then(m => ({ default: m.HomeFeed })));
+const Discover = lazy(() => import('./components/Discover.tsx').then(m => ({ default: m.Discover })));
+const GameDetails = lazy(() => import('./components/GameDetails.tsx').then(m => ({ default: m.GameDetails })));
+const Library = lazy(() => import('./components/Library.tsx').then(m => ({ default: m.Library })));
+const CustomLists = lazy(() => import('./components/CustomLists.tsx').then(m => ({ default: m.CustomLists })));
+const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => ({ default: m.UserProfile })));
+const StatsDashboard = lazy(() => import('./components/StatsDashboard.tsx').then(m => ({ default: m.StatsDashboard })));
 
 type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
 const SECTION_PATHS: Record<MainTab, string> = {
@@ -72,15 +72,14 @@ export default function App() {
       }
     } catch (err) {
       console.error("Session verification failed:", err);
+    } finally {
+      setLoading(false);
     }
 
-    // Prefetch all community users for onboarding switches or profile rendering
+    // Non-blocking: seeded profiles must not delay first render.
     try {
       const usersRes = await fetch('/api/social/feed?scope=all');
       if (usersRes.ok) {
-        // Can also fetch from general community list, let's load all seeded users
-        const usersListRes = await fetch('/api/games'); // helper to ping server. We know seed users exist.
-        // Let's resolve with preseeded profiles manually or through a clean local query if server was launched
         const mockGamers: User[] = [
           { id: "user_alex", username: "alex_gamer", email: "alex@gametracker.com", avatar: "/default-avatar.svg", bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.", createdAt: "" },
           { id: "user_sam", username: "vance_retro", email: "sam@gametracker.com", avatar: "/default-avatar.svg", bio: "Retro gaming collector. Chrono Trigger is the undisputed GOAT. CRTs are mandatory.", createdAt: "" },
@@ -91,8 +90,6 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -316,6 +313,7 @@ export default function App() {
 
   if (resetTokenInUrl) {
     return (
+      <Suspense fallback={null}>
       <div className="min-h-screen text-slate-200 font-sans">
         <Onboarding
           onLogin={handleLoginSuccess}
@@ -329,10 +327,12 @@ export default function App() {
           preseededUsers={allUsers}
         />
       </div>
+      </Suspense>
     );
   }
 
-  if (loading) {
+  // Keep the prerendered landing visible while the session is verified.
+  if (loading && !(pathname === '/' && !currentUser)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -345,6 +345,7 @@ export default function App() {
 
   if (!currentUser || !token) {
     return (
+      <Suspense fallback={null}>
       <div className="min-h-screen text-slate-200 font-sans">
         {pathname === '/' ? (
           <LandingPage
@@ -423,6 +424,7 @@ export default function App() {
           </Dialog>
         )}
       </div>
+      </Suspense>
     );
   }
 
@@ -618,7 +620,7 @@ export default function App() {
               exit={{ opacity: 0, y: reducedMotion ? 0 : -3 }}
               transition={{ duration: reducedMotion ? 0 : 0.18 }}
             >
-              {renderActiveView()}
+              <Suspense fallback={null}>{renderActiveView()}</Suspense>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -663,8 +665,6 @@ export default function App() {
           );
         })}
       </nav>
-
-      <Analytics />
     </div>
   );
 
