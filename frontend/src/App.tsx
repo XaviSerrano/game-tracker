@@ -52,6 +52,7 @@ export default function App() {
   // Sub-navigation targets
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [gameMetadata, setGameMetadata] = useState<{ gameId: number; name: string; summary: string } | null>(null);
   const [gameReturnPath, setGameReturnPath] = useState('/');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState('');
@@ -114,6 +115,7 @@ export default function App() {
   const routeTab = (Object.entries(SECTION_PATHS).find(([, path]) => path === pathname)?.[0] || null) as MainTab | null;
   const isNotFoundPath = pathname !== '/' && !isGamePath && !routeTab;
   const showGameNotFound = isGamePath && !isKnownGamePath;
+  const currentGameMetadata = gameMetadata?.gameId === gamePathId ? gameMetadata : null;
 
   useEffect(() => {
     const titles: Record<MainTab, string> = {
@@ -129,21 +131,52 @@ export default function App() {
       : pathname === '/discover'
         ? titles.discover
         : isKnownGamePath
-          ? t('Ficha de videojuego | GameTracker')
+          ? currentGameMetadata
+            ? `${currentGameMetadata.name}: ${language === 'es' ? 'ficha, plataformas y valoraciones' : 'details, platforms, and ratings'} | GameTracker`
+            : t('Ficha de videojuego | GameTracker')
           : isNotFoundPath || showGameNotFound
             ? t('Página no encontrada | GameTracker')
             : routeTab
               ? titles[routeTab]
               : t('Página no encontrada | GameTracker');
-    const description = pathname === '/discover'
+    const fullDescription = pathname === '/discover'
       ? t('Explora videojuegos por género, plataforma, año y valoración. Descubre próximos lanzamientos y encuentra tu siguiente aventura en el catálogo de GameTracker.')
       : isNotFoundPath || showGameNotFound
         ? t('No encontramos la página que buscas. Explora el catálogo de videojuegos de GameTracker.')
         : isKnownGamePath
-          ? t('Descubre información, plataformas, valoraciones y reseñas de videojuegos en GameTracker.')
+          ? currentGameMetadata?.summary || t('Descubre información, plataformas, valoraciones y reseñas de videojuegos en GameTracker.')
           : t('Organiza tu colección de videojuegos, registra tus partidas y horas, crea listas y descubre qué jugar después con GameTracker.');
+    const description = fullDescription.length > 160
+      ? `${fullDescription.slice(0, 157).trimEnd()}...`
+      : fullDescription;
     const isPublicRoute = pathname === '/' || pathname === '/discover' || isKnownGamePath;
-    const isIndexable = isPublicRoute && !currentUser;
+    const isIndexable = isPublicRoute && !currentUser && !resetTokenInUrl;
+    const canonicalPath = pathname === '/' || pathname === '/discover'
+      ? pathname
+      : isKnownGamePath ? `/game/${gamePathId}` : null;
+    const canonicalUrl = canonicalPath && !resetTokenInUrl
+      ? `https://gametracker.space${canonicalPath}`
+      : null;
+
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    let ogUrl = document.querySelector<HTMLMetaElement>('meta[property="og:url"]');
+    if (canonicalUrl) {
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+      }
+      if (!ogUrl) {
+        ogUrl = document.createElement('meta');
+        ogUrl.setAttribute('property', 'og:url');
+        document.head.appendChild(ogUrl);
+      }
+      canonical.href = canonicalUrl;
+      ogUrl.content = canonicalUrl;
+    } else {
+      canonical?.remove();
+      ogUrl?.remove();
+    }
 
     document.title = pageTitle;
     document.querySelector('meta[name="description"]')?.setAttribute('content', description);
@@ -153,7 +186,7 @@ export default function App() {
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', language === 'es' ? 'es_ES' : 'en_US');
     document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', pageTitle);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
-  }, [currentUser, isKnownGamePath, isNotFoundPath, language, pathname, routeTab, showGameNotFound, t]);
+  }, [currentGameMetadata, currentUser, gamePathId, isKnownGamePath, isNotFoundPath, language, pathname, resetTokenInUrl, routeTab, showGameNotFound, t]);
 
   if (isNotFoundPath || showGameNotFound) {
     return (
@@ -346,6 +379,7 @@ export default function App() {
                 <GameDetails
                   key={gamePathId}
                   gameId={gamePathId}
+                  onMetadataChange={setGameMetadata}
                   currentUser={null}
                   token={null}
                   onBack={handleBackFromGame}
@@ -397,6 +431,7 @@ export default function App() {
       return (
         <GameDetails
           gameId={selectedGameId}
+          onMetadataChange={setGameMetadata}
           currentUser={currentUser}
           token={token}
           onBack={handleBackFromGame}
@@ -412,6 +447,7 @@ export default function App() {
       return (
         <GameDetails
           gameId={gamePathId}
+          onMetadataChange={setGameMetadata}
           currentUser={currentUser}
           token={token}
           onBack={handleBackFromGame}

@@ -79,6 +79,29 @@ the current deployment model. If the frontend later calls Render directly,
 configure an explicit frontend origin and credentialed CORS, and revisit cookie
 `SameSite`/domain settings before changing the client URL.
 
+## Search visibility
+
+The production build prerenders the English landing page into `dist/index.html`.
+The Vercel fallback serves `dist/app.html` for other SPA routes so they do not
+initially contain the landing page or its canonical URL. React still renders the
+interactive application and updates route metadata in the browser. The default
+language is English; Spanish is selected in the application, not via a separate
+indexable URL.
+
+`frontend/public/robots.txt` points to the sitemap for `https://gametracker.space`.
+The sitemap lists the landing and public Discover page, but not private views,
+authentication modals, or dynamically loaded game pages. Canonical and social
+URLs use the same domain. If the production domain changes, update the sitemap,
+robots file, HTML metadata and route metadata together.
+
+After deployment, check that `/robots.txt` returns plain text and `/sitemap.xml`
+returns XML rather than the SPA, and that `www.gametracker.space` redirects to
+the preferred domain. Submit the sitemap in Google Search Console and inspect
+the landing and Discover URLs. Game and Discover content and route-specific
+metadata still require JavaScript; link previews that do not execute JavaScript
+see the generic SPA metadata on those routes. Unknown SPA routes also require
+hosting-side HTTP 404 handling to avoid soft 404s.
+
 ## Validation and release checks
 
 Run from the repository root:

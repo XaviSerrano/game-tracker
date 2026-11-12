@@ -6,8 +6,8 @@
       "destination": "https://gametracker-wk5b.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/(.+)",
+      "destination": "/app.html"
     }
   ]
 }

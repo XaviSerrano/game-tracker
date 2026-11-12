@@ -35,6 +35,7 @@ import { useLanguage } from '../i18n.tsx';
 
 interface GameDetailsProps {
   gameId: number;
+  onMetadataChange: (metadata: { gameId: number; name: string; summary: string }) => void;
   currentUser: User | null;
   token: string | null;
   onBack: () => void;
@@ -231,6 +232,7 @@ const PlatformBadgeLogo: React.FC<{ platform: PlatformStyle }> = ({ platform }) 
 
 export const GameDetails: React.FC<GameDetailsProps> = ({
   gameId,
+  onMetadataChange,
   currentUser,
   token,
   onBack,
@@ -291,24 +293,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       : game?.summary ?? '';
 
   useEffect(() => {
-    if (!game) return;
-
-    const suffix = language === 'es'
-      ? 'ficha, plataformas y valoraciones'
-      : 'details, platforms, and ratings';
-    const title = `${game.name}: ${suffix} | GameTracker`;
-    const fullDescription = displayedSummary || t('Descubre información, plataformas, valoraciones y reseñas de videojuegos en GameTracker.');
-    const description = fullDescription.length > 160
-      ? `${fullDescription.slice(0, 157).trimEnd()}...`
-      : fullDescription;
-
-    document.title = title;
-    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
-    document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
-    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
-  }, [displayedSummary, game, language, t]);
+    if (!game || game.igdbId !== gameId) return;
+    onMetadataChange({ gameId, name: game.name, summary: displayedSummary });
+  }, [displayedSummary, game, gameId, onMetadataChange]);
 
   useEffect(() => {
     if (language !== 'es' || !game?.igdbId || !game.summary) return;

@@ -533,6 +533,7 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'en';
     try {
       return localStorage.getItem('gametracker-language') === 'es' ? 'es' : 'en';
     } catch (error) {

@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, MouseEvent } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -70,6 +70,12 @@ const features = [
 export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGoHome }) => {
   const { t } = useLanguage();
 
+  const handleDiscover = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    onDiscover();
+  };
+
   return (
     <div className="min-h-screen overflow-x-clip text-slate-200">
       <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0b0d12]/95 backdrop-blur-md">
@@ -94,9 +100,9 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             <a href="#como-funciona" className="text-sm font-semibold text-slate-300 transition hover:text-white">
               {t('Cómo funciona')}
             </a>
-            <button type="button" onClick={onDiscover} className="text-sm font-semibold text-slate-300 transition hover:text-white">
+            <a href="/discover" onClick={handleDiscover} className="text-sm font-semibold text-slate-300 transition hover:text-white">
               {t('Descubrir juegos')}
-            </button>
+            </a>
           </nav>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -133,14 +139,14 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                   {t('Crear mi cuenta')}
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  onClick={onDiscover}
+                <a
+                  href="/discover"
+                  onClick={handleDiscover}
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 px-6 text-sm font-bold text-white transition hover:border-[#d9a352]/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
                 >
                   <Compass className="size-4 text-[#e5b974]" aria-hidden="true" />
                   {t('Explorar juegos')}
-                </button>
+                </a>
               </div>
               <p className="mt-5 text-sm text-slate-400">{t('Tu colección, tu ritmo, tus próximas aventuras.')}</p>
             </div>
@@ -341,10 +347,10 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             GameTracker
           </a>
           <p>{t('Tu biblioteca gamer, a tu manera.')}</p>
-          <button type="button" onClick={onDiscover} className="inline-flex items-center gap-1.5 self-start transition hover:text-white sm:self-auto">
+          <a href="/discover" onClick={handleDiscover} className="inline-flex items-center gap-1.5 self-start transition hover:text-white sm:self-auto">
             {t('Descubrir juegos')}
             <ArrowRight className="size-3.5" aria-hidden="true" />
-          </button>
+          </a>
         </div>
       </footer>
     </div>

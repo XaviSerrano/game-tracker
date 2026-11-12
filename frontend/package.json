@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npm --prefix .. run dev",
     "dev:vite": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "lint": "tsc --noEmit"
