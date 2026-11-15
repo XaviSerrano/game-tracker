@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import { useState } from 'react';
 import { Check, Gamepad2, X } from 'lucide-react';
 import type { Game, GameStatus, UserGame } from '../types.ts';
@@ -38,7 +39,7 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
     setError(false);
     try {
       if (removing) {
-        const response = await fetch(`/api/library/${game.igdbId}`, {
+        const response = await apiFetch(`/api/library/${game.igdbId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -51,11 +52,11 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
       }
       if (!selected) return;
       if (!status) {
-        const imported = await fetch(`/api/games/import/${game.igdbId}`, { method: 'POST' });
+        const imported = await apiFetch(`/api/games/import/${game.igdbId}`, { method: 'POST' });
         if (!imported.ok) throw new Error(`Game import failed: ${imported.status}`);
       }
 
-      const response = await fetch('/api/library', {
+      const response = await apiFetch('/api/library', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ gameId: game.igdbId, status: selected })

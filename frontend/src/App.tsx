@@ -1,4 +1,7 @@
+import { apiFetch } from './api.ts';
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { App as NativeApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Compass,
@@ -63,7 +66,7 @@ export default function App() {
   const verifySession = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const res = await apiFetch('/api/auth/me', { credentials: 'include' });
       if (res.ok) {
         const userData = await res.json();
         setCurrentUser(userData);
@@ -78,7 +81,7 @@ export default function App() {
 
     // Non-blocking: seeded profiles must not delay first render.
     try {
-      const usersRes = await fetch('/api/social/feed?scope=all');
+      const usersRes = await apiFetch('/api/social/feed?scope=all');
       if (usersRes.ok) {
         const mockGamers: User[] = [
           { id: "user_alex", username: "alex_gamer", email: "alex@gametracker.com", avatar: "/default-avatar.svg", bio: "RPG & Soulsborne fanatic. Playing games since 1998, always chasing the 100% completion.", createdAt: "" },
@@ -99,6 +102,27 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = NativeApp.addListener('backButton', ({ canGoBack }) => {
+      const dialog = document.querySelector<HTMLDialogElement>('dialog[open]');
+      if (dialog) {
+        dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+      } else if (selectedUserId !== null) {
+        setSelectedUserId(null);
+      } else if (canGoBack) {
+        window.history.back();
+      } else {
+        void NativeApp.minimizeApp().catch(error => console.error('Unable to minimize app:', error));
+      }
+    });
+    void listener.catch(error => console.error('Unable to register Android back button:', error));
+    return () => {
+      void listener.then(handle => handle.remove()).catch(error => console.error('Unable to remove Android back button listener:', error));
+    };
+  }, [selectedUserId]);
 
   const navigateTo = (nextPath: string) => {
     window.history.pushState({}, '', nextPath);
@@ -216,23 +240,24 @@ export default function App() {
     setSelectedUserId(null);
   };
 
+  const clearLocalSession = () => {
+    setCurrentUser(null);
+    setToken(null);
+    setSelectedGameId(null);
+    setSelectedUserId(null);
+    navigateTo('/');
+  };
+
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
     } catch (err) {
       console.error('Logout request failed:', err);
     }
-
-    setCurrentUser(null);
-    setToken(null);
-    setSelectedGameId(null);
-    setSelectedUserId(null);
-
-    navigateTo('/');
-
+    clearLocalSession();
   };
 
   const handleNavigation = (tab: MainTab) => {
@@ -467,6 +492,7 @@ export default function App() {
           userId={selectedUserId}
           currentUser={currentUser}
           onUpdateCurrentUser={setCurrentUser}
+          onAccountDeleted={clearLocalSession}
           token={token}
           onSelectGame={handleSelectGame}
           onSelectUser={handleSelectUser}
@@ -513,6 +539,7 @@ export default function App() {
             userId={currentUser.id}
             currentUser={currentUser}
             onUpdateCurrentUser={setCurrentUser}
+            onAccountDeleted={clearLocalSession}
             token={token}
             onSelectGame={handleSelectGame}
             onSelectUser={handleSelectUser}

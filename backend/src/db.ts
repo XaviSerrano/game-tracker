@@ -450,6 +450,30 @@ class GameDatabase {
     return (rows[0] as StoredUser) ?? null;
   }
 
+  async deleteAccount(userId: string, passwordHash: string, passwordSalt: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const deleted = await client.query(
+        'DELETE FROM users WHERE id = $1 AND "passwordHash" = $2 AND "passwordSalt" = $3 RETURNING id',
+        [userId, passwordHash, passwordSalt]
+      );
+      if (deleted.rowCount) {
+        await client.query(
+          `UPDATE reviews SET likes = (likes::jsonb - $1)::text WHERE likes::jsonb ? $1`,
+          [userId]
+        );
+      }
+      await client.query('COMMIT');
+      return deleted.rowCount === 1;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async createUser(
     user: User,
     auth?: {
@@ -976,28 +1000,29 @@ class GameDatabase {
     reviewId: string,
     userId: string
   ): Promise<Review | null> {
-    const review = await this.getReview(reviewId);
-
-    if (!review) {
-      return null;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const user = await client.query('SELECT id FROM users WHERE id = $1 FOR KEY SHARE', [userId]);
+      const result = await client.query('SELECT * FROM reviews WHERE id = $1 FOR UPDATE', [reviewId]);
+      if (!user.rowCount || !result.rowCount) {
+        await client.query('COMMIT');
+        return null;
+      }
+      const review = hydrateReview(result.rows[0]);
+      const likes = new Set(review.likes ?? []);
+      if (likes.has(userId)) likes.delete(userId);
+      else likes.add(userId);
+      const updatedReview = { ...review, likes: Array.from(likes) };
+      await client.query('UPDATE reviews SET likes = $1 WHERE id = $2', [serializeJson(updatedReview.likes), reviewId]);
+      await client.query('COMMIT');
+      return updatedReview;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    const likes = new Set(review.likes ?? []);
-
-    if (likes.has(userId)) {
-      likes.delete(userId);
-    } else {
-      likes.add(userId);
-    }
-
-    const updatedReview: Review = {
-      ...review,
-      likes: Array.from(likes)
-    };
-
-    await this.saveReview(updatedReview);
-
-    return updatedReview;
   }
 
   // ==================================================

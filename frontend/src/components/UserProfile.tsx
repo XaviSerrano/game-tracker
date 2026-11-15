@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { User, Review, Game, CustomList } from '../types.ts';
 import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
@@ -11,6 +12,7 @@ interface UserProfileProps {
   userId: string;
   currentUser: User;
   onUpdateCurrentUser: (user: User) => void;
+  onAccountDeleted: () => void;
   token: string;
   onSelectGame: (gameId: number) => void;
   onSelectUser?: (userId: string) => void;
@@ -24,6 +26,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   userId,
   currentUser,
   onUpdateCurrentUser,
+  onAccountDeleted,
   token,
   onSelectGame,
   onSelectUser,
@@ -57,6 +60,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [editBio, setEditBio] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
   const [editMessage, setEditMessage] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
 const isOwnProfile = userId === currentUser.id;
 
@@ -65,7 +72,7 @@ setLoading(true);
 
 try {
   // 1. Fetch user profile
-  const userRes = await fetch(`/api/users/${userId}`);
+  const userRes = await apiFetch(`/api/users/${userId}`);
 
   if (userRes.ok) {
     const userData = await userRes.json();
@@ -77,7 +84,7 @@ try {
   }
 
   // 2. Fetch user's library and generate reviews
-  const libRes = await fetch(`/api/users/${userId}/library`);
+  const libRes = await apiFetch(`/api/users/${userId}/library`);
 
   if (libRes.ok) {
     const libraryGames: any[] = await libRes.json();
@@ -101,7 +108,7 @@ try {
   }
 
   // 3. Fetch lists belonging to the visited profile
-  const listsRes = await fetch(`/api/lists?userId=${userId}`);
+  const listsRes = await apiFetch(`/api/lists?userId=${userId}`);
 
   if (listsRes.ok) {
     const listsData = await listsRes.json();
@@ -111,7 +118,7 @@ try {
 
   // 4. Check if following
   if (!isOwnProfile) {
-    const followRes = await fetch(
+    const followRes = await apiFetch(
       `/api/social/followers/${userId}`
     );
 
@@ -141,7 +148,7 @@ setSelectedList(null);
 
 const handleFollowToggle = async () => {
 try {
-const res = await fetch(
+const res = await apiFetch(
 `/api/social/follow/${userId}`,
 {
 method: 'POST',
@@ -178,8 +185,8 @@ const openSocialModal = async (tab: 'followers' | 'following') => {
 
   try {
     const [usersRes, myFollowingRes] = await Promise.all([
-      fetch(`/api/social/${tab}/${userId}`),
-      fetch(`/api/social/following/${currentUser.id}`)
+      apiFetch(`/api/social/${tab}/${userId}`),
+      apiFetch(`/api/social/following/${currentUser.id}`)
     ]);
 
     if (usersRes.ok) {
@@ -202,7 +209,7 @@ const handleToggleFollowInModal = async (targetUser: User) => {
   if (targetUser.id === currentUser.id) return;
 
   try {
-    const res = await fetch(`/api/social/follow/${targetUser.id}`, {
+    const res = await apiFetch(`/api/social/follow/${targetUser.id}`, {
       method: 'POST',
       headers: {
         Authorization: token ? `Bearer ${token}` : ''
@@ -282,7 +289,7 @@ e.preventDefault();
 setEditMessage('');
 
 try {
-  const res = await fetch(
+  const res = await apiFetch(
     '/api/users/profile',
     {
       method: 'PUT',
@@ -328,6 +335,29 @@ try {
   setEditMessage(`Error: ${t(err.message)}`);
 }
 
+};
+
+const handleDeleteAccount = async (event: React.FormEvent) => {
+  event.preventDefault();
+  setDeleteError('');
+  setDeleting(true);
+  try {
+    const response = await apiFetch('/api/auth/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ password: deletePassword })
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(typeof data.error === 'string' ? data.error : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+    }
+    onAccountDeleted();
+  } catch (error) {
+    console.error('Account deletion failed:', error);
+    setDeleteError(t(error instanceof Error ? error.message : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'));
+  } finally {
+    setDeleting(false);
+  }
 };
 
 if (loading) {
@@ -765,9 +795,35 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             {t('Guardar')}
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => { setDeletePassword(''); setDeleteError(''); setDeleteOpen(true); }}
+          className="min-h-12 rounded-lg text-sm font-semibold text-red-300 underline underline-offset-4 hover:text-red-200"
+        >
+          {t('Eliminar mi cuenta')}
+        </button>
       </form>
     )}
   </div>
+
+  {deleteOpen && (
+    <Dialog label={t('Eliminar mi cuenta')} onClose={() => { if (!deleting) setDeleteOpen(false); }}>
+      <form onSubmit={handleDeleteAccount} className="w-full max-w-md space-y-4 rounded-2xl border border-slate-800 bg-[#0f121d] p-6 text-left">
+        <h2 className="text-xl font-bold text-white">{t('Eliminar mi cuenta')}</h2>
+        <p className="text-sm leading-relaxed text-slate-300">
+          {t('Esta acción es irreversible. Se eliminarán tu cuenta, biblioteca, reseñas, listas y relaciones. Los registros de seguridad se conservarán desvinculados de tu cuenta.')}
+        </p>
+        <label htmlFor="delete-account-password" className="block text-sm font-semibold text-slate-300">{t('Confirma tu contraseña')}</label>
+        <input id="delete-account-password" type="password" autoComplete="current-password" required value={deletePassword}
+          onChange={event => setDeletePassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-slate-700 bg-[#07090e] px-3 text-white" />
+        {deleteError && <p role="alert" className="text-sm text-red-300">{deleteError}</p>}
+        <div className="flex flex-wrap gap-3">
+          <button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="min-h-12 rounded-lg bg-slate-800 px-4 text-sm font-semibold text-white disabled:opacity-50">{t('Cancelar')}</button>
+          <button type="submit" disabled={deleting} className="min-h-12 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50">{t(deleting ? 'Eliminando...' : 'Eliminar mi cuenta')}</button>
+        </div>
+      </form>
+    </Dialog>
+  )}
 
   {/* Grid panels */}
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

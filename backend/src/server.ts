@@ -253,6 +253,12 @@ const resetPasswordRateLimit = createRateLimiter(
   60 * 60 * 1000,
   (req) => getRequestIp(req)
 );
+const deleteAccountRateLimit = createRateLimiter(
+  'auth_delete_account',
+  5,
+  15 * 60 * 1000,
+  (req) => `${getRequestIp(req)}:${(req as AuthenticatedRequest).currUser?.id || ''}`
+);
 
 const buildResetUrl = (token: string) => {
   const resetUrl = new URL('/', parsedPublicAppUrl);
@@ -442,6 +448,31 @@ app.post('/api/auth/logout', authenticate, async (req: AuthenticatedRequest, res
   }
   clearSessionCookie(res);
   res.status(204).end();
+});
+
+app.post('/api/auth/delete-account', authenticate, deleteAccountRateLimit, async (req: AuthenticatedRequest, res) => {
+  const password = req.body?.password;
+  if (typeof password !== 'string' || !password) {
+    return res.status(400).json({ error: 'Introduce tu contraseña.' });
+  }
+
+  try {
+    const user = await db.getAuthUserById(req.currUser!.id);
+    if (!user || !verifyPassword(password, user.passwordHash || undefined, user.passwordSalt || undefined)) {
+      recordSecurityEvent(req, 'ACCOUNT_DELETE_FAILED', 'invalid_password', req.currUser!.id);
+      return res.status(403).json({ error: 'Contraseña incorrecta.' });
+    }
+
+    const deleted = await db.deleteAccount(user.id, user.passwordHash!, user.passwordSalt!);
+    if (!deleted) {
+      return res.status(409).json({ error: 'La cuenta ha cambiado. Vuelve a iniciar sesión e inténtalo de nuevo.' });
+    }
+    clearSessionCookie(res);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ error: 'No se pudo eliminar la cuenta. Inténtalo de nuevo.' });
+  }
 });
 
 app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {

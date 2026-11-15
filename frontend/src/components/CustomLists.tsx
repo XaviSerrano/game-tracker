@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { CustomList, Game, User } from '../types.ts';
 import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet } from 'lucide-react';
@@ -30,7 +31,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   const fetchLists = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/lists?userId=${currentUser.id}`, {
+      const res = await apiFetch(`/api/lists?userId=${currentUser.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -41,7 +42,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
       }
 
       // Also prefetch catalog games for creation option
-      const gamesRes = await fetch('/api/games');
+      const gamesRes = await apiFetch('/api/games');
       if (gamesRes.ok) {
         const gamesData = await gamesRes.json();
         setCatalogGames(gamesData);
@@ -62,7 +63,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
     if (!newListName.trim()) return;
 
     try {
-      const res = await fetch('/api/lists', {
+      const res = await apiFetch('/api/lists', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
   const handleDeleteList = async (listId: string) => {
     try {
-      const res = await fetch(`/api/lists/${listId}`, {
+      const res = await apiFetch(`/api/lists/${listId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -112,7 +113,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
         .map(game => game.igdbId)
         .filter(id => id !== gameId);
 
-      const res = await fetch(`/api/lists/${selectedList.id}`, {
+      const res = await apiFetch(`/api/lists/${selectedList.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

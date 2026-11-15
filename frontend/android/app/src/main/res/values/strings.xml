@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GameTracker</string>
+    <string name="title_activity_main">GameTracker</string>
+    <string name="package_name">space.gametracker.app</string>
+    <string name="custom_url_scheme">space.gametracker.app</string>
+</resources>

@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Clock, Trophy, Star, Flame } from 'lucide-react';
 import { GameStatus } from '../types.ts';
@@ -45,10 +46,10 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ userId, token, o
 
       try {
         const [statsRes, feedRes] = await Promise.all([
-          fetch(`/api/users/${userId}/stats`, {
+          apiFetch(`/api/users/${userId}/stats`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          fetch(`/api/social/feed?userId=${userId}&scope=following`)
+          apiFetch(`/api/social/feed?userId=${userId}&scope=following`)
         ]);
 
         const statsData = await statsRes.json();

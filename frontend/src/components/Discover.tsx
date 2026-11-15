@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Gamepad2, RefreshCw, Search, SlidersHorizontal, Users } from 'lucide-react';
 import { Game, GameStatus, User, UserGame } from '../types.ts';
@@ -127,7 +128,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     else setLoadingMorePopular(true);
     setHomeError(null);
     try {
-      const response = await fetch(`/api/discover/popular?page=${page}`, { signal });
+      const response = await apiFetch(`/api/discover/popular?page=${page}`, { signal });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'No se pudieron cargar los juegos populares.');
       if (!Array.isArray(data?.items) || typeof data?.hasMore !== 'boolean') {
@@ -165,7 +166,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       setLoadingTaxonomies(true);
       setTaxonomyError(null);
       const loadOptions = async (kind: 'genres' | 'platforms', label: string): Promise<CatalogOption[]> => {
-        const response = await fetch(`/api/igdb/${kind}`, { signal: controller.signal });
+        const response = await apiFetch(`/api/igdb/${kind}`, { signal: controller.signal });
         const data = await response.json();
         if (!response.ok) throw new Error(data?.error || `No se pudieron cargar ${label}.`);
         if (!Array.isArray(data) || data.length === 0 || !data.every(option =>
@@ -231,7 +232,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
         setLoading(true);
         try {
-          const response = await fetch(`/api/users?search=${encodeURIComponent(username)}`, {
+          const response = await apiFetch(`/api/users?search=${encodeURIComponent(username)}`, {
             signal: controller.signal,
             headers: token ? { Authorization: `Bearer ${token}` } : undefined
           });
@@ -274,7 +275,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       try {
         const params = makeSearchParams(filters);
         params.set('limit', '20');
-        const response = await fetch(`/api/games/search?${params.toString()}`, { signal: controller.signal });
+        const response = await apiFetch(`/api/games/search?${params.toString()}`, { signal: controller.signal });
         const data = await response.json();
         if (!response.ok) throw new Error(data?.error || 'No se pudo buscar en el catálogo.');
         const items: Game[] = Array.isArray(data?.items) ? data.items : [];
@@ -315,13 +316,13 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       }
       setLoadingLibrary(true);
       try {
-        const meResponse = await fetch('/api/auth/me', {
+        const meResponse = await apiFetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal
         });
         if (!meResponse.ok) throw new Error('No se pudo comprobar la sesión.');
         const me = await meResponse.json();
-        const libraryResponse = await fetch(`/api/users/${me.id}/library`, { signal: controller.signal });
+        const libraryResponse = await apiFetch(`/api/users/${me.id}/library`, { signal: controller.signal });
         if (!libraryResponse.ok) throw new Error('No se pudo cargar tu biblioteca.');
         const data = await libraryResponse.json();
         if (!Array.isArray(data)) throw new Error('La respuesta de la biblioteca no es válida.');
@@ -389,11 +390,11 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     try {
       const enabled = !wishlistIds.has(gameId);
       if (enabled && !libraryStatuses.has(gameId)) {
-        const importResponse = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+        const importResponse = await apiFetch(`/api/games/import/${gameId}`, { method: 'POST' });
         const importedGame = await importResponse.json();
         if (!importResponse.ok) throw new Error(importedGame?.error || 'No se pudo guardar el juego.');
       }
-      const saveResponse = await fetch(`/api/library/${gameId}/wishlist`, {
+      const saveResponse = await apiFetch(`/api/library/${gameId}/wishlist`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

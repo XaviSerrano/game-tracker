@@ -75,9 +75,32 @@ environment variables are needed. Never define database, Twitch client secret,
 or SMTP credentials as Vercel `VITE_*` variables.
 
 The API is accessed through Vercel rewrites, so backend CORS is not needed for
-the current deployment model. If the frontend later calls Render directly,
-configure an explicit frontend origin and credentialed CORS, and revisit cookie
-`SameSite`/domain settings before changing the client URL.
+the browser deployment model. The Android app uses Capacitor's native HTTP
+transport to call Render, not a browser cross-origin request. Its session uses
+the existing backend cookie; no change to web CORS or SameSite is required.
+
+## Android release
+
+See `frontend/README.md` for the build and Android Studio workflow. The app ID
+is `space.gametracker.app`; confirm it before the first Play release. Android
+requires the deployed backend to include the account-deletion endpoint.
+
+Before submitting to Google Play:
+
+- Publish an accurate privacy policy and a public account-deletion request URL;
+  document the controller, contact, data processing, retention and backups.
+- Verify deletion on a test account, including linked content, other users'
+  review likes, session invalidation and retained security logs. Security logs
+  retain IP and user-agent data even after their user reference is removed.
+- Test authentication, restored sessions, recovery, navigation, system Back,
+  rotation, keyboard and safe areas on real Android devices.
+- Verify the store listing, app icon, screenshots, data-safety declarations,
+  target API level and current testing requirements in Play Console.
+- Generate a signed AAB in Android Studio and securely back up the release
+  keystore and credentials outside the repository. Never commit signing keys.
+
+No signing key, privacy policy, public deletion-request page or Play Console
+configuration is supplied by the build. Do not treat a debug APK as a release.
 
 ## Search visibility
 
@@ -116,6 +139,13 @@ password reset email, library updates, reviews, lists, follows, statistics, and
 Discover against the deployed services. Confirm Render's health check and
 Vercel's `/api/*` rewrite target. Automated end-to-end coverage is not currently
 configured.
+
+The account-deletion integration test requires a **dedicated disposable**
+PostgreSQL database and a backend running against that same database. Set
+`TEST_DATABASE_URL` and `TEST_API_URL`, then run
+`node --test src/account-deletion.test.mjs` from `backend/`. Do not point this
+test at production. Run `node --test scripts/api.test.mjs` from `frontend/` for
+the web and Android API client behavior.
 
 ## Secrets and local data
 

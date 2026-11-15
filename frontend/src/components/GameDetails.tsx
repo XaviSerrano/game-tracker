@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useState, useEffect, useRef } from 'react';
 
 import {
@@ -300,7 +301,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   useEffect(() => {
     if (language !== 'es' || !game?.igdbId || !game.summary) return;
     const controller = new AbortController();
-    fetch(`/api/games/${game.igdbId}/summary?lang=es`, { signal: controller.signal })
+    apiFetch(`/api/games/${game.igdbId}/summary?lang=es`, { signal: controller.signal })
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (data?.translated && typeof data.summary === 'string') {
@@ -339,7 +340,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     setCompletedAt('');
     try {
       // 1. Fetch game details
-      const gameRes = await fetch(`/api/games/${gameId}`);
+      const gameRes = await apiFetch(`/api/games/${gameId}`);
       if (!gameRes.ok) {
         if (gameRes.status === 404) {
           setErrorMessage(t('Este juego no existe o ya no está disponible.'));
@@ -349,19 +350,19 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       const gameData = await gameRes.json();
       setGame(gameData);
 
-      fetch(`/api/games/${gameId}/stores`)
+      apiFetch(`/api/games/${gameId}/stores`)
         .then(res => (res.ok ? res.json() : {}))
         .then(setStoreLinks)
         .catch(() => setStoreLinks({}));
       // Fetch public reviews independently of authentication.
-      const reviewsRes = await fetch(`/api/reviews/${gameId}`);
+      const reviewsRes = await apiFetch(`/api/reviews/${gameId}`);
       if (reviewsRes.ok) {
         const reviewsData = await reviewsRes.json();
         setReviews(reviewsData);
       }
 
       if (currentUser && token) {
-        const ugRes = await fetch(`/api/users/${currentUser.id}/library`);
+        const ugRes = await apiFetch(`/api/users/${currentUser.id}/library`);
         if (ugRes.ok) {
           const ugData: (UserGame & { game: Game })[] = await ugRes.json();
           const found = ugData.find(item => item.gameId === gameId);
@@ -380,7 +381,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           setMessage(`Error: ${t('No se pudo cargar tu biblioteca.')}`);
         }
 
-        const listsRes = await fetch(`/api/lists?userId=${currentUser.id}`, {
+        const listsRes = await apiFetch(`/api/lists?userId=${currentUser.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -442,7 +443,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     if (requireSession()) return;
     setMessage('');
     try {
-      const res = await fetch('/api/library', {
+      const res = await apiFetch('/api/library', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -485,13 +486,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
     try {
       if (!isInWishlist && !userGame) {
-        const importRes = await fetch(`/api/games/import/${gameId}`, { method: 'POST' });
+        const importRes = await apiFetch(`/api/games/import/${gameId}`, { method: 'POST' });
         const importData = await importRes.json();
         if (!importRes.ok) {
           throw new Error(importData?.error || 'No se pudo importar el juego.');
         }
       }
-      const saveRes = await fetch(`/api/library/${gameId}/wishlist`, {
+      const saveRes = await apiFetch(`/api/library/${gameId}/wishlist`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ enabled: !isInWishlist })
@@ -516,7 +517,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     if (!reviewTitle.trim() || !reviewContent.trim()) return;
 
     try {
-      const res = await fetch('/api/reviews', {
+      const res = await apiFetch('/api/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -544,7 +545,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     if (requireSession()) return;
 
     try {
-      const res = await fetch(`/api/reviews/${reviewId}/like`, {
+      const res = await apiFetch(`/api/reviews/${reviewId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -552,7 +553,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       });
       if (res.ok) {
         // Refresh reviews
-        const reviewsRes = await fetch(`/api/reviews/${gameId}`);
+        const reviewsRes = await apiFetch(`/api/reviews/${gameId}`);
         if (reviewsRes.ok) {
           const reviewsData = await reviewsRes.json();
           setReviews(reviewsData);
@@ -567,7 +568,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     setUpdatingListId(listId);
 
     try {
-      const listRes = await fetch(`/api/lists/${listId}`, {
+      const listRes = await apiFetch(`/api/lists/${listId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -586,7 +587,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         ? activeIds.filter((id: number) => id !== gameId)
         : [...activeIds, gameId];
 
-      const updateRes = await fetch(`/api/lists/${listId}`, {
+      const updateRes = await apiFetch(`/api/lists/${listId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -622,7 +623,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     await Promise.all(
       myLists.map(async (list) => {
         try {
-          const res = await fetch(`/api/lists/${list.id}`, {
+          const res = await apiFetch(`/api/lists/${list.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -654,7 +655,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     await Promise.all(
       myLists.map(async (list) => {
         try {
-          const res = await fetch(`/api/lists/${list.id}`, {
+          const res = await apiFetch(`/api/lists/${list.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

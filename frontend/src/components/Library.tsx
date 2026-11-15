@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { UserGame, Game, GameStatus } from '../types.ts';
 import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
@@ -28,7 +29,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     setLoading(true);
     setLoadError(false);
     try {
-      const res = await fetch(`/api/users/${userId}/library`, {
+      const res = await apiFetch(`/api/users/${userId}/library`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -92,7 +93,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       const item = completeLib.find(i => i.gameId === gameId);
       if (!item) return;
 
-      const res = await fetch(`/api/library/${gameId}/wishlist`, {
+      const res = await apiFetch(`/api/library/${gameId}/wishlist`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ enabled: !item.isInWishlist })

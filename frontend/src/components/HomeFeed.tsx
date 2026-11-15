@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useEffect, useState } from 'react';
 import { Activity, User } from '../types.ts';
 import {
@@ -54,7 +55,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
     setLoadError(false);
 
     try {
-      const feedRes = await fetch(
+      const feedRes = await apiFetch(
         `/api/social/feed?userId=${currentUser.id}&scope=${feedScope}`
       );
 
@@ -87,7 +88,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         const detailsResponses =
           await Promise.allSettled(
             activityGameIds.map(async (gameId) => {
-              const gameRes = await fetch(
+              const gameRes = await apiFetch(
                 `/api/games/${gameId}`
               );
 

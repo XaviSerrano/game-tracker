@@ -1,3 +1,4 @@
+import { apiFetch } from '../api.ts';
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Compass, Eye, EyeOff, KeyRound, LogIn, Mail, UserPlus } from 'lucide-react';
 import { User } from '../types.ts';
@@ -117,7 +118,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
     clearMessages();
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -151,7 +152,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -181,7 +182,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      const res = await apiFetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -221,7 +222,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await apiFetch('/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

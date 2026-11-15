@@ -8,7 +8,8 @@ API have been retired.
 The SPA uses relative `/api/*` URLs. In development Vite proxies requests to
 Express at `http://localhost:3001`; Vercel rewrites them to the Render service.
 The browser therefore uses the frontend origin for API calls and the session
-cookie.
+cookie. The Android app uses Capacitor's native HTTP client to call the Render
+origin directly.
 
 ## Routes
 
@@ -22,6 +23,7 @@ cookie.
 | POST | `/api/auth/forgot-password` | Request a password-reset link | No |
 | POST | `/api/auth/reset-password` | Set a password with a reset token | No |
 | POST | `/api/auth/logout` | Revoke the current session | Yes |
+| POST | `/api/auth/delete-account` | Delete the current account after password confirmation | Yes |
 | GET | `/api/auth/me` | Return the current user | Yes |
 | GET | `/api/users?search=...` | Search public usernames | No |
 | GET | `/api/users/:id` | Read a public profile and follow counts | No |
@@ -53,6 +55,12 @@ cookie.
 | POST | `/api/lists` | Create a list | Yes |
 | PUT | `/api/lists/:id` | Update an owned list | Yes |
 | DELETE | `/api/lists/:id` | Delete an owned list | Yes |
+
+`POST /api/auth/delete-account` requires `{ "password": "..." }`. It returns
+204 on success, revokes all sessions through deletion, removes account-owned
+content and follows, and removes the user's likes from other reviews. Security
+events remain with their user reference set to null; IP and user-agent fields
+are retained. A failed cleanup rolls back the deletion.
 
 For `/api/games/search`, the `newest` and `rating` sorts only include games
 released already or due within 14 days, with at least one meaningful IGDB
