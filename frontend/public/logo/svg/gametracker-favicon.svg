@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="567" height="313" viewBox="71 40 567 313">
+  <style>
+    path { fill: #0B0D10; }
+    @media (prefers-color-scheme: dark) {
+      path { fill: #FFFFFF; }
+    }
+  </style>
+  <path d="M 177 42 H 390 L 350 82 H 198 L 135 145 Q 121 159 135 173 L 158 196 H 269 L 291 174 H 220 L 260 134 H 388 L 294 228 Q 285 238 270 238 H 149 Q 137 238 127 228 L 91 192 Q 73 174 73 158 Q 73 140 91 122 L 153 60 Q 163 50 177 42 Z" />
+  <path d="M 414 42 H 636 L 596 82 H 493 L 471 104 L 445 278 L 372 351 L 418 108 H 352 Z" />
+</svg>

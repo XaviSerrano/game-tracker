@@ -1,15 +1,10 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="512"
-    android:viewportHeight="512">
-    <group android:translateX="88" android:translateY="172" android:scaleX="0.7" android:scaleY="0.7">
-        <path android:fillColor="#9CA3AF" android:pathData="M110,36H370A84,84 0,0 1,454 120A84,84 0,0 1,370 204C330,204 310,176 240,176C170,176 150,204 110,204A84,84 0,0 1,26 120A84,84 0,0 1,110 36Z"/>
-        <path android:fillColor="#FFFFFF" android:pathData="M92,86Q92,80 98,80L122,80Q128,80 128,86L128,96Q128,102 134,102L144,102Q150,102 150,108L150,132Q150,138 144,138L134,138Q128,138 128,144L128,154Q128,160 122,160L98,160Q92,160 92,154L92,144Q92,138 86,138L76,138Q70,138 70,132L70,108Q70,102 76,102L86,102Q92,102 92,96Z"/>
-        <path android:fillColor="#FFFFFF" android:pathData="M193.12,146.58L216.06,130.52A8,8 0,0 0,206.88 117.42L183.94,133.48A8,8 0,0 0,193.12 146.58Z M243.12,146.58L266.06,130.52A8,8 0,0 0,256.88 117.42L233.94,133.48A8,8 0,0 0,243.12 146.58Z"/>
-        <path android:fillColor="#4F8CFF" android:pathData="M352,88a18,18 0,1 0,36 0a18,18 0,1 0,-36 0"/>
-        <path android:fillColor="#3DDC84" android:pathData="M318,120a18,18 0,1 0,36 0a18,18 0,1 0,-36 0"/>
-        <path android:fillColor="#FF4D63" android:pathData="M386,120a18,18 0,1 0,36 0a18,18 0,1 0,-36 0"/>
-        <path android:fillColor="#FFD23F" android:pathData="M352,152a18,18 0,1 0,36 0a18,18 0,1 0,-36 0"/>
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateY="26" android:scaleX="0.15" android:scaleY="0.15">
+        <path android:fillColor="#FFFFFF" android:pathData="M177,42 H390 L350,82 H198 L135,145 Q121,159 135,173 L158,196 H269 L291,174 H220 L260,134 H388 L294,228 Q285,238 270,238 H149 Q137,238 127,228 L91,192 Q73,174 73,158 Q73,140 91,122 L153,60 Q163,50 177,42 Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M414,42 H636 L596,82 H493 L471,104 L445,278 L372,351 L418,108 H352 Z" />
     </group>
 </vector>

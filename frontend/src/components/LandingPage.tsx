@@ -6,9 +6,12 @@ import {
   Gamepad2,
   LibraryBig,
   ListChecks,
+  Menu,
   Search,
+  X,
   UsersRound
 } from 'lucide-react';
+import { useState } from 'react';
 import { LanguageSelector } from './LanguageSelector.tsx';
 import { useLanguage } from '../i18n.tsx';
 
@@ -69,6 +72,7 @@ const features = [
 
 export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGoHome }) => {
   const { t } = useLanguage();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleDiscover = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -79,7 +83,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
   return (
     <div className="min-h-screen overflow-x-clip text-slate-200">
       <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0b0d12]/95 backdrop-blur-md">
-        <div className="mx-auto flex min-h-16 w-full max-w-[86rem] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+        <div className="relative mx-auto grid min-h-16 w-full max-w-[86rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:gap-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:px-12">
           <a
             href="/"
             onClick={(event) => {
@@ -89,11 +93,10 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             aria-label={t('Volver al inicio')}
             className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
           >
-            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
-            <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
+            <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
           </a>
 
-          <nav aria-label={t('Navegación principal')} className="hidden items-center gap-7 md:flex">
+          <nav aria-label={t('Navegación principal')} className="hidden items-center justify-center gap-4 whitespace-nowrap md:col-span-2 md:col-start-1 md:row-start-2 md:flex md:py-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:py-0 xl:gap-7">
             <a href="#funciones" className="text-sm font-semibold text-slate-300 transition hover:text-white">
               {t('Funciones')}
             </a>
@@ -105,16 +108,45 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             </a>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <LanguageSelector compact />
+          <div className="flex shrink-0 items-center justify-self-end gap-1.5 sm:gap-2 lg:col-start-3 lg:row-start-1">
+            <div className="hidden md:block"><LanguageSelector compact /></div>
             <button
               type="button"
               onClick={() => onOpenAuth('login')}
-              className="min-h-10 rounded-xl px-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/[0.06] hover:text-white sm:px-4 sm:text-sm"
+              className="min-h-10 whitespace-nowrap rounded-xl px-2 text-xs font-bold text-slate-200 transition hover:bg-white/[0.06] hover:text-white sm:px-4 sm:text-sm"
             >
               {t('Iniciar sesión')}
             </button>
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? t('Cerrar menú') : t('Abrir menú')}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="landing-mobile-menu"
+              onClick={() => setMobileMenuOpen(open => !open)}
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] md:hidden"
+            >
+              {mobileMenuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
+            </button>
           </div>
+
+          {mobileMenuOpen && (
+            <div id="landing-mobile-menu" className="absolute inset-x-3 top-full z-40 mt-2 rounded-2xl border border-white/10 bg-[#11151d] p-2 shadow-xl shadow-black/30 sm:inset-x-6 md:hidden">
+              <nav aria-label={t('Navegación principal móvil')} className="grid gap-1">
+                <a href="#funciones" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                  {t('Funciones')}
+                </a>
+                <a href="#como-funciona" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                  {t('Cómo funciona')}
+                </a>
+                <a href="/discover" onClick={event => { setMobileMenuOpen(false); handleDiscover(event); }} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                  {t('Descubrir juegos')}
+                </a>
+              </nav>
+              <div className="mt-2 border-t border-white/[0.07] px-2 pt-3">
+                <LanguageSelector compact />
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -352,10 +384,9 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                   onGoHome();
                 }}
                 aria-label={t('Volver al inicio')}
-                className="inline-flex items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
               >
-                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-7 w-auto" />
-                <span className="text-lg font-extrabold tracking-tight">GameTracker</span>
+                <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
               </a>
               <p className="mt-3 text-sm leading-6 text-slate-400">{t('Tu biblioteca gamer, a tu manera.')}</p>
             </div>

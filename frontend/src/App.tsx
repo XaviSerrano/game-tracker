@@ -20,6 +20,7 @@ import { LandingPage } from './components/LandingPage.tsx';
 import { useLanguage } from './i18n.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { Dialog } from './components/Dialog.tsx';
+import { HeroCarousel } from './components/HeroCarousel.tsx';
 
 const Onboarding = lazy(() => import('./components/Onboarding.tsx').then(m => ({ default: m.Onboarding })));
 const HomeFeed = lazy(() => import('./components/HomeFeed.tsx').then(m => ({ default: m.HomeFeed })));
@@ -336,6 +337,59 @@ export default function App() {
     setSelectedGameId(null);
   };
 
+  // Footer compartido. `reserveBottomNavSpace` añade espacio en móvil para que
+  // la barra de navegación inferior fija (solo con sesión iniciada) no lo tape.
+  const renderFooter = (reserveBottomNavSpace: boolean) => (
+    <footer className={`border-t border-white/[0.07] ${reserveBottomNavSpace ? 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
+      <div className="mx-auto w-full max-w-[86rem] px-5 py-8 sm:px-8 lg:px-12">
+        <div className="flex flex-col gap-7 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-sm">
+            <a
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                handleGoHome();
+              }}
+              aria-label={t('Volver al inicio')}
+              className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            >
+              <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
+            </a>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{t('Tu biblioteca gamer, a tu manera.')}</p>
+          </div>
+
+          <nav aria-label={t('Enlaces del pie de página')} className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-400">
+            <a
+              href="/discover"
+              onClick={(event) => {
+                event.preventDefault();
+                handleGoDiscover();
+              }}
+              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            >
+              {t('Descubrir juegos')}
+            </a>
+            <a
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            >
+              {t('Volver arriba')}
+            </a>
+          </nav>
+        </div>
+
+        <div className="flex flex-col gap-2 pt-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 GameTracker. {t('Todos los derechos reservados.')}</p>
+          <p>{t('Hecho para quienes siempre tienen una partida pendiente.')}</p>
+        </div>
+      </div>
+    </footer>
+  );
+
   if (resetTokenInUrl) {
     return (
       <Suspense fallback={null}>
@@ -361,7 +415,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
-          <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-10 w-auto animate-bounce mx-auto" />
+          <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-10 w-auto animate-bounce mx-auto" />
           <p className="text-xs text-slate-500 font-mono tracking-widest animate-pulse">{t('CARGANDO GAMETRACKER...')}</p>
         </div>
       </div>
@@ -390,8 +444,7 @@ export default function App() {
                 aria-label={t('Volver al inicio')}
                 className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
               >
-                <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-5 w-auto" />
-                <span className="text-lg font-bold tracking-tight text-white">GameTracker</span>
+                <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-5 w-auto" />
               </a>
               <div className="flex max-w-full items-center gap-3">
                 <LanguageSelector compact />
@@ -426,6 +479,7 @@ export default function App() {
                 />
               )}
             </main>
+            {renderFooter(false)}
           </>
         )}
         {authModalOpen && (
@@ -562,12 +616,15 @@ export default function App() {
   const isNavItemActive = (id: MainTab) =>
     (routeTab || activeTab) === id && selectedGameId === null && selectedUserId === null;
 
+  // El carrusel solo aparece en el inicio (feed), no en fichas de juego ni perfiles ajenos.
+  const showHero = (routeTab || activeTab) === 'feed' && selectedGameId === null && selectedUserId === null && !isKnownGamePath;
+
   return (
     <div className="min-h-screen text-slate-200 flex flex-col font-sans">
       
       {/* 1. TOP HEADER (mismo formato que la landing) */}
       <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0b0d12]/95 backdrop-blur-md">
-        <div className="mx-auto flex min-h-16 w-full max-w-[86rem] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto grid min-h-16 w-full max-w-[86rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:gap-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:px-12">
           <a
             href="/"
             onClick={(event) => {
@@ -577,11 +634,10 @@ export default function App() {
             aria-label={t('Volver al inicio')}
             className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
           >
-            <img src="/brand/isotipo.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
-            <span className="text-lg font-extrabold tracking-tight sm:text-xl">GameTracker</span>
+            <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
           </a>
 
-          <nav aria-label={t('Navegación principal')} className="hidden items-center gap-7 md:flex">
+          <nav aria-label={t('Navegación principal')} className="hidden items-center justify-center gap-4 whitespace-nowrap md:col-span-2 md:col-start-1 md:row-start-2 md:flex md:py-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:py-0 xl:gap-7">
             {navItems.filter(item => item.id !== 'profile').map(item => {
               const active = isNavItemActive(item.id);
 
@@ -606,7 +662,7 @@ export default function App() {
             })}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center justify-self-end gap-1 sm:gap-2 lg:col-start-3 lg:row-start-1 lg:gap-3">
             <LanguageSelector compact />
             <button
               type="button"
@@ -623,7 +679,7 @@ export default function App() {
                 referrerPolicy="no-referrer"
                 className="size-7 rounded-full border border-slate-800"
               />
-              <span className="hidden max-w-[10rem] truncate lg:inline">@{currentUser.username}</span>
+              <span className="hidden max-w-[10rem] truncate xl:inline">@{currentUser.username}</span>
             </button>
             <button
               type="button"
@@ -632,14 +688,17 @@ export default function App() {
               className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/[0.06] hover:text-white sm:px-4 sm:text-sm"
             >
               <LogOut className="size-4" aria-hidden="true" />
-              <span className="hidden sm:inline">{t('Cerrar Sesión')}</span>
+              <span className="hidden 2xl:inline">{t('Cerrar Sesión')}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* 2. CORE VIEWPORT */}
-      <main className="flex-1 min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/* 2. HERO CAROUSEL (solo en inicio, encima del mensaje de bienvenida) */}
+      {showHero && <HeroCarousel onSelectGame={handleSelectGame} />}
+
+      {/* 3. CORE VIEWPORT */}
+      <main className="flex-1 min-w-0">
         <div className={`w-full mx-auto py-4 md:py-6 ${selectedGameId !== null || isKnownGamePath ? '' : (routeTab || activeTab) === 'discover' ? 'max-w-[96rem] px-3 md:px-6' : 'max-w-6xl px-3 md:px-5'}`}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -659,8 +718,11 @@ export default function App() {
         </div>
       </main>
 
+      {/* 4. FOOTER */}
+      {renderFooter(true)}
+
       {/* 5. MOBILE BOTTOM NAV */}
-      <nav aria-label={t('Navegación principal')} className="flex md:hidden items-center justify-around bg-[#0f121d] border-t border-slate-850 fixed bottom-0 left-0 right-0 min-h-16 px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] z-20">
+      <nav aria-label={t('Navegación principal')} className="fixed inset-x-0 bottom-0 z-20 grid min-h-16 grid-cols-6 items-center border-t border-slate-850 bg-[#0f121d] px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 md:hidden" style={{ paddingLeft: 'max(0.25rem, env(safe-area-inset-left))', paddingRight: 'max(0.25rem, env(safe-area-inset-right))' }}>
         {navItems.map(item => {
           const active =
             (routeTab || activeTab) === item.id &&
@@ -679,15 +741,15 @@ export default function App() {
                 event.preventDefault();
                 handleNavigation(item.id);
               }}
-              className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 transition cursor-pointer text-center relative ${
+              className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0 transition text-center ${
                 active
                   ? 'text-blue-500'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Icon className="w-4.5 h-4.5" />
+              <Icon className="size-[18px] shrink-0" />
 
-              <span className="text-[11px] leading-3 font-semibold tracking-tight sm:text-xs">
+              <span className="max-w-full whitespace-nowrap text-[10px] leading-3 font-semibold tracking-tight sm:text-[11px]">
                 {'mobileLabel' in item ? item.mobileLabel : item.label}
               </span>
 

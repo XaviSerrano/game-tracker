@@ -9,8 +9,6 @@ import {
   Star,
   ChevronRight
 } from 'lucide-react';
-import { ParticleBackdrop } from './ParticleBackdrop.tsx';
-import { ShimmerText } from './ShimmerText.tsx';
 import { translateActivityDetails, useLanguage } from '../i18n.tsx';
 
 interface HomeFeedProps {
@@ -275,107 +273,47 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
     );
   };
 
+  const scopeOptions = [
+    { id: 'all', label: t('General'), icon: Globe },
+    { id: 'following', label: t('Siguiendo'), icon: Users }
+  ] as const;
+
   return (
     <div className="space-y-6 pb-20 selection:bg-[#dca94f] selection:text-black">
 
-      {/* HERO */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0d1320] via-[#101522] to-[#080b10] border border-slate-800 p-6 rounded-2xl">
-        <ParticleBackdrop
-          className="opacity-40"
-          count={18}
+      {/* SEARCH */}
+      <form
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const query = searchQuery.trim();
+          if (query) onSearchGames(query);
+        }}
+        className="relative flex items-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-lg shadow-black/20 transition focus-within:border-[#d9a352]/70 focus-within:bg-white/[0.06]"
+      >
+        <label htmlFor="home-game-search" className="sr-only">{t('Buscar videojuegos')}</label>
+        <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+        <input
+          id="home-game-search"
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder={t('Busca videojuegos...')}
+          className="h-14 w-full rounded-2xl bg-transparent pl-12 pr-28 text-base text-slate-100 outline-none placeholder:text-slate-500 sm:text-sm"
         />
-
-        <div className="absolute top-0 right-0 w-80 h-80 bg-[#dca94f]/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div>
-            <span className="inline-flex text-[9px] font-bold text-[#e1b35e] uppercase tracking-widest bg-[#dca94f]/10 px-2.5 py-1 rounded-full border border-[#dca94f]/20">
-              {t('Activo hoy')}
-            </span>
-
-            <h2 className="text-2xl md:text-3xl font-bold font-display text-white mt-3 tracking-tight">
-              {language === 'en' ? 'Welcome' : '¡Hola de'}{' '}
-              <ShimmerText>{language === 'en' ? 'back' : 'nuevo'}</ShimmerText>
-              , @{currentUser.username}!
-            </h2>
-
-            <p className="text-slate-400 text-xs mt-1 md:max-w-lg">
-              {t('Echa un vistazo a la actividad reciente de')} {t('tus compañeros y descubre nuevos videojuegos.')}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={onDiscover}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#dca84f] px-4 py-2.5 text-xs font-semibold text-[#17120a] transition hover:bg-[#e8b967] cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5" />
-              {t('Explorar juegos')}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFeedScope('all')}
-              aria-pressed={feedScope === 'all'}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 border ${
-                feedScope === 'all'
-                  ? 'bg-[#dca84f] text-[#17120a] border-[#e5b660]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {t('General')}
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setFeedScope('following')
-              }
-              aria-pressed={feedScope === 'following'}
-              className={`px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 border ${
-                feedScope === 'following'
-                  ? 'bg-[#dca84f] text-[#17120a] border-[#e5b660]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              {t('Siguiendo')}
-            </button>
-          </div>
-        </div>
-        <form
-          role="search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const query = searchQuery.trim();
-            if (query) onSearchGames(query);
-          }}
-          className="relative z-10 mt-6 flex max-w-2xl gap-2"
+        <button
+          type="submit"
+          disabled={!searchQuery.trim()}
+          className="absolute right-2 top-1/2 inline-flex h-10 -translate-y-1/2 items-center rounded-xl bg-[#dca84f] px-5 text-sm font-semibold text-[#17120a] transition hover:bg-[#e8b967] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <label htmlFor="home-game-search" className="sr-only">{t('Buscar videojuegos')}</label>
-          <div className="relative min-w-0 flex-1">
-            <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <input
-              id="home-game-search"
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder={t('Busca videojuegos...')}
-              className="min-h-11 w-full rounded-xl border border-slate-700 bg-[#111317] py-3 pl-11 pr-4 text-base text-slate-200 outline-none placeholder:text-slate-400 focus:border-[#d9a352] sm:text-sm"
-            />
-          </div>
-          <button type="submit" disabled={!searchQuery.trim()} className="min-h-11 rounded-xl bg-[#dca84f] px-4 text-sm font-semibold text-[#17120a] transition hover:bg-[#e8b967] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50">
-            {t('Buscar')}
-          </button>
-        </form>
-      </div>
+          {t('Buscar')}
+        </button>
+      </form>
 
       {/* FEED */}
       <div className="space-y-4">
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-slate-200 font-display flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#dca84f]" />
 
@@ -384,14 +322,42 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               : t('Actividad de tus Seguidos')}
           </h3>
 
-          <button
-            type="button"
-            onClick={fetchFeed}
-            className="text-xs text-slate-500 hover:text-[#dca84f] transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <RefreshCw className="w-3 h-3" />
-            {t('Actualizar')}
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Selector segmentado: General / Siguiendo */}
+            <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.04] p-1">
+              {scopeOptions.map(option => {
+                const Icon = option.icon;
+                const selected = feedScope === option.id;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setFeedScope(option.id)}
+                    aria-pressed={selected}
+                    className={`inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${
+                      selected
+                        ? 'bg-[#dca84f] text-[#17120a] shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="size-3.5" aria-hidden="true" />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchFeed}
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs text-slate-500 transition hover:text-[#dca84f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]"
+            >
+              <RefreshCw className={`size-3 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+              <span className="hidden sm:inline">{t('Actualizar')}</span>
+              <span className="sr-only sm:hidden">{t('Actualizar')}</span>
+            </button>
+          </div>
         </div>
 
         {/* LOADING */}

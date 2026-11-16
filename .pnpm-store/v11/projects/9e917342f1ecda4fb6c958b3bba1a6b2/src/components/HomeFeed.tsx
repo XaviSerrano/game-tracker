@@ -273,32 +273,9 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#dca94f]/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div>
-            <span className="inline-flex text-[9px] font-bold text-[#e1b35e] uppercase tracking-widest bg-[#dca94f]/10 px-2.5 py-1 rounded-full border border-[#dca94f]/20">
-              Activo hoy
-            </span>
 
-            <h2 className="text-2xl md:text-3xl font-bold font-display text-white mt-3 tracking-tight">
-              ¡Hola de{' '}
-              <ShimmerText>nuevo</ShimmerText>
-              , @{currentUser.username}!
-            </h2>
-
-            <p className="text-slate-400 text-xs mt-1 md:max-w-lg">
-              Echa un vistazo a la actividad reciente de
-              tus compañeros y descubre nuevos videojuegos.
-            </p>
-          </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={onDiscover}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#dca84f] px-4 py-2.5 text-xs font-semibold text-[#17120a] transition hover:bg-[#e8b967] cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5" />
-              Explorar juegos
-            </button>
 
             <button
               type="button"
