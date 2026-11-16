@@ -2,7 +2,6 @@
 import {
   ArrowRight,
   BarChart3,
-  Compass,
   Gamepad2,
   LibraryBig,
   ListChecks,
@@ -91,7 +90,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
               onGoHome();
             }}
             aria-label={t('Volver al inicio')}
-            className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
             <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
           </a>
@@ -123,7 +122,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
               aria-expanded={mobileMenuOpen}
               aria-controls="landing-mobile-menu"
               onClick={() => setMobileMenuOpen(open => !open)}
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] md:hidden"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:hidden"
             >
               {mobileMenuOpen ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
             </button>
@@ -132,13 +131,13 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
           {mobileMenuOpen && (
             <div id="landing-mobile-menu" className="absolute inset-x-3 top-full z-40 mt-2 rounded-2xl border border-white/10 bg-[#11151d] p-2 shadow-xl shadow-black/30 sm:inset-x-6 md:hidden">
               <nav aria-label={t('Navegación principal móvil')} className="grid gap-1">
-                <a href="#funciones" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                <a href="#funciones" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-accent">
                   {t('Funciones')}
                 </a>
-                <a href="#como-funciona" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                <a href="#como-funciona" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-accent">
                   {t('Cómo funciona')}
                 </a>
-                <a href="/discover" onClick={event => { setMobileMenuOpen(false); handleDiscover(event); }} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-[#e5b974]">
+                <a href="/discover" onClick={event => { setMobileMenuOpen(false); handleDiscover(event); }} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-accent">
                   {t('Descubrir juegos')}
                 </a>
               </nav>
@@ -152,21 +151,22 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
 
       <main>
         <section className="relative border-b border-white/[0.06]">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-36 top-8 size-[28rem] rounded-full bg-[#d9a352]/[0.045] blur-3xl" />
+          <div aria-hidden="true" className="landing-hero-grid pointer-events-none absolute inset-0" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-36 top-8 size-[28rem] rounded-full bg-accent/10 blur-3xl" />
           <div className="relative mx-auto grid w-full max-w-[86rem] items-center gap-14 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[minmax(0,9fr)_minmax(0,11fr)] lg:gap-16 lg:px-12 lg:py-28">
             <div className="max-w-2xl">
-              <h1 className="text-balance text-5xl font-extrabold leading-[1.04] tracking-[-0.045em] text-white sm:text-6xl xl:text-7xl">
-                {t('Organiza tu colección de videojuegos.')}
-                <span className="mt-2 block text-[#e5b974]">{t('Descubre qué jugar después.')}</span>
+              <h1 className="landing-heading text-balance text-white">
+                {t('Organiza tu colección de videojuegos.')}{' '}
+                <span className="font-accent-serif">{t('Descubre qué jugar después.')}</span>
               </h1>
-              <p className="mt-7 max-w-[56ch] text-pretty text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+              <p className="mt-7 max-w-[56ch] text-pretty text-base leading-[1.65] text-slate-300 sm:text-lg">
                 {t('Organiza tu colección de videojuegos, registra tu progreso y descubre tu próximo juego junto a otros jugadores.')}
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => onOpenAuth('register')}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#d9a352] px-6 text-sm font-bold text-[#17120a] transition hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-semibold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
                 >
                   {t('Crear mi cuenta')}
                   <ArrowRight className="size-4" aria-hidden="true" />
@@ -174,10 +174,10 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 <a
                   href="/discover"
                   onClick={handleDiscover}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/10 px-6 text-sm font-bold text-white transition hover:border-[#d9a352]/40 hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 px-2 text-sm font-semibold text-white underline decoration-1 underline-offset-4 transition hover:text-accent-hover hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
                 >
-                  <Compass className="size-4 text-[#e5b974]" aria-hidden="true" />
                   {t('Explorar juegos')}
+                  <ArrowRight className="size-4" aria-hidden="true" />
                 </a>
               </div>
               <p className="mt-5 text-sm text-slate-400">{t('Tu colección, tu ritmo, tus próximas aventuras.')}</p>
@@ -187,7 +187,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
               <div>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-11 place-items-center rounded-xl bg-[#d9a352]/10 text-[#e5b974]">
+                    <span className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent">
                       <LibraryBig className="size-5" aria-hidden="true" />
                     </span>
                     <div>
@@ -207,8 +207,8 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 />
               </div>
               <div className="relative mt-4 flex items-center justify-end gap-4 px-1 text-xs text-slate-400">
-                <span className="flex items-center gap-1.5 text-[#e5b974]">
-                  <span className="size-1.5 rounded-full bg-[#d9a352]" aria-hidden="true"/>
+                <span className="flex items-center gap-1.5 text-accent">
+                  <span className="size-1.5 rounded-full bg-accent" aria-hidden="true"/>
                   {t('Hecha para jugar a tu manera')}
                 </span>
               </div>
@@ -219,19 +219,19 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
         <section id="funciones" className="scroll-mt-24">
           <div className="mx-auto w-full max-w-[86rem] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
             <div className="max-w-3xl">
-              <h2 className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-5xl">
-                {t('Tu colección merece algo más que una lista.')}
+              <h2 className="landing-section-heading text-balance text-white">
+                {t('Tu colección merece algo más que una')}{' '}<span className="font-accent-serif">{t('lista.')}</span>
               </h2>
               <p className="mt-5 max-w-[64ch] text-base leading-7 text-slate-300">
                 {t('Guarda el hilo de cada partida: desde ese juego que tienes pendiente hasta todo lo que ya has terminado.')}
               </p>
             </div>
 
-            <figure className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-[0_28px_90px_-42px_rgba(217,163,82,0.28)] sm:mt-14">
+            <figure className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-accent-soft sm:mt-14">
               <div aria-hidden="true" className="flex h-11 items-center gap-2 border-b border-white/[0.08] bg-[#111317] px-4">
                 <span className="size-2.5 rounded-full bg-slate-600" />
                 <span className="size-2.5 rounded-full bg-slate-600" />
-                <span className="size-2.5 rounded-full bg-[#d9a352]/80" />
+                <span className="size-2.5 rounded-full bg-accent/80" />
                 <span className="ml-3 h-6 min-w-0 flex-1 truncate rounded-md border border-white/[0.06] bg-[#0b0d12] px-3 text-left text-[0.6875rem] leading-6 text-slate-500">
                   {t('GameTracker · Vista previa del detalle')}
                 </span>
@@ -253,7 +253,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             <div className="mt-12 grid border-t border-white/[0.09] sm:grid-cols-2 xl:grid-cols-5">
               {features.map(({ icon: Icon, title, description }) => (
                 <article key={title} className="border-b border-white/[0.09] py-7 sm:px-5 sm:first:pl-0 xl:px-6 xl:first:pl-0">
-                  <Icon className="size-5 text-[#e5b974]" aria-hidden="true" />
+                  <Icon className="size-5 text-accent" aria-hidden="true" />
                   <h3 className="mt-5 text-base font-bold text-white">{t(title)}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-400">{t(description)}</p>
                 </article>
@@ -263,11 +263,11 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
         </section>
 
         <section aria-labelledby="movil-titulo" className="relative overflow-hidden border-t border-white/[0.07]">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_at_50%_100%,rgba(217,163,82,0.10),transparent_65%)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 accent-ambient" />
           <div className="relative mx-auto w-full max-w-[86rem] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
             <div className="max-w-3xl">
-              <h2 id="movil-titulo" className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-5xl">
-                {t('Tu biblioteca, siempre en el bolsillo.')}
+              <h2 id="movil-titulo" className="landing-section-heading text-balance text-white">
+                {t('Tu biblioteca, siempre en el')}{' '}<span className="font-accent-serif">{t('bolsillo.')}</span>
               </h2>
               <p className="mt-5 max-w-[64ch] text-base leading-7 text-slate-300">
                 {t('Consulta la actividad de la comunidad, repasa cada juego y revisa tus estadísticas desde cualquier pantalla.')}
@@ -293,8 +293,8 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
         <section aria-labelledby="listas-titulo" className="border-t border-white/[0.07]">
           <div className="mx-auto grid w-full max-w-[86rem] items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:px-12 lg:py-24">
             <div>
-              <h2 id="listas-titulo" className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-4xl">
-                {t('Tus juegos, tus listas.')}
+              <h2 id="listas-titulo" className="landing-section-heading text-balance text-white">
+                {t('Tus juegos, tus')}{' '}<span className="font-accent-serif">{t('listas.')}</span>
               </h2>
               <p className="mt-5 max-w-[52ch] text-base leading-7 text-slate-300">
                 {t('Crea colecciones temáticas para ordenar tus juegos como más sentido tenga para ti.')}
@@ -303,11 +303,11 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 {t('Reúne tus próximos juegos, tus favoritos o los títulos que quieras recordar en una lista propia.')}
               </p>
             </div>
-            <figure className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-[0_28px_90px_-42px_rgba(217,163,82,0.28)]">
+            <figure className="min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-[#080a0f] shadow-accent-soft">
               <div aria-hidden="true" className="flex h-11 items-center gap-2 border-b border-white/[0.08] bg-[#111317] px-4">
                 <span className="size-2.5 rounded-full bg-slate-600" />
                 <span className="size-2.5 rounded-full bg-slate-600" />
-                <span className="size-2.5 rounded-full bg-[#d9a352]/80" />
+                <span className="size-2.5 rounded-full bg-accent/80" />
                 <span className="ml-3 h-6 min-w-0 flex-1 truncate rounded-md border border-white/[0.06] bg-[#0b0d12] px-3 text-left text-[0.6875rem] leading-6 text-slate-500">
                   {t('GameTracker · Vista previa de listas')}
                 </span>
@@ -328,8 +328,8 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
         <section id="como-funciona" className="scroll-mt-24 border-y border-white/[0.07] bg-[#0f1218]">
           <div className="mx-auto grid w-full max-w-[86rem] gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:px-12 lg:py-24">
             <div>
-              <h2 className="text-balance text-3xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-4xl">
-                {t('Menos pestañas abiertas. Más tiempo para jugar.')}
+              <h2 className="landing-section-heading text-balance text-white">
+                {t('Menos pestañas abiertas.')}{' '}<span className="font-accent-serif">{t('Más tiempo para jugar.')}</span>
               </h2>
               <p className="mt-5 max-w-[52ch] text-base leading-7 text-slate-300">
                 {t('GameTracker reúne tu biblioteca, tus descubrimientos y tus estadísticas en un mismo espacio.')}
@@ -341,8 +341,8 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 ['2', 'Organiza', 'Añade cada juego a tu biblioteca y actualiza su estado a tu ritmo.'],
                 ['3', 'Comparte', 'Sigue a otros jugadores y descubre nuevas aventuras en comunidad.']
               ].map(([step, title, description]) => (
-                <div key={step} className="border-t border-[#d9a352]/30 pt-5">
-                  <span className="font-mono text-xs font-semibold tracking-widest text-[#e5b974]">{step.padStart(2, '0')}</span>
+                <div key={step} className="border-t border-accent/30 pt-5">
+                  <span className="font-mono text-xs font-semibold tracking-widest text-accent">{step.padStart(2, '0')}</span>
                   <h3 className="mt-4 text-lg font-bold text-white">{t(title)}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-400">{t(description)}</p>
                 </div>
@@ -352,10 +352,10 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
         </section>
 
         <section className="mx-auto w-full max-w-[86rem] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-          <div className="flex flex-col items-start justify-between gap-8 rounded-3xl border border-[#d9a352]/20 bg-[#111317] p-6 sm:p-10 lg:flex-row lg:items-center lg:p-12">
+          <div className="flex flex-col items-start justify-between gap-8 rounded-3xl border border-accent/20 bg-[#111317] p-6 sm:p-10 lg:flex-row lg:items-center lg:p-12">
             <div className="max-w-2xl">
-              <h2 className="text-balance text-3xl font-bold tracking-[-0.035em] text-white sm:text-4xl">
-                {t('Tu próxima partida merece un buen comienzo.')}
+              <h2 className="landing-section-heading text-balance text-white">
+                {t('Tu próxima partida merece un buen')}{' '}<span className="font-accent-serif">{t('comienzo.')}</span>
               </h2>
               <p className="mt-4 max-w-[60ch] text-base leading-7 text-slate-300">
                 {t('Empieza tu biblioteca hoy y vuelve cuando quieras para seguir justo donde lo dejaste.')}
@@ -364,7 +364,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             <button
               type="button"
               onClick={() => onOpenAuth('register')}
-              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#d9a352] px-6 text-sm font-bold text-[#17120a] transition hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               {t('Crear mi cuenta')}
               <ArrowRight className="size-4" aria-hidden="true" />
@@ -384,7 +384,7 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                   onGoHome();
                 }}
                 aria-label={t('Volver al inicio')}
-                className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
               >
                 <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
               </a>
@@ -392,16 +392,16 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             </div>
 
             <nav aria-label={t('Enlaces del pie de página')} className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-slate-400">
-              <a href="/discover" onClick={handleDiscover} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+              <a href="/discover" onClick={handleDiscover} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Descubrir juegos')}
               </a>
-              <a href="#funciones" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+              <a href="#funciones" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Funciones')}
               </a>
-              <a href="#como-funciona" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+              <a href="#como-funciona" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Cómo funciona')}
               </a>
-              <a href="#" onClick={event => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]">
+              <a href="#" onClick={event => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Volver arriba')}
               </a>
             </nav>

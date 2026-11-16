@@ -4,6 +4,8 @@ import { CustomList, Game, User } from '../types.ts';
 import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 import { ConfirmDialog } from './ConfirmDialog.tsx';
+import { GameCard } from './GameCard.tsx';
+import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
 
 interface CustomListsProps {
   currentUser: User;
@@ -14,6 +16,7 @@ interface CustomListsProps {
 
 export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectGame, onSelectUser, token }) => {
   const { t } = useLanguage();
+  const useMobileCardLayout = useIsMobileLayout();
   const [lists, setLists] = useState<(CustomList & { author: User, games: Game[] })[]>([]);
   const [selectedList, setSelectedList] = useState<(CustomList & { author: User, games: Game[] }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +169,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   };
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white">
       {confirmation && (
         <ConfirmDialog
           title={t(confirmation.type === 'list' ? 'Eliminar lista' : 'Eliminar de la lista')}
@@ -200,7 +203,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                 placeholder={t('ej. Mejores RPGs por Turnos, Joyas Ocultas, Indispensables de Switch...')}
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-2.5 px-4 text-xs text-white placeholder-slate-600 transition outline-none"
+                className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-2.5 px-4 text-xs text-white placeholder-slate-600 transition outline-none"
               />
             </div>
 
@@ -212,7 +215,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                 value={newListDesc}
                 rows={3}
                 onChange={(e) => setNewListDesc(e.target.value)}
-                className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 transition outline-none resize-none"
+                className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-3 text-xs text-white placeholder-slate-500 transition outline-none resize-none"
               ></textarea>
             </div>
 
@@ -227,10 +230,10 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       key={game.igdbId}
                       aria-pressed={active}
                       onClick={() => toggleSelectGame(game.igdbId)}
-                      className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-1.5 cursor-pointer ${active ? 'bg-blue-600/10 text-blue-400 border-blue-500/30 font-bold' : 'bg-[#0f121d] border-slate-850 hover:border-slate-700 text-slate-400'}`}
+                      className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-1.5 cursor-pointer ${active ? 'bg-accent/10 text-accent border-accent/30 font-bold' : 'bg-[#0f121d] border-slate-850 hover:border-slate-700 text-slate-400'}`}
                     >
                       <span className="truncate text-[10px]">{game.name}</span>
-                      <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] ${active ? 'bg-blue-600 border-blue-500 text-white' : 'border-slate-850'}`}>
+                      <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] ${active ? 'bg-accent border-accent text-on-accent' : 'border-slate-850'}`}>
                         {active && '✓'}
                       </span>
                     </button>
@@ -249,7 +252,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition cursor-pointer"
+                className="px-5 py-2 bg-accent hover:bg-accent-hover text-on-accent font-semibold rounded-xl text-xs transition cursor-pointer"
               >
                 {t('Crear Lista')}
               </button>
@@ -273,7 +276,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                   onClick={() => onSelectUser(selectedList.userId)}
                   className="inline-flex items-center gap-1.5 p-1 px-2.5 bg-[#07090e] text-slate-400 hover:text-white rounded-full border border-slate-800 text-[10px]"
                 >
-                  {t('creada por')} <span className="font-bold text-white hover:text-blue-400">@{selectedList.author?.username}</span>
+                  {t('creada por')} <span className="font-bold text-white hover:text-accent">@{selectedList.author?.username}</span>
                 </button>
                 <h1 className="text-2xl md:text-3xl font-bold font-display text-white tracking-tight">
                   {selectedList.name}
@@ -295,7 +298,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
-              <Library className="w-4 h-4 text-blue-500" />
+              <Library className="w-4 h-4 text-accent" />
               {t('Catálogo de esta lista')} ({selectedList.games.length} {t('juegos')})
             </h3>
 
@@ -304,8 +307,18 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                 <p className="text-xs">{t('Usa "Detalles de juego" para agregar títulos a esta lista.')}</p>
               </div>
             ) : (
-              <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {selectedList.games.map(game => (
+              <div className={`mx-auto grid w-full grid-cols-1 ${useMobileCardLayout ? 'gap-y-3' : 'max-w-[16rem] gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
+              {selectedList.games.map(game => useMobileCardLayout ? (
+                <GameCard
+                  key={game.igdbId}
+                  game={game}
+                  variant="mobile"
+                  onSelectGame={onSelectGame}
+                  onRemoveFromList={selectedList.userId === currentUser.id
+                    ? () => setConfirmation({ type: 'game', id: game.igdbId })
+                    : undefined}
+                />
+              ) : (
                 <div
                   key={game.igdbId}
                   className="group bg-[#0f121d] border border-slate-850 p-2.5 rounded-xl transition relative"
@@ -321,7 +334,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       className="w-full aspect-[3/4] object-cover rounded-md border border-slate-900 group-hover:scale-[1.03] transition"
                     />
 
-                    <h4 className="text-xs font-bold text-white group-hover:text-blue-400 mt-3 truncate">
+                    <h4 className="text-xs font-bold text-white group-hover:text-accent mt-3 truncate">
                       {game.name}
                     </h4>
 
@@ -357,7 +370,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             </div>
             <button
               onClick={() => setIsCreating(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer transition flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-accent hover:bg-accent-hover text-on-accent rounded-xl text-xs font-bold cursor-pointer transition flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> {t('Crear Lista')}
             </button>
@@ -386,7 +399,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => onSelectUser(list.userId)}
-                        className="text-[10px] font-bold text-slate-500 hover:text-blue-400 leading-none cursor-pointer"
+                        className="text-[10px] font-bold text-slate-500 hover:text-accent leading-none cursor-pointer"
                       >
                         @{list.author?.username || t('usuario')}
                       </button>
@@ -398,7 +411,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       onClick={() => setSelectedList(list)}
                       className="text-left group cursor-pointer block"
                     >
-                      <h3 className="font-bold text-white group-hover:text-blue-400 transition tracking-tight">
+                      <h3 className="font-bold text-white group-hover:text-accent transition tracking-tight">
                         {list.name}
                       </h3>
                       <p className="text-slate-400 text-xs mt-1.5 leading-relaxed line-clamp-2">{list.description || t('Sin descripción.')}</p>

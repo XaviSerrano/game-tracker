@@ -8,6 +8,12 @@
         "value": "plus jakarta sans",
         "createdAt": "2026-11-09T15:40:46.341Z",
         "reason": "Keep the existing project-wide font as part of the established visual identity."
+      },
+      {
+        "rule": "overused-font",
+        "value": "instrument serif",
+        "createdAt": "2026-11-16T11:39:16.295Z",
+        "reason": "User requested Instrument Serif italic for the landing headline accents."
       }
     ]
   }

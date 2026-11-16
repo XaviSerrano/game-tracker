@@ -1,13 +1,79 @@
 @import "tailwindcss";
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-latin-400-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plus Jakarta Sans Fallback";
+  src: local("Arial");
+  size-adjust: 98%;
+  ascent-override: 92%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Instrument Serif Fallback";
+  src: local("Georgia");
+  size-adjust: 92%;
+  ascent-override: 94%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Plus Jakarta Sans Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --font-serif: "Lora", serif;
+  --font-accent-serif: "Instrument Serif", "Instrument Serif Fallback", Georgia, serif;
+  --color-accent: #34d399;
+  --color-accent-hover: #6ee7b7;
+  --color-on-accent: #06241a;
   --color-slate-850: #1c1f26;
   --color-slate-750: #334155;
   --animate-fade-in: fade-in 200ms ease-out;
+}
+
+.font-accent-serif {
+  color: var(--color-accent);
+  font-family: var(--font-accent-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+.landing-heading {
+  max-width: 18ch;
+  font-size: clamp(2.75rem, 7.2vw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.landing-section-heading {
+  max-width: 22ch;
+  font-size: clamp(1.875rem, 4.2vw, 3rem);
+  font-weight: 750;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.landing-hero-grid {
+  background-image: linear-gradient(to bottom, transparent 52%, #0b0d12 100%),
+    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 56px 56px, 56px 56px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 95%);
 }
 
 /* Base resets & typography */
@@ -40,7 +106,7 @@ body {
 }
 
 :where(button, a, input, select, textarea, summary, [role="button"]):focus-visible {
-  outline: 2px solid #e5b974;
+  outline: 2px solid var(--color-accent);
   outline-offset: 3px;
 }
 
@@ -61,59 +127,6 @@ body {
   }
 }
 
-/* Masterfully map standard Tailwind gaming/Discord accents (blue-*) to Atmospheric Brass */
-.text-blue-500, .hover\:text-blue-500:hover {
-  color: #d9a352 !important;
-}
-.text-blue-400, .hover\:text-blue-400:hover {
-  color: #e5b974 !important;
-}
-.text-blue-600, .hover\:text-blue-600:hover {
-  color: #c48c3f !important;
-}
-.bg-blue-600, .hover\:bg-blue-600:hover {
-  background-color: #d9a352 !important;
-}
-.bg-blue-600.text-white {
-  color: #111317 !important;
-}
-.hover\:bg-blue-500:hover {
-  background-color: #e5b974 !important;
-}
-:is(button, a).bg-blue-600:active {
-  background-color: #c48c3f !important;
-}
-.hover\:bg-blue-500\/10:hover {
-  background-color: rgba(217, 163, 82, 0.1) !important;
-}
-.bg-blue-500\/10 {
-  background-color: rgba(217, 163, 82, 0.1) !important;
-}
-.bg-blue-500\/5 {
-  background-color: rgba(217, 163, 82, 0.05) !important;
-}
-.bg-blue-600\/25 {
-  background-color: rgba(217, 163, 82, 0.25) !important;
-}
-.border-blue-500\/20 {
-  border-color: rgba(217, 163, 82, 0.2) !important;
-}
-.border-blue-500\/30 {
-  border-color: rgba(217, 163, 82, 0.3) !important;
-}
-.border-blue-600\/30 {
-  border-color: rgba(217, 163, 82, 0.3) !important;
-}
-.border-blue-500 {
-  border-color: #d9a352 !important;
-}
-.bg-blue-900\/20 {
-  background-color: rgba(217, 163, 82, 0.08) !important;
-}
-.text-blue-300 {
-  color: #ecd2ad !important;
-}
-
 /* Refined Dark Panels & Container Mapping (replaces generic deep-blue elements) */
 .bg-\[\#07090e\], .bg-\[\#07090e\]\/60 {
   background-color: #0b0c0e !important;
@@ -132,16 +145,24 @@ body {
   background-color: rgba(17, 19, 23, 0.5) !important;
 }
 .border-slate-800, .border-slate-850, .border-slate-850\/65 {
-  border-color: rgba(217, 163, 82, 0.1) !important;
+  border-color: color-mix(in srgb, var(--color-accent) 10%, transparent) !important;
 }
 .hover\:border-slate-700:hover {
-  border-color: rgba(217, 163, 82, 0.25) !important;
+  border-color: color-mix(in srgb, var(--color-accent) 25%, transparent) !important;
 }
 
 /* Pure interactive selection style */
 ::selection {
-  background-color: rgba(217, 163, 82, 0.35);
+  background-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
   color: #ffffff;
+}
+
+.accent-ambient {
+  background-image: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--color-accent) 10%, transparent), transparent 65%);
+}
+
+.shadow-accent-soft {
+  box-shadow: 0 28px 90px -42px color-mix(in srgb, var(--color-accent) 28%, transparent);
 }
 
 /* Custom cards refinement - flat & clean outline styling */
@@ -171,7 +192,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d9a352;
+  background: var(--color-accent);
 }
 
 /* Soft card micro-interactions */
@@ -215,7 +236,7 @@ body {
   animation-name: particle-float;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
-  box-shadow: 0 0 12px rgba(217, 163, 82, 0.25);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

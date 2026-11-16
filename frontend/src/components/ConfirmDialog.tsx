@@ -26,10 +26,10 @@ export function ConfirmDialog({ title, message, confirmLabel, onCancel, onConfir
           </div>
         </div>
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button type="button" autoFocus onClick={onCancel} className="min-h-11 rounded-xl border border-slate-700 px-5 text-sm font-semibold text-slate-200 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
+          <button type="button" autoFocus onClick={onCancel} className="min-h-11 rounded-xl border border-slate-700 px-5 text-sm font-semibold text-slate-200 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             {t('Cancelar')}
           </button>
-          <button type="button" onClick={onConfirm} className="min-h-11 rounded-xl bg-red-700 px-5 text-sm font-semibold text-white hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
+          <button type="button" onClick={onConfirm} className="min-h-11 rounded-xl bg-red-700 px-5 text-sm font-semibold text-white hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             {confirmLabel}
           </button>
         </div>

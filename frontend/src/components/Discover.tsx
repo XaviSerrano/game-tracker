@@ -5,6 +5,7 @@ import { Game, GameStatus, User, UserGame } from '../types.ts';
 import { GameCard } from './GameCard.tsx';
 import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
+import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
@@ -71,9 +72,22 @@ const makeSearchParams = (filters: DiscoverFilters) => {
   return params;
 };
 
-const GameSkeletons: React.FC<{ count?: number }> = ({ count = 8 }) => (
-  <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-    {Array.from({ length: count }, (_, index) => (
+const GameSkeletons: React.FC<{ count?: number; native?: boolean }> = ({ count = 8, native = false }) => (
+  <div className={`mx-auto grid w-full grid-cols-1 ${native ? 'gap-3' : 'max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'}`}>
+    {Array.from({ length: count }, (_, index) => native ? (
+      <div key={index} className="flex h-40 animate-pulse gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5">
+        <div className="w-[5.5rem] shrink-0 rounded-lg bg-slate-700/70" />
+        <div className="flex min-w-0 flex-1 flex-col py-1">
+          <div className="h-5 w-3/4 rounded bg-slate-700/70" />
+          <div className="mt-2 h-3 w-1/2 rounded bg-slate-700/50" />
+          <div className="mt-3 space-y-2">
+            <div className="h-3 w-full rounded bg-slate-700/50" />
+            <div className="h-3 w-5/6 rounded bg-slate-700/50" />
+            <div className="h-3 w-2/3 rounded bg-slate-700/50" />
+          </div>
+        </div>
+      </div>
+    ) : (
       <div key={index} className="animate-pulse rounded-xl border border-slate-850 bg-[#0f121d] p-2.5">
         <div className="aspect-[3/4] rounded-lg bg-slate-800" />
         <div className="mt-3 h-3 w-3/4 rounded bg-slate-800" />
@@ -85,6 +99,7 @@ const GameSkeletons: React.FC<{ count?: number }> = ({ count = 8 }) => (
 
 export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired }) => {
   const { t } = useLanguage();
+  const useMobileCardLayout = useIsMobileLayout();
   const [filters, setFilters] = useState<DiscoverFilters>(readFiltersFromUrl);
   const [games, setGames] = useState<Game[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -428,6 +443,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
       <GameCard
         key={game.igdbId}
         game={game}
+        variant={useMobileCardLayout ? 'mobile' : 'default'}
         onSelectGame={onSelectGame}
         onManageStatus={() => {
           if (!token) {
@@ -462,7 +478,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
     : t(quickActionMessage);
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white">
       <section className="space-y-5 border-b border-slate-800 pb-6">
         <div>
           <h2 className="font-display text-2xl font-bold tracking-tight text-white md:text-3xl">
@@ -483,10 +499,10 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               placeholder={t('Busca juegos o @usuarios...')}
               value={filters.query}
               onChange={event => updateFilters({ query: event.target.value })}
-              className="w-full rounded-xl border border-slate-700 bg-[#111317] py-3 pl-11 pr-4 text-sm text-slate-200 outline-none placeholder:text-slate-400 focus:border-[#d9a352]"
+              className="w-full rounded-xl border border-slate-700 bg-[#111317] py-3 pl-11 pr-4 text-sm text-slate-200 outline-none placeholder:text-slate-400 focus:border-accent"
             />
           </div>
-          <button type="submit" className="rounded-xl bg-blue-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
+          <button type="submit" className="rounded-xl bg-accent px-4 py-3 text-xs font-semibold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             {t('Buscar')}
           </button>
           {!isUserSearch && (
@@ -495,7 +511,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               aria-label={showFilters ? t('Ocultar filtros') : t('Mostrar filtros')}
               aria-expanded={showFilters}
               onClick={() => setShowFilters(open => !open)}
-              className={`rounded-xl border px-3.5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${showFilters ? 'border-[#d9a352]/50 bg-slate-800 text-[#e5b974]' : 'border-slate-700 bg-[#111317] text-slate-300 hover:text-white'}`}
+              className={`rounded-xl border px-3.5 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${showFilters ? 'border-accent/50 bg-slate-800 text-accent' : 'border-slate-700 bg-[#111317] text-slate-300 hover:text-white'}`}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </button>
@@ -565,9 +581,9 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             <h3 id="discover-popular" className="text-lg font-bold text-white">{t('Populares ahora')}</h3>
             <p className="mt-1 text-xs text-slate-500">{t('Juegos con mayor actividad y valoraciones en IGDB.')}</p>
           </div>
-          {loadingHome && <GameSkeletons count={18} />}
+          {loadingHome && <GameSkeletons count={18} native={useMobileCardLayout} />}
           {popularGames.length > 0 && (
-            <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            <div className={`mx-auto grid w-full grid-cols-1 ${useMobileCardLayout ? 'gap-y-3' : 'max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'}`}>
               {popularGames.map(renderGameCard)}
             </div>
           )}
@@ -585,7 +601,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           )}
           {popularHasMore && !homeError && (
             <div className="flex justify-center">
-              <button type="button" disabled={loadingMorePopular} onClick={() => void fetchPopular(popularPage + 1)} className="rounded-xl border border-blue-500/30 bg-blue-600/10 px-5 py-2.5 text-xs font-semibold text-blue-300 disabled:opacity-60">
+              <button type="button" disabled={loadingMorePopular} onClick={() => void fetchPopular(popularPage + 1)} className="rounded-xl border border-accent/30 bg-accent/10 px-5 py-2.5 text-xs font-semibold text-accent disabled:opacity-60">
                 {loadingMorePopular ? t('Cargando...') : t('Cargar más')}
               </button>
             </div>
@@ -600,7 +616,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
               {filters.query.trim() ? `${t('resultados para')} “${filters.query.trim()}”` : t('Juegos que coinciden con tus filtros')}
             </h3>
             {(activeFilterNames.length > 0 || filters.query.trim()) && (
-              <button type="button" onClick={clearFilters} className="text-xs font-semibold text-blue-300 hover:text-blue-200">
+              <button type="button" onClick={clearFilters} className="text-xs font-semibold text-accent-hover hover:text-accent-hover">
                 {t('Limpiar filtros')}
               </button>
             )}
@@ -620,7 +636,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             ))}
           </div>
 
-          {loading && games.length === 0 ? <GameSkeletons /> : null}
+          {loading && games.length === 0 ? <GameSkeletons native={useMobileCardLayout} /> : null}
           {apiError ? (
             <div className="rounded-2xl border border-red-500/20 bg-[#0f121d] p-8 text-center">
               <p className="text-sm font-semibold text-red-300">{t('Error buscando juegos')}</p>
@@ -632,12 +648,12 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           ) : games.length > 0 ? (
             <>
               <p aria-live="polite" className="text-xs text-slate-500">{games.length} {t('resultados cargados')}</p>
-              <div className={`mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-x-4 gap-y-6 transition-opacity sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 ${loading ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`mx-auto grid w-full grid-cols-1 transition-opacity ${useMobileCardLayout ? 'gap-y-3' : 'max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'} ${loading ? 'opacity-60' : 'opacity-100'}`}>
                 {games.map(renderGameCard)}
               </div>
               {hasMore && (
                 <div className="flex justify-center">
-                  <button type="button" disabled={loadingMore} onClick={() => updateFilters({ page: filters.page + 1 })} className="rounded-xl border border-blue-500/30 bg-blue-600/10 px-5 py-2.5 text-xs font-semibold text-blue-300 disabled:opacity-60">
+                  <button type="button" disabled={loadingMore} onClick={() => updateFilters({ page: filters.page + 1 })} className="rounded-xl border border-accent/30 bg-accent/10 px-5 py-2.5 text-xs font-semibold text-accent-hover disabled:opacity-60">
                     {loadingMore ? t('Cargando...') : t('Cargar más')}
                   </button>
                 </div>
@@ -669,7 +685,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           ) : users.length ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {users.map(user => (
-                <button key={user.id} type="button" onClick={() => onSelectUser(user.id)} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#0f121d] p-4 text-left hover:border-blue-500/40">
+                <button key={user.id} type="button" onClick={() => onSelectUser(user.id)} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#0f121d] p-4 text-left hover:border-accent/40">
                   <img src={user.avatar} alt="" loading="lazy" className="h-11 w-11 rounded-full border border-slate-800 object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-bold text-white">@{user.username}</span>

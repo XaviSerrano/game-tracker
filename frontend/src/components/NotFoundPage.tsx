@@ -20,10 +20,10 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({
       <LanguageSelector compact />
     </div>
     <section className="w-full max-w-xl text-center">
-      <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-400">
+      <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
         <Gamepad2 className="h-8 w-8" aria-hidden="true" />
       </div>
-      <p className="mb-3 font-mono text-sm font-semibold tracking-[0.35em] text-blue-400">404</p>
+      <p className="mb-3 font-mono text-sm font-semibold tracking-[0.35em] text-accent">404</p>
       <h1 className="font-display text-3xl font-bold text-white md:text-4xl">
         {isGameNotFound ? t('Juego no encontrado') : t('No encontramos esta página')}
       </h1>
@@ -36,7 +36,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({
         <button
           type="button"
           onClick={onSearchGames}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm sm:text-xs font-bold text-white transition hover:bg-blue-500"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm sm:text-xs font-bold text-on-accent transition hover:bg-accent-hover"
         >
           <Search className="h-4 w-4" aria-hidden="true" />
           {t('Buscar un juego')}

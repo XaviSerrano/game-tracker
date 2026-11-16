@@ -351,7 +351,7 @@ export default function App() {
                 handleGoHome();
               }}
               aria-label={t('Volver al inicio')}
-              className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
             </a>
@@ -365,7 +365,7 @@ export default function App() {
                 event.preventDefault();
                 handleGoDiscover();
               }}
-              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               {t('Descubrir juegos')}
             </a>
@@ -375,7 +375,7 @@ export default function App() {
                 event.preventDefault();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               {t('Volver arriba')}
             </a>
@@ -442,13 +442,13 @@ export default function App() {
                   handleGoHome();
                 }}
                 aria-label={t('Volver al inicio')}
-                className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+                className="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
               >
                 <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-5 w-auto" />
               </a>
               <div className="flex max-w-full items-center gap-3">
                 <LanguageSelector compact />
-                <button type="button" onClick={() => handleOpenAuth('login')} className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]">
+                <button type="button" onClick={() => handleOpenAuth('login')} className="rounded-xl bg-accent px-4 py-2 text-xs font-bold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                   {t('Iniciar sesión / Registrarse')}
                 </button>
               </div>
@@ -485,7 +485,7 @@ export default function App() {
         {authModalOpen && (
           <Dialog label={t('Iniciar sesión / Registrarse')} onClose={() => { setAuthModalOpen(false); setAuthNotice(''); }}>
             <div className="w-full">
-              <button type="button" onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed left-4 top-4 z-[60] inline-flex min-h-12 items-center rounded-full border border-slate-700 bg-[#0f121d] px-3 text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs">
+              <button type="button" onClick={() => { setAuthModalOpen(false); setAuthNotice(''); }} className="fixed left-4 top-4 z-[60] inline-flex min-h-12 items-center rounded-full border border-slate-700 bg-[#0f121d] px-3 text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:min-h-9 sm:text-xs">
                 {t('Cerrar')}
               </button>
               <Onboarding
@@ -632,7 +632,7 @@ export default function App() {
               handleGoHome();
             }}
             aria-label={t('Volver al inicio')}
-            className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+            className="flex shrink-0 items-center gap-2.5 rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
             <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
           </a>
@@ -650,9 +650,9 @@ export default function App() {
                     event.preventDefault();
                     handleNavigation(item.id);
                   }}
-                  className={`border-b-2 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974] ${
+                  className={`border-b-2 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${
                     active
-                      ? 'border-[#e5b974] text-white'
+                      ? 'border-accent text-white'
                       : 'border-transparent text-slate-300 hover:text-white'
                   }`}
                 >
@@ -743,7 +743,7 @@ export default function App() {
               }}
               className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0 transition text-center ${
                 active
-                  ? 'text-blue-500'
+                  ? 'text-accent'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -754,7 +754,7 @@ export default function App() {
               </span>
 
               {active && (
-                <span className="absolute bottom-[-4px] w-4 h-0.5 bg-blue-500 rounded-full" />
+                <span className="absolute bottom-[-4px] w-4 h-0.5 bg-accent rounded-full" />
               )}
             </a>
           );

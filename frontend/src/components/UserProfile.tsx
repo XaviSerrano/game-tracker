@@ -377,7 +377,7 @@ return ( <div className="text-center py-12 text-slate-500"> <p>{t('Usuario no en
 );
 }
 
-return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white">
 
   {/* Selected list modal */}
   {selectedList && (
@@ -429,7 +429,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                   className="aspect-[3/4] w-full rounded-lg border border-slate-800 object-cover transition group-hover:scale-[1.02]"
                 />
 
-                <span className="mt-2 block truncate text-xs font-bold text-white group-hover:text-blue-400">
+                <span className="mt-2 block truncate text-xs font-bold text-white group-hover:text-accent">
                   {game.name}
                 </span>
               </button>
@@ -458,7 +458,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         {/* Modal Header */}
         <div className="p-4 md:p-5 border-b border-slate-850 flex items-center justify-between bg-[#0b0e17]">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-400" />
+            <Users className="w-5 h-5 text-accent" />
             <div>
               <h2 className="text-sm font-bold text-white leading-none">
                 {t('Conexiones de')} @{profile.username}
@@ -486,7 +486,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             onClick={() => openSocialModal('followers')}
             className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
               socialModalTab === 'followers'
-                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                ? 'text-accent border-accent bg-accent/5'
                 : 'text-slate-400 border-transparent hover:text-slate-200'
             }`}
           >
@@ -498,7 +498,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             onClick={() => openSocialModal('following')}
             className={`flex-1 py-2.5 text-xs font-bold transition border-b-2 cursor-pointer ${
               socialModalTab === 'following'
-                ? 'text-blue-400 border-blue-500 bg-blue-500/5'
+                ? 'text-accent border-accent bg-accent/5'
                 : 'text-slate-400 border-transparent hover:text-slate-200'
             }`}
           >
@@ -516,7 +516,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
               placeholder={t('Buscar por usuario o biografía...')}
               value={socialSearch}
               onChange={(e) => setSocialSearch(e.target.value)}
-              className="w-full bg-[#07090e] border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500/50 transition"
+              className="w-full bg-[#07090e] border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-accent/50 transition"
             />
           </div>
         </div>
@@ -525,7 +525,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         <div className="p-3 md:p-4 overflow-y-auto space-y-2 max-h-[55vh] min-h-[220px]">
           {loadingSocial ? (
             <div className="py-12 text-center text-xs text-slate-500 space-y-2">
-              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
               <p>{t('Cargando lista de jugadores...')}</p>
             </div>
           ) : filteredSocialUsers.length === 0 ? (
@@ -564,7 +564,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                       className="w-10 h-10 rounded-full border border-slate-800 bg-[#07090e] object-cover flex-shrink-0"
                     />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white group-hover:text-blue-400 transition truncate">
+                      <p className="text-xs font-bold text-white group-hover:text-accent transition truncate">
                         @{u.username}
                       </p>
                       <p className="text-[11px] text-slate-400 truncate leading-snug">
@@ -575,7 +575,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
                   <div className="flex-shrink-0">
                     {isMe ? (
-                      <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full">
+                      <span className="text-[10px] font-bold bg-accent/10 text-accent border border-accent/20 px-2.5 py-1 rounded-full">
                         {t('Tú')}
                       </span>
                     ) : (
@@ -585,7 +585,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                         className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer transition flex items-center gap-1 border ${
                           isFollowedByMe
                             ? 'bg-[#07090e] text-slate-300 border-slate-800 hover:border-red-500/30 hover:text-red-400'
-                            : 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+                            : 'bg-accent text-on-accent border-accent hover:bg-accent-hover'
                         }`}
                       >
                         {isFollowedByMe ? (
@@ -614,7 +614,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
   {/* Profile main card */}
   <div className="bg-[#0f121d] border border-slate-850 p-6 rounded-2xl relative overflow-hidden">
 
-    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
     <div className="relative z-10 flex flex-col sm:flex-row gap-5 items-center justify-between text-center sm:text-left">
 
@@ -623,7 +623,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           src={profile.avatar}
           alt={profile.username}
           referrerPolicy="no-referrer"
-          className="w-20 h-20 rounded-full border-2 border-blue-500/20 bg-[#07090e] object-cover shadow-lg"
+          className="w-20 h-20 rounded-full border-2 border-accent/20 bg-[#07090e] object-cover shadow-lg"
         />
 
         <div className="space-y-1.5 max-w-sm">
@@ -647,7 +647,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
             title={t('Ver seguidores')}
           >
-            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
+            <span className="text-white font-bold block text-sm group-hover:text-accent transition">
               {profile.followersCount}
             </span>
             <span className="group-hover:text-slate-200 transition">
@@ -661,7 +661,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             className="group text-center sm:text-right cursor-pointer p-1.5 -m-1.5 rounded-xl hover:bg-slate-800/50 transition border border-transparent hover:border-slate-800"
             title={t('Ver usuarios seguidos')}
           >
-            <span className="text-white font-bold block text-sm group-hover:text-blue-400 transition">
+            <span className="text-white font-bold block text-sm group-hover:text-accent transition">
               {profile.followingCount}
             </span>
             <span className="group-hover:text-slate-200 transition">{t('seguidos')}</span>
@@ -672,7 +672,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
           <button
             type="button"
             onClick={() => setIsEditing(!isEditing)}
-            className="px-4 py-2 border border-slate-800 hover:border-blue-500/20 bg-[#07090e] hover:bg-slate-900 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
+            className="px-4 py-2 border border-slate-800 hover:border-accent/20 bg-[#07090e] hover:bg-slate-900 text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition"
           >
             <PenSquare className="w-3.5 h-3.5" />
             {t('Editar Perfil')}
@@ -684,7 +684,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
             className={`px-5 py-2 text-xs font-bold rounded-xl cursor-pointer transition flex items-center gap-1.5 border ${
               isFollowing
                 ? 'bg-[#07090e] text-slate-300 border-slate-800'
-                : 'bg-blue-600 text-white border-blue-500'
+                : 'bg-accent text-on-accent border-accent'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -707,7 +707,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
         </h3>
 
         {editMessage && (
-          <p className="text-[11px] text-blue-400 font-bold">
+          <p className="text-[11px] text-accent font-bold">
             {editMessage}
           </p>
         )}
@@ -762,7 +762,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
               />
               <label
                 htmlFor="profile-avatar"
-                className="cursor-pointer rounded-lg bg-slate-850 px-3.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#e5b974]"
+                className="cursor-pointer rounded-lg bg-slate-850 px-3.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent"
               >
                 {t('Elegir imagen')}
               </label>
@@ -790,7 +790,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
 
           <button
             type="submit"
-            className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg text-[11px]"
+            className="px-4 py-1.5 bg-accent text-on-accent font-semibold rounded-lg text-[11px]"
           >
             {t('Guardar')}
           </button>
@@ -868,7 +868,7 @@ return ( <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-wh
                   <button
                     type="button"
                     onClick={() => onSelectGame(rev.gameId)}
-                    className="text-xs font-bold text-white hover:text-blue-400 transition truncate"
+                    className="text-xs font-bold text-white hover:text-accent transition truncate"
                   >
                     {rev.game.name}
                   </button>

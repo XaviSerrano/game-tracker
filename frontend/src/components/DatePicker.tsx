@@ -161,7 +161,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, pla
         calendarButtonRef.current?.focus();
       }
     }}>
-      <div className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2 text-xs text-white outline-none focus-within:border-blue-500 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+      <div className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2 text-xs text-white outline-none focus-within:border-accent transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
         <input
           id={id}
           type="text"
@@ -248,7 +248,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, pla
                   }}
                   className={`h-8 rounded-lg text-xs font-medium transition ${
                     isSelected
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-accent text-on-accent'
                       : isToday
                         ? 'bg-slate-800 text-slate-100'
                         : 'text-slate-300 hover:bg-slate-800'
@@ -269,7 +269,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ id, value, onChange, pla
                 setInputValue(formatDisplayDate(today, language));
                 setOpen(false);
               }}
-              className="text-[11px] text-blue-400 hover:text-blue-300 transition font-semibold"
+              className="text-[11px] text-accent hover:text-accent-hover transition font-semibold"
             >
               {t('Hoy')}
             </button>

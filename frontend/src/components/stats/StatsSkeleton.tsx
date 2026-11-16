@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const StatsSkeleton: React.FC = () => (
-  <div className="space-y-6 pb-20 animate-pulse selection:bg-blue-600 selection:text-white">
+  <div className="space-y-6 pb-20 animate-pulse selection:bg-accent/30 selection:text-white">
     <div className="space-y-2">
       <div className="h-7 w-56 bg-slate-850 rounded-lg" />
       <div className="h-3 w-80 max-w-full bg-slate-850 rounded-lg" />

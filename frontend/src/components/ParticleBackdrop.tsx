@@ -37,7 +37,7 @@ export const ParticleBackdrop: React.FC<ParticleBackdropProps> = ({
       {particles.map((particle) => (
         <span
           key={particle.id}
-          className="particle-dot absolute rounded-full bg-blue-400"
+          className="particle-dot absolute rounded-full bg-accent"
           style={{
             width: `${particle.width}px`,
             height: `${particle.height}px`,

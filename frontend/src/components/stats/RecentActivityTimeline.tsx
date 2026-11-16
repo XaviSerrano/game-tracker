@@ -41,7 +41,7 @@ export const RecentActivityTimeline: React.FC<RecentActivityTimelineProps> = ({ 
   const { t, language } = useLanguage();
   return <div className="bg-[#0f121d] border border-slate-850 p-5 rounded-2xl">
     <h3 className="font-semibold text-slate-300 font-display text-sm mb-4 flex items-center gap-1.5">
-      <History className="w-4.5 h-4.5 text-blue-400" /> {t('Actividad reciente')}
+      <History className="w-4.5 h-4.5 text-accent" /> {t('Actividad reciente')}
     </h3>
 
     {activities.length === 0 ? (

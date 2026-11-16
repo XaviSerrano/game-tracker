@@ -4,6 +4,18 @@ import type { ActivityType } from '../../shared/types.ts';
 export type Language = 'en' | 'es';
 
 const translations: Record<string, string> = Object.fromEntries([
+  ['Organiza tu colección de videojuegos.', 'Organize your video game collection.'],
+  ['Descubre qué jugar después.', 'Discover what to play next.'],
+  ['Tu colección merece algo más que una', 'Your collection deserves more than a'],
+  ['lista.', 'list.'],
+  ['Tu biblioteca, siempre en el', 'Your library, always in your'],
+  ['bolsillo.', 'pocket.'],
+  ['Tus juegos, tus', 'Your games, your'],
+  ['listas.', 'lists.'],
+  ['Menos pestañas abiertas.', 'Fewer open tabs.'],
+  ['Más tiempo para jugar.', 'More time to play.'],
+  ['Tu próxima partida merece un buen', 'Your next game deserves a great'],
+  ['comienzo.', 'start.'],
   ['Inicio', 'Home'] as const,
   ['Descubrir', 'Discover'] as const,
   ['Biblioteca', 'Library'] as const,
@@ -110,11 +122,11 @@ const translations: Record<string, string> = Object.fromEntries([
   ['día', 'day'] as const,
   ['días', 'days'] as const,
   ['comenzó a seguir a', 'started following'] as const,
-  ['se unió a GameTracker 🎮', 'joined GameTracker 🎮'] as const,
-  ['completó 🏆 {game}', 'completed {game} 🏆'] as const,
-  ['está jugando a 🎮 {game}', 'is playing 🎮 {game}'] as const,
-  ['añadió {game} a su wishlist ⭐️', 'added {game} to their wishlist ⭐️'] as const,
-  ['abandonó ❌ {game}', 'abandoned {game} ❌'] as const,
+  ['se unió a GameTracker', 'joined GameTracker'] as const,
+  ['completó {game}', 'completed {game}'] as const,
+  ['está jugando a {game}', 'is playing {game}'] as const,
+  ['añadió {game} a su wishlist', 'added {game} to their wishlist'] as const,
+  ['abandonó {game}', 'abandoned {game}'] as const,
   ['jugó a {game}', 'played {game}'] as const,
   ['añadió a su biblioteca {game}', 'added {game} to their library'] as const,
   ['creó la lista', 'created the list'] as const,
@@ -127,9 +139,9 @@ const translations: Record<string, string> = Object.fromEntries([
   ['tus compañeros y descubre nuevos videojuegos.', 'your fellow gamers and discover new games.'] as const,
   ['No hay actividad reciente', 'No recent activity'] as const,
   ['Aún no sigues a ningún gamer o no han compartido aventuras de juego todavía. ¡Prueba a cambiar a General!', 'You are not following any gamers yet, or they have not shared any gaming activity. Try switching to All!'] as const,
-  ['Pendiente (Wishlist) ⭐️', 'Want to play ⭐️'] as const,
-  ['Jugando 🎮', 'Playing 🎮'] as const,
-  ['Completado 🏆', 'Completed 🏆'] as const,
+  ['Pendiente (Wishlist)', 'Want to play'] as const,
+  ['Jugando', 'Playing'] as const,
+  ['Completado', 'Completed'] as const,
   ['Mi Biblioteca Gamer', 'My Game Library'] as const,
   ['Organiza, filtra y analiza el estado actual y horas dedicadas de todos tus progresos de juego', 'Organize, filter, and review the status and hours played for all your games'] as const,
   ['Filtra por título o categoría dentro de tu biblioteca...', 'Filter your library by title or category...'] as const,
@@ -281,7 +293,7 @@ const translations: Record<string, string> = Object.fromEntries([
   ['Pausado o cancelado', 'Paused or cancelled'] as const,
   ['Todo', 'All'] as const,
   ['Jugados', 'Played'] as const,
-  ['Abandonado ❌', 'Abandoned ❌'] as const,
+  ['Abandonado', 'Abandoned'] as const,
   ['Fecha', 'Date'] as const,
   ['Horas', 'Hours'] as const,
   ['juego', 'game'] as const,
@@ -595,18 +607,20 @@ export function translateActivityDetails(
 ): string {
   if (!details) return t('Actualizó su biblioteca');
 
+  const cleanDetails = details.replace(/[🏆🎮⭐️❌]/gu, '').replace(/\s+/g, ' ').trim();
+
   const gameActions: Partial<Record<ActivityType, { prefix: string; template: string }>> = {
-    COMPLETED: { prefix: 'completó 🏆', template: 'completó 🏆 {game}' },
-    PLAYING: { prefix: 'está jugando a 🎮', template: 'está jugando a 🎮 {game}' },
-    WISHLIST: { prefix: 'añadió a su wishlist ⭐️', template: 'añadió {game} a su wishlist ⭐️' },
-    ABANDONED: { prefix: 'abandonó ❌', template: 'abandonó ❌ {game}' },
+    COMPLETED: { prefix: 'completó', template: 'completó {game}' },
+    PLAYING: { prefix: 'está jugando a', template: 'está jugando a {game}' },
+    WISHLIST: { prefix: 'añadió a su wishlist', template: 'añadió {game} a su wishlist' },
+    ABANDONED: { prefix: 'abandonó', template: 'abandonó {game}' },
     PLAYED: { prefix: 'jugó a', template: 'jugó a {game}' }
   };
   const gameAction = gameActions[type];
 
   if (gameAction) {
-    const extractedGameName = details.startsWith(gameAction.prefix)
-      ? details.slice(gameAction.prefix.length).trim()
+    const extractedGameName = cleanDetails.startsWith(gameAction.prefix)
+      ? cleanDetails.slice(gameAction.prefix.length).trim()
       : '';
     const name = gameName || extractedGameName;
     return name
@@ -614,9 +628,9 @@ export function translateActivityDetails(
       : t('Actualizó su biblioteca');
   }
 
-  if (type === 'REVIEWED' && details.startsWith('reseñó ')) {
-    return `${t('reseñó')}${details.slice('reseñó'.length)}`
-      .replace(/\(sin ⭐\)$/, `(${t('sin valoración')} ⭐)`);
+  if (type === 'REVIEWED' && cleanDetails.startsWith('reseñó ')) {
+    return `${t('reseñó')}${cleanDetails.slice('reseñó'.length)}`
+      .replace(/\(sin\)$/, `(${t('sin valoración')})`);
   }
 
   if (type === 'LIST_CREATED' && details.startsWith('creó la lista')) {
@@ -624,14 +638,14 @@ export function translateActivityDetails(
   }
 
   if (type === 'FOLLOWED') {
-    if (details === 'se unió a GameTracker 🎮') return t(details);
+    if (cleanDetails === 'se unió a GameTracker') return t('se unió a GameTracker');
     return details.replace(' comenzó a seguir a ', ` ${t('comenzó a seguir a')} `);
   }
 
   const addedToLibraryPrefix = 'añadió a su biblioteca ';
-  if (details.startsWith(addedToLibraryPrefix)) {
+  if (cleanDetails.startsWith(addedToLibraryPrefix)) {
     return t('añadió a su biblioteca {game}')
-      .replace('{game}', details.slice(addedToLibraryPrefix.length));
+      .replace('{game}', cleanDetails.slice(addedToLibraryPrefix.length));
   }
 
   return t(details);

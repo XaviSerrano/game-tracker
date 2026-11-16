@@ -82,7 +82,7 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({ file, onCancel, on
           tabIndex={0}
           role="group"
           aria-label={t('Área de recorte')}
-          className="relative mx-auto cursor-grab touch-none select-none overflow-hidden rounded-xl bg-[#07090e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] active:cursor-grabbing"
+          className="relative mx-auto cursor-grab touch-none select-none overflow-hidden rounded-xl bg-[#07090e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:cursor-grabbing"
           style={{ width: BOX, height: BOX }}
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -150,7 +150,7 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({ file, onCancel, on
             value={zoom}
             disabled={!natural}
             onChange={(event) => changeZoom(Number(event.target.value))}
-            className="w-full accent-[#d9a352]"
+            className="w-full accent-accent"
           />
         </div>
 
@@ -166,7 +166,7 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({ file, onCancel, on
             type="button"
             onClick={handleConfirm}
             disabled={!natural}
-            className="rounded-lg bg-blue-600 px-4 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-1.5 text-[11px] font-semibold text-on-accent disabled:opacity-50"
           >
             {t('Aplicar')}
           </button>

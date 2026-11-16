@@ -53,7 +53,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data, timeRange })
               onClick={() => setMetric(key)}
               className={`min-h-11 text-sm sm:min-h-0 sm:text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer ${
                 metric === key
-                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+                  ? 'bg-accent/10 text-accent border border-accent/30'
                   : 'text-slate-400 hover:text-slate-300 border border-transparent'
               }`}
             >

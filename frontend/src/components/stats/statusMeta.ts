@@ -20,9 +20,9 @@ export const STATUS_META: Record<GameStatus, StatusMeta> = {
   PLAYING: {
     label: 'Jugando',
     icon: Gamepad2,
-    text: 'text-blue-300',
-    bg: 'bg-blue-600/15',
-    border: 'border-blue-500/20'
+    text: 'text-accent-hover',
+    bg: 'bg-accent/10',
+    border: 'border-accent/20'
   },
   PLAYED: {
     label: 'Jugados',

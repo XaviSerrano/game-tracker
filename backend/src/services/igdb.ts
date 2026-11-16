@@ -698,6 +698,10 @@ export class IgdbService {
     } else if (options.sort === 'rating') {
       games.sort((a, b) => (b.rating || 0) - (a.rating || 0)
         || (b.popularity || 0) - (a.popularity || 0));
+    } else if (options.sort === 'relevance' && query) {
+      games.sort((a, b) => (b.rating || 0) - (a.rating || 0)
+        || (b.popularity || 0) - (a.popularity || 0)
+        || a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
     } else if (options.sort === 'popularity') {
       games.sort((a, b) => (b.popularity || 0) - (a.popularity || 0) || (b.rating || 0) - (a.rating || 0));
     } else if (options.sort === 'name') {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Game, GameStatus } from '../types.ts';
-import { Bookmark, Gamepad2, Star } from 'lucide-react';
+import { Bookmark, Gamepad2, Star, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 
 interface GameCardProps {
@@ -16,12 +16,13 @@ interface GameCardProps {
   isInWishlist?: boolean;
 
   // Modo visual
-  variant?: 'default' | 'feed';
+  variant?: 'default' | 'feed' | 'mobile';
   showDiscoverMeta?: boolean;
 
   // Callbacks
   onSelectGame: (gameId: number) => void;
   onManageStatus?: (game: Game) => void;
+  onRemoveFromList?: () => void;
   statusActionDisabled?: boolean;
   onToggleWishlist?: (
     gameId: number,
@@ -36,6 +37,7 @@ interface GameCardProps {
 export const GameCard: React.FC<GameCardProps> = ({
   game,
   userGameStatus,
+  userGameRating,
   userGameHours,
   userGameNotes,
   isInWishlist,
@@ -43,6 +45,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   showDiscoverMeta = false,
   onSelectGame,
   onManageStatus,
+  onRemoveFromList,
   statusActionDisabled = false,
   onToggleWishlist,
   togglingWishlistId,
@@ -56,6 +59,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
   const showFullLibraryCard = userGameStatus !== undefined;
   const isFeedCard = variant === 'feed';
+  const isMobileCard = variant === 'mobile';
 
   const bookmarkActive = isInWishlist ?? userGameStatus === 'WISHLIST';
   const hasProgress = userGameStatus !== undefined && userGameStatus !== 'WISHLIST';
@@ -79,6 +83,130 @@ export const GameCard: React.FC<GameCardProps> = ({
     }
   };
 
+  if (isMobileCard) {
+    const releaseYear = game.releaseDate && game.releaseDate !== 'Unknown'
+      ? game.releaseDate.slice(0, 4)
+      : '';
+    const summary = game.summary?.trim();
+    const hasSummary = summary && summary.toLowerCase() !== 'no summary available.';
+
+    return (
+      <div
+        className="group flex h-full min-w-0 gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5 text-left transition-colors hover:border-white/15"
+      >
+        <button
+          type="button"
+          onClick={handleCardClick}
+          aria-label={`${t('Ver detalles de')} ${game.name}`}
+          className="relative min-h-[8.5rem] w-[5.5rem] shrink-0 self-stretch overflow-hidden rounded-lg bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {game.cover && failedCover !== game.cover ? (
+            <img
+              src={game.cover}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setFailedCover(game.cover)}
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : (
+            <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center text-slate-500">
+              <Gamepad2 className="size-9" />
+            </div>
+          )}
+        </button>
+
+        <div className="flex min-w-0 flex-1 flex-col py-0.5">
+          <button
+            type="button"
+            onClick={handleCardClick}
+            aria-label={`${t('Ver detalles de')} ${game.name}`}
+            className="flex min-h-0 min-w-0 flex-1 flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <h3 className="line-clamp-2 min-w-0 text-[17px] font-bold leading-tight text-white group-hover:text-accent-hover">
+                {game.name}
+              </h3>
+              {game.rating ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-black/20 px-1.5 py-1 text-xs font-semibold text-amber-200">
+                  <Star className="size-3 fill-amber-300 text-amber-300" aria-hidden="true" />
+                  {Math.round(game.rating)}
+                </span>
+              ) : null}
+            </div>
+
+            <p className="mt-1 truncate text-[11px] font-medium text-slate-300">
+              {[releaseYear, ...game.genres.slice(0, 2)].filter(Boolean).join(' · ') || t('Videojuego')}
+            </p>
+            {showFullLibraryCard && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-md border border-white/10 bg-black/15 px-1.5 py-0.5 text-[10px] font-medium text-slate-200">
+                  {statusLabels[userGameStatus]}
+                </span>
+                {userGameHours > 0 && (
+                  <span className="text-[10px] text-slate-400">{userGameHours} h</span>
+                )}
+                {userGameRating > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400">
+                    <Star className="size-3 fill-amber-300 text-amber-300" aria-hidden="true" />
+                    {userGameRating}
+                  </span>
+                )}
+              </div>
+            )}
+            <p className="mt-2 line-clamp-4 text-[13px] leading-[1.4rem] text-slate-200">
+              {hasSummary ? summary : t('Sin descripción.')}
+            </p>
+            {showFullLibraryCard && userGameNotes && (
+              <p className="mt-1 line-clamp-1 text-[11px] italic text-slate-400">{userGameNotes}</p>
+            )}
+          </button>
+
+          <div className="flex min-w-0 items-end justify-between gap-2 pt-2">
+            <p className="min-w-0 truncate text-[10px] leading-5 text-slate-400">
+              {game.platforms.slice(0, 2).join(' · ')}
+            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {onToggleWishlist && (
+                <button
+                  type="button"
+                  aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
+                  aria-pressed={bookmarkActive}
+                  onClick={event => { event.stopPropagation(); onToggleWishlist(game.igdbId, event); }}
+                  disabled={isLoadingWishlist}
+                  className={`flex size-11 items-center justify-center rounded-lg border transition disabled:opacity-50 ${bookmarkActive ? 'border-indigo-400/40 bg-indigo-400/10 text-indigo-200' : 'border-white/10 text-slate-300 hover:bg-white/[0.06]'}`}
+                >
+                  <Bookmark className={`size-4 ${bookmarkActive ? 'fill-indigo-300 text-indigo-300' : ''}`} aria-hidden="true" />
+                </button>
+              )}
+              {onManageStatus && (
+                <button
+                  type="button"
+                  aria-label={`${t('Gestionar estado del juego')}: ${game.name}${hasProgress ? ` (${statusLabels[userGameStatus]})` : ''}`}
+                  onClick={event => { event.stopPropagation(); onManageStatus(game); }}
+                  disabled={statusActionDisabled}
+                  className="flex size-11 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/[0.06] disabled:opacity-50"
+                >
+                  <Gamepad2 className="size-4" aria-hidden="true" />
+                </button>
+              )}
+              {onRemoveFromList && (
+                <button
+                  type="button"
+                  aria-label={`${t('Eliminar de la lista')}: ${game.name}`}
+                  onClick={event => { event.stopPropagation(); onRemoveFromList(); }}
+                  className="flex size-11 items-center justify-center rounded-lg border border-red-400/25 text-red-300 transition hover:bg-red-500/10"
+                >
+                  <Trash2 className="size-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       role="button"
@@ -93,7 +221,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         flex flex-col
         cursor-pointer
         duration-200
-        focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]
+        focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent
         ${isFeedCard ? 'p-2 bg-[#0f121d] border border-slate-800 hover:border-slate-700' : ''}
       `}
     >
@@ -172,7 +300,7 @@ export const GameCard: React.FC<GameCardProps> = ({
               event.stopPropagation();
               onManageStatus(game);
             }}
-            className={`absolute left-2 ${onToggleWishlist ? 'top-14' : 'top-2'} flex h-10 w-10 items-center justify-center rounded-full border ${hasProgress ? 'border-[#d9a352] bg-[#44351d] text-[#ffdb9d]' : 'border-slate-700 bg-black/85 text-slate-200'} hover:border-[#d9a352]/60 hover:text-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50`}
+            className={`absolute left-2 ${onToggleWishlist ? 'top-14' : 'top-2'} flex h-10 w-10 items-center justify-center rounded-full border bg-black/85 ${hasProgress ? 'border-accent text-accent' : 'border-slate-700 text-slate-200'} hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <Gamepad2 className="size-5" aria-hidden="true" />
           </button>
@@ -233,7 +361,7 @@ export const GameCard: React.FC<GameCardProps> = ({
           className={`
             font-bold
             text-white
-            group-hover:text-blue-400
+            group-hover:text-accent
             transition
             line-clamp-2
             leading-snug

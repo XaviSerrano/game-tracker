@@ -31,6 +31,7 @@ import {
   Bookmark,
   BookmarkPlus
 } from 'lucide-react';
+import { GameStatusIcon } from './GameStatusIcon.tsx';
 import { Breadcrumbs } from './Breadcrumbs.tsx';
 import { useLanguage } from '../i18n.tsx';
 
@@ -59,11 +60,11 @@ interface PlatformStyle {
     | { kind: 'text'; text: string; className: string; colorClass: string };
 }
 
-const PROGRESS_PHASE_OPTIONS: Array<{ value: GameStatus; label: string; helper: string; icon: string }> = [
-  { value: 'PLAYING', label: 'Jugando', helper: 'En progreso', icon: '🎮' },
-  { value: 'PLAYED', label: 'Jugado', helper: 'Sesión cerrada', icon: '🕹️' },
-  { value: 'COMPLETED', label: 'Completado', helper: 'Objetivo cumplido', icon: '🏆' },
-  { value: 'ABANDONED', label: 'Abandonado', helper: 'Pausado o cancelado', icon: '❌' }
+const PROGRESS_PHASE_OPTIONS: Array<{ value: GameStatus; label: string; helper: string }> = [
+  { value: 'PLAYING', label: 'Jugando', helper: 'En progreso' },
+  { value: 'PLAYED', label: 'Jugado', helper: 'Sesión cerrada' },
+  { value: 'COMPLETED', label: 'Completado', helper: 'Objetivo cumplido' },
+  { value: 'ABANDONED', label: 'Abandonado', helper: 'Pausado o cancelado' }
 ];
 
 const getStoreUrl = (platformName: string, gameName: string, stores: Record<string, string>): string => {
@@ -714,7 +715,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   if (loading) {
     return (
-      <div className="space-y-6 pb-20 animate-pulse selection:bg-blue-600 selection:text-white">
+      <div className="space-y-6 pb-20 animate-pulse selection:bg-accent/30 selection:text-white">
         <div className="h-64 bg-slate-800 rounded-3xl w-full"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
@@ -729,12 +730,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   if (!game) {
     return (
-      <div className="text-center py-12 space-y-4 selection:bg-blue-600 selection:text-white">
+      <div className="text-center py-12 space-y-4 selection:bg-accent/30 selection:text-white">
         <p className="text-lg font-semibold text-white">
           {t(errorMessage || 'No pudimos recopilar los datos de este videojuego.')}
         </p>
         <p className="text-sm text-slate-500">{t('Comprueba la dirección o vuelve a descubrir otros juegos.')}</p>
-        <button onClick={onBack} className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-semibold text-white">
+        <button onClick={onBack} className="px-4 py-2 bg-accent rounded-xl text-xs font-semibold text-on-accent">
           {t('Volver al inicio')}
         </button>
       </div>
@@ -742,7 +743,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   }
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white relative">
+    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white relative">
       <div className="relative isolate overflow-hidden pb-8 pt-24 md:pb-12 md:pt-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-full max-h-[34rem] overflow-hidden">
           <img
@@ -917,7 +918,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           <div onClickCapture={handlePrivateButtonClick} className="space-y-5 border-t border-slate-800 pt-6">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
-                <CheckSquare className="w-4 h-4 text-blue-400" />
+                <CheckSquare className="w-4 h-4 text-accent" />
                 {t('Tú diario de Juego (Track)')}
               </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -968,10 +969,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     aria-labelledby="progress-label progress-value"
                     aria-expanded={progressMenuOpen}
                     onClick={() => setProgressMenuOpen(prev => !prev)}
-                    className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-blue-500 transition flex items-center justify-between"
+                    className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-accent transition flex items-center justify-between"
                   >
                     <span className="flex items-center gap-2">
-                      <span className="text-sm">{selectedProgressOption.icon}</span>
+                      <GameStatusIcon status={selectedProgressOption.value} className="mt-0.5 size-4 shrink-0 text-accent" />
                       <span id="progress-value" className="text-left">
                         <span className="font-semibold text-slate-200 block">{selectedProgressOption.label}</span>
                         <span className="text-[10px] text-slate-500 block mt-0.5">{selectedProgressOption.helper}</span>
@@ -995,16 +996,16 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                             }}
                             className={`w-full text-left rounded-lg px-2.5 py-2 transition cursor-pointer flex items-start gap-2 ${
                               active
-                                ? 'bg-blue-600/15 border border-blue-500/25'
+                                ? 'bg-accent/10 border border-accent/25'
                                 : 'border border-transparent hover:bg-slate-800/80'
                             }`}
                           >
-                            <span className="text-sm leading-4 mt-0.5">{option.icon}</span>
+                            <GameStatusIcon status={option.value} className="mt-0.5 size-4 shrink-0 text-slate-400" />
                             <span>
-                              <span className={`text-xs font-semibold block ${active ? 'text-blue-300' : 'text-slate-200'}`}>
+                              <span className={`text-xs font-semibold block ${active ? 'text-accent-hover' : 'text-slate-200'}`}>
                                 {option.label}
                               </span>
-                              <span className={`text-[10px] block mt-0.5 ${active ? 'text-blue-400/85' : 'text-slate-500'}`}>
+                              <span className={`text-[10px] block mt-0.5 ${active ? 'text-accent/85' : 'text-slate-500'}`}>
                                 {option.helper}
                               </span>
                             </span>
@@ -1050,7 +1051,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   step="0.5"
                   value={hoursPlayed}
                   onChange={(e) => setHoursPlayed(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-2.5 text-xs text-white placeholder-slate-700 transition outline-none"
+                  className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-2.5 text-xs text-white placeholder-slate-700 transition outline-none"
                 />
               </div>
 
@@ -1083,13 +1084,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   value={notes}
                   rows={2}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-blue-500 rounded-xl p-3 text-xs text-white placeholder-slate-750 transition outline-none resize-none"
+                  className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-3 text-xs text-white placeholder-slate-750 transition outline-none resize-none"
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                className="col-span-1 md:col-span-2 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl cursor-pointer text-xs mt-2 transition"
+                className="col-span-1 md:col-span-2 w-full bg-accent hover:bg-accent-hover text-on-accent font-bold py-2.5 rounded-xl cursor-pointer text-xs mt-2 transition"
               >
                 {t('Guardar Diario de Juego')}
               </button>
@@ -1149,7 +1150,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                className="w-full bg-accent hover:bg-accent-hover text-on-accent font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
               >
                 <Send className="w-3.5 h-3.5" /> {t('Publicar Reseña')}
               </button>
@@ -1164,7 +1165,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-semibold text-slate-300 font-display flex items-center gap-2">
-                    <span className="w-1 h-5 rounded-full bg-blue-500"></span>
+                    <span className="w-1 h-5 rounded-full bg-accent"></span>
                     {t('Imágenes del juego')}
                   </h2>
 
@@ -1241,7 +1242,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                         onClick={() => setSelectedScreenshot(index)}
                         className={`relative flex-shrink-0 w-28 md:w-36 aspect-video rounded-xl overflow-hidden border transition ${
                           isActive
-                            ? 'border-blue-500 ring-2 ring-blue-500/20'
+                            ? 'border-accent ring-2 ring-accent/20'
                             : 'border-slate-850 opacity-60 hover:opacity-100'
                         }`}
                       >
@@ -1253,7 +1254,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                         />
 
                         {isActive && (
-                          <div className="absolute inset-0 bg-blue-500/10" />
+                          <div className="absolute inset-0 bg-accent/10" />
                         )}
                       </button>
                     );
@@ -1294,7 +1295,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                           className="w-8 h-8 rounded-full border border-slate-800"
                         />
                         <div>
-                          <p className="text-xs font-bold text-white hover:text-blue-400 transition leading-tight">
+                          <p className="text-xs font-bold text-white hover:text-accent transition leading-tight">
                             @{rev.author.username}
                           </p>
                           <p className="text-[10px] text-slate-500">
@@ -1305,7 +1306,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
                       <button
                         onClick={() => handleLikeReview(rev.id)}
-                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer transition ${currentUser && rev.likes.includes(currentUser.id) ? 'bg-blue-600/10 text-blue-400 border-blue-500/20' : 'bg-[#07090e] text-slate-500 border-slate-800 hover:text-slate-355'}`}
+                        className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer transition ${currentUser && rev.likes.includes(currentUser.id) ? 'bg-accent/10 text-accent border-accent/20' : 'bg-[#07090e] text-slate-500 border-slate-800 hover:text-slate-355'}`}
                       >
                         <ThumbsUp className="w-3.5 h-3.5" />
                         <span className="font-bold">{rev.likes.length}</span>
@@ -1348,7 +1349,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           >
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-slate-300 font-display text-sm flex items-center gap-1.5">
-                <ListPlus className="w-4 h-4 text-blue-400" /> {t('Añadir a lista personalizada')}
+                <ListPlus className="w-4 h-4 text-accent" /> {t('Añadir a lista personalizada')}
               </h4>
               <button
                 type="button"
@@ -1381,15 +1382,15 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                       disabled={isUpdating}
                       className={`w-full text-left p-2.5 border rounded-xl text-xs font-medium transition cursor-pointer flex items-center justify-between ${
                         isInList
-                          ? 'bg-blue-600/15 border-blue-500/30 text-blue-300'
-                          : 'bg-[#07090e] hover:bg-blue-600/10 border-slate-800 hover:border-blue-500/20 text-slate-300 hover:text-blue-400'
+                          ? 'bg-accent/10 border-accent/30 text-accent'
+                          : 'bg-[#07090e] hover:bg-accent/10 border-slate-800 hover:border-accent/20 text-slate-300 hover:text-accent'
                       }`}
                     >
                       <span>{list.name}</span>
 
                       <span
                         className={`text-[10px] font-normal ${
-                          isInList ? 'text-blue-400' : 'text-slate-500'
+                          isInList ? 'text-accent' : 'text-slate-500'
                         }`}
                       >
                         {isUpdating

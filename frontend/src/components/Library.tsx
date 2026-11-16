@@ -5,6 +5,8 @@ import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
 import { GameCard } from './GameCard.tsx';
 import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
+import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
+import { GameStatusIcon } from './GameStatusIcon.tsx';
 
 interface LibraryProps {
   userId: string;
@@ -14,6 +16,7 @@ interface LibraryProps {
 
 export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token }) => {
   const { t } = useLanguage();
+  const useMobileCardLayout = useIsMobileLayout();
   const [completeLib, setCompleteLib] = useState<(UserGame & { game: Game })[]>([]);
   const [filteredLib, setFilteredLib] = useState<(UserGame & { game: Game })[]>([]);
   const [activeTab, setActiveTab] = useState<GameStatus | 'ALL'>('ALL');
@@ -117,15 +120,15 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     value: GameStatus | 'ALL';
   }[] = [
     { label: t('Todo'), value: 'ALL' },
-    { label: `${t('Lista de deseos')} ⭐️`, value: 'WISHLIST' },
-    { label: t('Jugando 🎮'), value: 'PLAYING' },
+    { label: t('Lista de deseos'), value: 'WISHLIST' },
+    { label: t('Jugando'), value: 'PLAYING' },
     { label: t('Jugados'), value: 'PLAYED' },
-    { label: t('Completado 🏆'), value: 'COMPLETED' },
-    { label: t('Abandonado ❌'), value: 'ABANDONED' },
+    { label: t('Completado'), value: 'COMPLETED' },
+    { label: t('Abandonado'), value: 'ABANDONED' },
   ];
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-blue-600 selection:text-white">
+    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white">
       {/* Title Header */}
       <div>
         <h2 className="text-2xl font-bold font-display text-white tracking-tight">
@@ -147,10 +150,11 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           onClick={() => setActiveTab(tab.value)}
           className={`min-h-11 px-4 py-2 rounded-xl text-sm sm:text-xs font-semibold cursor-pointer transition border ${
             activeTab === tab.value
-              ? 'bg-blue-600 text-white border-blue-500'
+              ? 'bg-accent text-on-accent border-accent'
               : 'bg-[#0f121d] text-slate-400 border-slate-800 hover:text-white'
           }`}
         >
+          {tab.value !== 'ALL' && <GameStatusIcon status={tab.value} className="mr-1.5 inline size-3.5 align-[-2px]" />}
           <span>{tab.label}</span>
         </button>
       ))}
@@ -165,7 +169,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             placeholder={t('Filtra por título o categoría dentro de tu biblioteca...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full min-h-11 bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-400 rounded-xl px-4 py-2.5 pl-11 text-base sm:text-xs focus:ring-1 focus:ring-blue-500 transition outline-none"
+            className="w-full min-h-11 bg-[#0f121d] border border-slate-800 text-slate-200 placeholder-slate-400 rounded-xl px-4 py-2.5 pl-11 text-base sm:text-xs focus:ring-1 focus:ring-accent transition outline-none"
           />
           <Search className="absolute left-4 top-3 w-4.5 h-4.5 text-slate-500" />
         </div>
@@ -178,7 +182,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             type="button"
             aria-pressed={sortBy === 'date'}
             onClick={() => setSortBy('date')}
-            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'date' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'date' ? 'bg-[#1e293b] text-accent' : 'text-slate-400'}`}
           >
             {t('Fecha')}
           </button>
@@ -186,7 +190,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             type="button"
             aria-pressed={sortBy === 'rating'}
             onClick={() => setSortBy('rating')}
-            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'rating' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'rating' ? 'bg-[#1e293b] text-accent' : 'text-slate-400'}`}
           >
             Rating
           </button>
@@ -194,7 +198,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             type="button"
             aria-pressed={sortBy === 'hours'}
             onClick={() => setSortBy('hours')}
-            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'hours' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'hours' ? 'bg-[#1e293b] text-accent' : 'text-slate-400'}`}
           >
             {t('Horas')}
           </button>
@@ -202,7 +206,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
             type="button"
             aria-pressed={sortBy === 'name'}
             onClick={() => setSortBy('name')}
-            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'name' ? 'bg-[#1e293b] text-blue-400' : 'text-slate-400'}`}
+            className={`min-h-11 min-w-11 flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-sm sm:text-xs font-semibold transition ${sortBy === 'name' ? 'bg-[#1e293b] text-accent' : 'text-slate-400'}`}
           >
             A-Z
           </button>
@@ -211,13 +215,13 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(59,130,246,0.7)]" />
 
           <p className="text-[11px] uppercase tracking-widest font-semibold text-slate-500">
             {t('Biblioteca')}
           </p>
 
-          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-400">
+          <span className="px-2 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[11px] font-bold text-accent">
             {filteredLib.length}
           </span>
 
@@ -235,12 +239,27 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
       {/* Grid listing */}
       {loading ? (
-        <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className={`mx-auto grid w-full grid-cols-1 ${useMobileCardLayout ? 'gap-3' : 'max-w-[16rem] gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="animate-pulse bg-[#0f121d]/40 border border-slate-850 p-3 rounded-xl space-y-2">
-              <div className="aspect-[3/4] bg-slate-800 rounded-lg w-full"></div>
-              <div className="h-4 bg-slate-800 rounded w-2/3"></div>
-            </div>
+            useMobileCardLayout ? (
+              <div key={i} className="flex h-40 animate-pulse gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5">
+                <div className="w-[5.5rem] shrink-0 rounded-lg bg-slate-700/70" />
+                <div className="flex min-w-0 flex-1 flex-col py-1">
+                  <div className="h-5 w-3/4 rounded bg-slate-700/70" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-slate-700/50" />
+                  <div className="mt-3 space-y-2">
+                    <div className="h-3 w-full rounded bg-slate-700/50" />
+                    <div className="h-3 w-5/6 rounded bg-slate-700/50" />
+                    <div className="h-3 w-2/3 rounded bg-slate-700/50" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div key={i} className="animate-pulse bg-[#0f121d]/40 border border-slate-850 p-3 rounded-xl space-y-2">
+                <div className="aspect-[3/4] bg-slate-800 rounded-lg w-full"></div>
+                <div className="h-4 bg-slate-800 rounded w-2/3"></div>
+              </div>
+            )
           ))}
         </div>
       ) : loadError ? (
@@ -265,11 +284,12 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           )}
         </div>
       ) : (
-        <div className="mx-auto grid w-full max-w-[16rem] grid-cols-1 gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className={`mx-auto grid w-full grid-cols-1 ${useMobileCardLayout ? 'gap-y-3' : 'max-w-[16rem] gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
           {filteredLib.map(item => (
             <GameCard
               key={item.gameId}
               game={item.game}
+              variant={useMobileCardLayout ? 'mobile' : 'default'}
               userGameStatus={item.status}
               isInWishlist={item.isInWishlist}
               userGameRating={item.rating}

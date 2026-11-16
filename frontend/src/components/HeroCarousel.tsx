@@ -272,7 +272,7 @@ export function HeroCarousel({ onSelectGame }: HeroCarouselProps) {
   const activeSummary = active.summary || fetchedSummaries[active.id] || '';
 
   const arrowClass =
-    'inline-flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-200 backdrop-blur-sm transition hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]';
+    'inline-flex size-8 items-center justify-center rounded-full bg-white/10 text-slate-200 backdrop-blur-sm transition hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
   return (
     <section
@@ -314,7 +314,7 @@ export function HeroCarousel({ onSelectGame }: HeroCarouselProps) {
               type="button"
               onClick={() => onSelectGame(active.id)}
               aria-label={active.name}
-              className="block shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="block shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               <img
                 key={active.id}
@@ -353,7 +353,7 @@ export function HeroCarousel({ onSelectGame }: HeroCarouselProps) {
                   onClick={() => setIndex(i)}
                   aria-label={game.name}
                   aria-current={i === index ? 'true' : undefined}
-                  className={`size-1.5 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${
+                  className={`size-1.5 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     i === index ? 'bg-white' : 'bg-white/35 hover:bg-white/60'
                   }`}
                 />

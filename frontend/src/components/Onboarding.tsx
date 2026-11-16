@@ -54,7 +54,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ id, placeholder, value, o
         aria-controls={id}
         title={label}
         onClick={() => setVisible(previous => !previous)}
-        className="absolute right-0 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#e5b974]"
+        className="absolute right-0 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-accent"
       >
         <Icon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -65,8 +65,8 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ id, placeholder, value, o
 export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initialMode = 'login', preseededUsers, notice }) => {
   const { t } = useLanguage();
   const fieldLabelClassName = 'mb-2 block text-base font-medium text-slate-300 sm:text-xs';
-  const fieldClassName = 'w-full min-h-12 rounded-xl border border-slate-800 bg-[#07090e] px-3 py-3 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-[#d9a352] focus:ring-2 focus:ring-[#d9a352]/20 sm:px-4 sm:py-2.5 sm:text-sm';
-  const primaryButtonClassName = 'flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#d9a352] px-4 py-3 text-sm font-semibold text-[#17120a] transition hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5 sm:text-xs';
+  const fieldClassName = 'w-full min-h-12 rounded-xl border border-slate-800 bg-[#07090e] px-3 py-3 text-base text-white placeholder:text-slate-500 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 sm:px-4 sm:py-2.5 sm:text-sm';
+  const primaryButtonClassName = 'flex min-h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5 sm:text-xs';
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -250,12 +250,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
   const isReset = mode === 'reset';
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center p-4 antialiased selection:bg-[#d9a352]/40 selection:text-white">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center p-4 antialiased selection:bg-accent/40 selection:text-white">
       <div className="absolute right-4 top-4">
         <LanguageSelector compact />
       </div>
-      <div className="pointer-events-none absolute left-1/4 top-1/4 h-72 w-72 rounded-full bg-[#d9a352]/10 blur-3xl"></div>
-      <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-72 w-72 rounded-full bg-[#e5b974]/5 blur-3xl"></div>
+      <div className="pointer-events-none absolute left-1/4 top-1/4 h-72 w-72 rounded-full bg-accent/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-72 w-72 rounded-full bg-accent-hover/5 blur-3xl"></div>
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-700/80 bg-[#0f121d] p-5 shadow-2xl sm:p-8">
         <div className="flex flex-col items-center mb-8">
@@ -267,7 +267,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
                 event.preventDefault();
                 onGoHome();
               }}
-              className="rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#e5b974]"
+              className="rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
               GameTracker
             </a>
@@ -308,14 +308,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
             <button
               type="button"
               onClick={() => switchMode('login')}
-              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs ${!isRegister ? 'border border-[#d9a352]/20 bg-[#d9a352]/10 text-[#e5b974]' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:min-h-9 sm:text-xs ${!isRegister ? 'border border-accent/20 bg-accent/10 text-accent' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <Compass className="w-3.5 h-3.5" /> {t('Iniciar sesión')}
             </button>
             <button
               type="button"
               onClick={() => switchMode('register')}
-              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:min-h-9 sm:text-xs ${isRegister ? 'border border-[#d9a352]/20 bg-[#d9a352]/10 text-[#e5b974]' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:min-h-9 sm:text-xs ${isRegister ? 'border border-accent/20 bg-accent/10 text-accent' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <UserPlus className="w-3.5 h-3.5" /> {t('Crear cuenta')}
             </button>
@@ -362,7 +362,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
               <button
                 type="button"
                 onClick={() => switchMode('forgot')}
-                className="cursor-pointer text-sm text-blue-400 transition hover:text-blue-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:text-xs"
+                className="cursor-pointer text-sm text-blue-400 transition hover:text-blue-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:text-xs"
               >
                 {t('¿Has olvidado tu contraseña?')}
               </button>
@@ -470,7 +470,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
             <button
               type="button"
               onClick={() => switchMode('login')}
-              className="flex items-center gap-1 text-sm text-slate-400 transition hover:text-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] sm:text-xs"
+              className="flex items-center gap-1 text-sm text-slate-400 transition hover:text-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> {t('Volver al login')}
             </button>

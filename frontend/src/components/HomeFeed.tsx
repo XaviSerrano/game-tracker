@@ -10,6 +10,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { translateActivityDetails, useLanguage } from '../i18n.tsx';
+import { GameStatusIcon } from './GameStatusIcon.tsx';
 
 interface HomeFeedProps {
   currentUser: User;
@@ -186,11 +187,18 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       <button
         type="button"
         onClick={() => onSelectUser(act.userId)}
-        className="font-bold text-white hover:text-[#dfad55] transition cursor-pointer"
+        className="font-bold text-white hover:text-accent transition cursor-pointer"
       >
         @{actor.username}
       </button>
     );
+    const activityStatus = ({
+      COMPLETED: 'COMPLETED',
+      PLAYING: 'PLAYING',
+      PLAYED: 'PLAYED',
+      WISHLIST: 'WISHLIST',
+      ABANDONED: 'ABANDONED'
+    } as const)[act.type as 'COMPLETED' | 'PLAYING' | 'PLAYED' | 'WISHLIST' | 'ABANDONED'];
 
     if (
       act.type === 'FOLLOWED' &&
@@ -210,7 +218,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             onClick={() =>
               onSelectUser(act.targetUserId!)
             }
-            className="font-bold text-white hover:text-[#dfad55] transition cursor-pointer"
+            className="font-bold text-white hover:text-accent transition cursor-pointer"
           >
             @{target.username}
           </button>
@@ -229,7 +237,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
           {act.details && (
             <div className="rounded-xl bg-[#090c12] border border-slate-800/80 px-4 py-3">
               <div className="flex items-center gap-1.5 mb-2">
-                <Star className="w-3.5 h-3.5 text-[#e2ad52] fill-[#e2ad52]" />
+                <Star className="w-3.5 h-3.5 text-accent fill-accent" />
 
                 <span className="text-[9px] uppercase tracking-widest font-bold text-slate-500">
                   {t('Reseña')}
@@ -250,6 +258,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <div className="text-sm text-slate-300 leading-relaxed">
           {username}{' '}
           <span>
+            {activityStatus && <GameStatusIcon status={activityStatus} className="mr-1 inline size-3.5 align-[-2px] text-accent" />}
             {translateActivityDetails(
               act.type,
               act.details,
@@ -267,6 +276,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
       <div className="text-sm text-slate-300 leading-relaxed">
         {username}{' '}
         <span>
+          {activityStatus && <GameStatusIcon status={activityStatus} className="mr-1 inline size-3.5 align-[-2px] text-accent" />}
           {translateActivityDetails(act.type, act.details, t)}
         </span>
       </div>
@@ -279,7 +289,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
   ] as const;
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-[#dca94f] selection:text-black">
+    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-black">
 
       {/* SEARCH */}
       <form
@@ -289,7 +299,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
           const query = searchQuery.trim();
           if (query) onSearchGames(query);
         }}
-        className="relative flex items-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-lg shadow-black/20 transition focus-within:border-[#d9a352]/70 focus-within:bg-white/[0.06]"
+        className="relative flex items-center rounded-2xl border border-white/10 bg-white/[0.04] shadow-lg shadow-black/20 transition focus-within:border-accent/70 focus-within:bg-white/[0.06]"
       >
         <label htmlFor="home-game-search" className="sr-only">{t('Buscar videojuegos')}</label>
         <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
@@ -304,7 +314,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
         <button
           type="submit"
           disabled={!searchQuery.trim()}
-          className="absolute right-2 top-1/2 inline-flex h-10 -translate-y-1/2 items-center rounded-xl bg-[#dca84f] px-5 text-sm font-semibold text-[#17120a] transition hover:bg-[#e8b967] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-40"
+          className="absolute right-2 top-1/2 inline-flex h-10 -translate-y-1/2 items-center rounded-xl bg-accent px-5 text-sm font-semibold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t('Buscar')}
         </button>
@@ -315,7 +325,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-slate-200 font-display flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#dca84f]" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
 
             {feedScope === 'all'
               ? t('Actividad de la Comunidad')
@@ -335,9 +345,9 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                     type="button"
                     onClick={() => setFeedScope(option.id)}
                     aria-pressed={selected}
-                    className={`inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${
+                    className={`inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3.5 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                       selected
-                        ? 'bg-[#dca84f] text-[#17120a] shadow-sm'
+                        ? 'bg-accent text-on-accent shadow-sm'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -351,7 +361,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
             <button
               type="button"
               onClick={fetchFeed}
-              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs text-slate-500 transition hover:text-[#dca84f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974]"
+              className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs text-slate-500 transition hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <RefreshCw className={`size-3 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
               <span className="hidden sm:inline">{t('Actualizar')}</span>
@@ -414,7 +424,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
               <button
                 type="button"
                 onClick={() => setFeedScope('all')}
-                className="px-4 py-2 mt-2 bg-[#dca84f] text-[#17120a] text-xs font-semibold rounded-xl hover:bg-[#e8b967] transition cursor-pointer"
+                className="px-4 py-2 mt-2 bg-accent text-on-accent text-xs font-semibold rounded-xl hover:bg-accent-hover transition cursor-pointer"
               >
                 {t('Ver Actividad General')}
               </button>
@@ -475,7 +485,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                           src={actor.avatar}
                           alt={actor.username}
                           referrerPolicy="no-referrer"
-                          className="w-11 h-11 rounded-full border border-slate-800 hover:border-[#dca84f]/60 transition"
+                          className="w-11 h-11 rounded-full border border-slate-800 hover:border-accent/60 transition"
                         />
                       </button>
 
@@ -516,7 +526,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                                 relatedGame.igdbId
                               )
                             }
-                            className="w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden border border-slate-800 hover:border-[#dca84f]/60 transition cursor-pointer group"
+                            className="w-24 h-32 flex-shrink-0 rounded-lg overflow-hidden border border-slate-800 hover:border-accent/60 transition cursor-pointer group"
                           >
                             <img
                               src={relatedGame.cover}
@@ -537,7 +547,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                                 }
                                 className="text-left min-w-0 cursor-pointer"
                               >
-                                <h4 className="text-sm font-bold text-white hover:text-[#e1b35e] transition truncate">
+                                <h4 className="text-sm font-bold text-white hover:text-accent-hover transition truncate">
                                   {relatedGame.name}
                                 </h4>
                               </button>
@@ -557,8 +567,8 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                             {typeof relatedGame.rating ===
                               'number' && (
                               <div className="flex items-center gap-1.5 mt-2">
-                                <Star className="w-3 h-3 text-[#dfad55] fill-[#dfad55]" />
-                                <span className="text-[10px] font-bold text-[#dfad55]">
+                                <Star className="w-3 h-3 text-accent fill-accent" />
+                                <span className="text-[10px] font-bold text-accent">
                                   {Math.round(relatedGame.rating)}
                                 </span>
                               </div>
@@ -577,7 +587,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                                   relatedGame.igdbId
                                 )
                               }
-                              className="text-[10px] text-slate-500 hover:text-[#dfad55] transition mt-3 text-left cursor-pointer"
+                              className="text-[10px] text-slate-500 hover:text-accent transition mt-3 text-left cursor-pointer"
                             >
                               {t('Ver detalles')} →
                             </button>
@@ -604,16 +614,16 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                             src={targetUser.avatar}
                             alt={targetUser.username}
                             referrerPolicy="no-referrer"
-                            className="w-20 h-20 rounded-full border border-slate-800 group-hover:border-[#dca84f]/60 transition"
+                            className="w-20 h-20 rounded-full border border-slate-800 group-hover:border-accent/60 transition"
                           />
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-bold text-white group-hover:text-[#e1b35e] transition truncate">
+                              <h4 className="text-sm font-bold text-white group-hover:text-accent-hover transition truncate">
                                 @{targetUser.username}
                               </h4>
 
-                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#dca84f]/10 text-[#dfad55] border border-[#dca84f]/20">
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
                                 Gamer
                               </span>
                             </div>
@@ -628,7 +638,7 @@ export const HomeFeed: React.FC<HomeFeedProps> = ({
                               </p>
                             )}
 
-                            <div className="flex items-center gap-1 mt-3 text-[10px] text-slate-500 group-hover:text-[#dfad55] transition">
+                            <div className="flex items-center gap-1 mt-3 text-[10px] text-slate-500 group-hover:text-accent transition">
                               {t('Ver perfil')}
                               <ChevronRight className="w-3 h-3" />
                             </div>

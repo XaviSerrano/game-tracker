@@ -4,6 +4,7 @@ import { Check, Gamepad2, X } from 'lucide-react';
 import type { Game, GameStatus, UserGame } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
+import { GameStatusIcon } from './GameStatusIcon.tsx';
 
 type ProgressStatus = Exclude<GameStatus, 'WISHLIST'>;
 
@@ -79,12 +80,12 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-              <Gamepad2 className="size-5 shrink-0 text-[#e5b974]" aria-hidden="true" />
+              <Gamepad2 className="size-5 shrink-0 text-accent" aria-hidden="true" />
               {t('Gestionar estado del juego')}
             </h2>
             <p className="mt-1 break-words text-sm text-slate-400">{game.name}</p>
           </div>
-          <button type="button" onClick={onClose} disabled={saving} aria-label={t('Cerrar')} className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:opacity-50">
+          <button type="button" onClick={onClose} disabled={saving} aria-label={t('Cerrar')} className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50">
             <X className="size-5" aria-hidden="true" />
           </button>
         </div>
@@ -92,10 +93,10 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
         <fieldset className="mt-6 space-y-2" disabled={saving}>
           <legend className="mb-2 text-sm font-semibold text-slate-300">{t('Selecciona un estado')}</legend>
           {OPTIONS.map(option => (
-            <button type="button" key={option.value} aria-pressed={selected === option.value} onClick={() => setSelected(current => current === option.value ? null : option.value)} className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] ${selected === option.value ? 'border-[#d9a352]/60 bg-[#d9a352]/10 text-white' : 'border-slate-800 text-slate-300 hover:border-slate-600'}`}>
-              <span>{t(option.label)}</span>
+            <button type="button" key={option.value} aria-pressed={selected === option.value} onClick={() => setSelected(current => current === option.value ? null : option.value)} className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${selected === option.value ? 'border-accent/60 bg-accent/10 text-white' : 'border-slate-800 text-slate-300 hover:border-slate-600'}`}>
+              <span className="flex items-center gap-2"><GameStatusIcon status={option.value} className="size-4 text-slate-400" />{t(option.label)}</span>
               <span className="grid size-5 place-items-center rounded-full border border-slate-500">
-                {selected === option.value && <Check className="size-3.5 text-[#e5b974]" aria-hidden="true" />}
+                {selected === option.value && <Check className="size-3.5 text-accent" aria-hidden="true" />}
               </span>
             </button>
           ))}
@@ -104,7 +105,7 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
         {error && <p role="alert" className="mt-4 text-sm text-red-300">{t(removing ? 'No se pudo eliminar el juego. Inténtalo de nuevo.' : 'No se pudo guardar el estado. Inténtalo de nuevo.')}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/5 disabled:opacity-50">{t('Cancelar')}</button>
-          <button type="button" onClick={() => void save()} disabled={saving || selected === initialStatus} className="min-h-10 rounded-xl bg-[#d9a352] px-4 text-sm font-bold text-[#17120a] hover:bg-[#e5b974] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5b974] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => void save()} disabled={saving || selected === initialStatus} className="min-h-10 rounded-xl bg-accent px-4 text-sm font-bold text-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50">
             {saving ? t('Guardando...') : removing ? t('Eliminar de la biblioteca') : t('Guardar')}
           </button>
         </div>
