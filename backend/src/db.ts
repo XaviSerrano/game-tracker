@@ -175,6 +175,14 @@ export async function initDb(): Promise<void> {
       PRIMARY KEY ("userId", "gameId")
     );
 
+    CREATE TABLE IF NOT EXISTS "userFavoriteGames" (
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "gameId" INTEGER NOT NULL REFERENCES games("igdbId") ON DELETE CASCADE,
+      position INTEGER NOT NULL CHECK (position >= 0 AND position < 4),
+      PRIMARY KEY ("userId", "gameId"),
+      UNIQUE ("userId", position)
+    );
+
     CREATE TABLE IF NOT EXISTS reviews (
       id TEXT PRIMARY KEY,
       "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -821,6 +829,37 @@ class GameDatabase {
     );
 
     return game;
+  }
+
+  async getFavoriteGames(userId: string): Promise<Game[]> {
+    const { rows } = await this.pool.query(
+      `SELECT games.* FROM "userFavoriteGames" favorites
+       JOIN games ON games."igdbId" = favorites."gameId"
+       WHERE favorites."userId" = $1 ORDER BY favorites.position ASC`,
+      [userId]
+    );
+    return rows.map(hydrateGame);
+  }
+
+  async setFavoriteGames(userId: string, gameIds: number[]): Promise<Game[]> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM "userFavoriteGames" WHERE "userId" = $1', [userId]);
+      for (const [position, gameId] of gameIds.entries()) {
+        await client.query(
+          'INSERT INTO "userFavoriteGames" ("userId", "gameId", position) VALUES ($1, $2, $3)',
+          [userId, gameId, position]
+        );
+      }
+      await client.query('COMMIT');
+      return this.getFavoriteGames(userId);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // ==================================================

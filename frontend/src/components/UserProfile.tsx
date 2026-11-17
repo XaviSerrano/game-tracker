@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { User, Review, Game, CustomList } from '../types.ts';
-import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus, UserX, Plus, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
 import { AvatarCropper } from './AvatarCropper.tsx';
@@ -42,6 +42,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   const [reviews, setReviews] = useState<(Review & { game: Game })[]>([]);
   const [lists, setLists] = useState<PublicList[]>([]);
+  const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
+  const [editingFavorites, setEditingFavorites] = useState(false);
+  const [favoriteSearch, setFavoriteSearch] = useState('');
+  const [favoriteResults, setFavoriteResults] = useState<Game[]>([]);
+  const [favoriteSearchLoading, setFavoriteSearchLoading] = useState(false);
+  const [favoriteSaving, setFavoriteSaving] = useState(false);
+  const [favoriteError, setFavoriteError] = useState('');
   const [selectedList, setSelectedList] = useState<PublicList | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -81,6 +88,12 @@ try {
     setEditUsername(userData.username);
     setEditBio(userData.bio ?? '');
     setEditAvatar(userData.avatar ?? '');
+  }
+
+  const favoritesRes = await apiFetch(`/api/users/${userId}/favorites`);
+  if (favoritesRes.ok) {
+    const favorites: Game[] = await favoritesRes.json();
+    setFavoriteGames(Array.isArray(favorites) ? favorites : []);
   }
 
   // 2. Fetch user's library and generate reviews
@@ -145,6 +158,64 @@ useEffect(() => {
 fetchProfileData();
 setSelectedList(null);
 }, [userId, currentUser.id]);
+
+useEffect(() => {
+  if (!editingFavorites) return;
+  const query = favoriteSearch.trim();
+  if (query.length < 2) {
+    setFavoriteResults([]);
+    setFavoriteSearchLoading(false);
+    return;
+  }
+  const controller = new AbortController();
+  const timeout = window.setTimeout(async () => {
+    setFavoriteSearchLoading(true);
+    try {
+      const params = new URLSearchParams({ q: query, limit: '30', sort: 'popularity' });
+      const response = await apiFetch(`/api/games/search?${params}`, { signal: controller.signal });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'No se pudo buscar en el catálogo.');
+      setFavoriteResults(Array.isArray(data?.items) ? data.items : []);
+      setFavoriteError('');
+    } catch (error) {
+      if (!controller.signal.aborted) setFavoriteError(error instanceof Error ? error.message : 'Error al buscar juegos.');
+    } finally {
+      if (!controller.signal.aborted) setFavoriteSearchLoading(false);
+    }
+  }, 300);
+  return () => { window.clearTimeout(timeout); controller.abort(); };
+}, [editingFavorites, favoriteSearch]);
+
+const saveFavoriteGames = async (nextGames: Game[]) => {
+  setFavoriteSaving(true);
+  setFavoriteError('');
+  try {
+    const response = await apiFetch('/api/users/profile/favorites', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ gameIds: nextGames.map(game => game.igdbId) })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || 'No se pudieron guardar los favoritos.');
+    setFavoriteGames(Array.isArray(data) ? data : nextGames);
+  } catch (error) {
+    setFavoriteError(error instanceof Error ? error.message : 'No se pudieron guardar los favoritos.');
+  } finally {
+    setFavoriteSaving(false);
+  }
+};
+
+const addFavoriteGame = async (game: Game) => {
+  if (favoriteGames.some(favorite => favorite.igdbId === game.igdbId) || favoriteGames.length >= 4 || favoriteSaving) return;
+  await saveFavoriteGames([...favoriteGames, game]);
+  setFavoriteSearch('');
+  setFavoriteResults([]);
+};
+
+const removeFavoriteGame = (gameId: number) => {
+  if (favoriteSaving) return;
+  void saveFavoriteGames(favoriteGames.filter(game => game.igdbId !== gameId));
+};
 
 const handleFollowToggle = async () => {
 try {
@@ -378,6 +449,59 @@ return ( <div className="text-center py-12 text-slate-500"> <p>{t('Usuario no en
 }
 
 return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white">
+
+  {editingFavorites && (
+    <Dialog label={t('Juegos favoritos')} onClose={() => { setEditingFavorites(false); setFavoriteError(''); }}>
+      <section className="w-full max-w-3xl rounded-2xl border border-slate-800 bg-[#0f121d] p-4 text-left sm:p-6">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-white">{t('Juegos favoritos')}</h2>
+            <p className="mt-1 text-xs text-slate-400">{t('Elige hasta cuatro juegos para mostrar en tu perfil.')}</p>
+          </div>
+          <button type="button" onClick={() => { setEditingFavorites(false); setFavoriteError(''); }} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white" aria-label={t('Cerrar')}>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <label htmlFor="favorite-game-search" className="sr-only">{t('Buscar juegos')}</label>
+        <div className="relative">
+          <Search aria-hidden="true" className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <input id="favorite-game-search" type="search" value={favoriteSearch} onChange={event => setFavoriteSearch(event.target.value)} placeholder={t('Busca un juego...')} className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-10 text-sm text-white placeholder:text-slate-400 focus:border-accent" />
+        </div>
+        {favoriteError && <p role="alert" className="mt-3 text-sm text-red-300">{t(favoriteError)}</p>}
+        {favoriteSaving && <p role="status" className="mt-3 text-xs text-slate-300">{t('Guardando...')}</p>}
+        {favoriteSearchLoading && <p className="py-6 text-center text-xs text-slate-400">{t('Buscando juegos...')}</p>}
+        {!favoriteSearchLoading && favoriteSearch.trim().length >= 2 && favoriteResults.length === 0 && !favoriteError && <p className="py-6 text-center text-xs text-slate-400">{t('No se encontraron juegos.')}</p>}
+        {favoriteResults.length > 0 && (
+          <div className="mt-4 grid max-h-[48vh] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+            {favoriteResults.map(game => {
+              const alreadySelected = favoriteGames.some(favorite => favorite.igdbId === game.igdbId);
+              const disabled = alreadySelected || favoriteGames.length >= 4 || favoriteSaving;
+              return (
+                <button key={game.igdbId} type="button" disabled={disabled} onClick={() => void addFavoriteGame(game)} className="group flex min-w-0 items-center gap-2 rounded-lg border border-slate-800 bg-[#0b0c0e] p-2 text-left transition hover:border-accent/40 disabled:cursor-default disabled:opacity-50">
+                  <img src={game.cover} alt="" referrerPolicy="no-referrer" className="h-14 w-10 shrink-0 rounded object-cover" />
+                  <span className="min-w-0 flex-1 text-xs font-semibold leading-snug text-slate-200 line-clamp-2">{game.name}</span>
+                  {alreadySelected ? <Star aria-label={t('Seleccionado')} className="h-4 w-4 shrink-0 fill-accent text-accent" /> : <Plus aria-hidden="true" className="h-4 w-4 shrink-0 text-slate-500 group-hover:text-accent" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="mt-5 border-t border-slate-800 pt-4">
+          <p className="mb-3 text-xs font-semibold text-slate-300">{t('Tus favoritos')} · {favoriteGames.length}/4</p>
+          <div className="space-y-2">
+            {favoriteGames.map(game => (
+              <div key={game.igdbId} className="flex items-center gap-3 rounded-lg border border-slate-800 bg-[#0b0c0e] p-2">
+                <img src={game.cover} alt="" referrerPolicy="no-referrer" className="h-12 w-9 rounded object-cover" />
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-white">{game.name}</span>
+                <button type="button" onClick={() => removeFavoriteGame(game.igdbId)} disabled={favoriteSaving} aria-label={`${t('Quitar')} ${game.name}`} className="rounded-md p-2 text-slate-400 hover:bg-red-950/50 hover:text-red-300 disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
+              </div>
+            ))}
+            {favoriteGames.length === 0 && <p className="text-xs text-slate-400">{t('Todavía no has elegido juegos favoritos.')}</p>}
+          </div>
+        </div>
+      </section>
+    </Dialog>
+  )}
 
   {/* Selected list modal */}
   {selectedList && (
@@ -824,6 +948,33 @@ return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-w
       </form>
     </Dialog>
   )}
+
+  {/* Favorite games */}
+  <section aria-labelledby="profile-favorites-heading" className="space-y-4">
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <h2 id="profile-favorites-heading" className="text-xl font-bold tracking-tight text-white">{t('Favoritos')}</h2>
+        <p className="mt-1 text-xs text-slate-400">{t('Los juegos que mejor te representan.')}</p>
+      </div>
+      {isOwnProfile && <button type="button" onClick={() => { setFavoriteSearch(''); setFavoriteError(''); setEditingFavorites(true); }} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-700 bg-[#111317] px-3.5 text-xs font-semibold text-slate-200 transition hover:border-accent/40 hover:text-white"><PenSquare aria-hidden="true" className="h-3.5 w-3.5" />{t('Editar')}</button>}
+    </div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+      {Array.from({ length: 4 }, (_, index) => {
+        const game = favoriteGames[index];
+        return game ? (
+          <button key={game.igdbId} type="button" onClick={() => onSelectGame(game.igdbId)} className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-slate-800 bg-[#111317] text-left focus-visible:outline-offset-4">
+            <img src={game.cover} alt={game.name} referrerPolicy="no-referrer" loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]" />
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pb-3 pt-12 text-xs font-bold text-white">{game.name}</span>
+          </button>
+        ) : (
+          <button key={`empty-${index}`} type="button" disabled={!isOwnProfile} onClick={() => { setFavoriteSearch(''); setFavoriteError(''); setEditingFavorites(true); }} className={`flex aspect-[2/3] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-[#111317]/50 text-slate-500 transition ${isOwnProfile ? 'hover:border-accent/50 hover:bg-accent/[0.03] hover:text-accent' : 'cursor-default'}`} aria-label={isOwnProfile ? t('Añadir juego favorito') : t('Espacio para juego favorito')}>
+            {isOwnProfile && <Plus aria-hidden="true" className="h-6 w-6" />}
+            <span className="text-xs">{isOwnProfile ? t('Añadir favorito') : t('Sin seleccionar')}</span>
+          </button>
+        );
+      })}
+    </div>
+  </section>
 
   {/* Grid panels */}
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

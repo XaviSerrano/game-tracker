@@ -506,6 +506,36 @@ app.get('/api/users/:id', async (req, res) => {
   res.json({ ...user, followersCount, followingCount });
 });
 
+app.get('/api/users/:id/favorites', async (req, res) => {
+  const user = await db.getUser(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+  res.json(await db.getFavoriteGames(user.id));
+});
+
+app.put('/api/users/profile/favorites', authenticate, async (req: AuthenticatedRequest, res) => {
+  const ids: unknown = req.body?.gameIds;
+  if (!Array.isArray(ids) || ids.length > 4 || ids.some(id => !Number.isInteger(id) || id <= 0)
+    || new Set(ids).size !== ids.length) {
+    return res.status(400).json({ error: 'Selecciona hasta cuatro juegos distintos.' });
+  }
+
+  try {
+    const games = await Promise.all(ids.map(async (id: number) => {
+      const existing = await db.getGame(id);
+      if (existing) return existing;
+      const game = await IgdbService.getGameDetails(id);
+      if (game) await db.saveGame(game);
+      return game;
+    }));
+    if (games.some(game => !game)) return res.status(404).json({ error: 'No se encontró uno de los juegos seleccionados.' });
+    const favorites = await db.setFavoriteGames(req.currUser!.id, ids as number[]);
+    res.json(favorites);
+  } catch (error) {
+    console.error('Error updating favorite games:', error);
+    res.status(500).json({ error: 'No se pudieron guardar los juegos favoritos.' });
+  }
+});
+
 // Modificar perfil de usuario
 app.put('/api/users/profile', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
