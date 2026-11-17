@@ -1,5 +1,7 @@
 # GameTracker
 
+Consulta la [Política de privacidad](./PRIVACY_POLICY.md) de la aplicación.
+
 GameTracker is a React + Vite game-discovery and library app backed by a single
 Express API, PostgreSQL, and IGDB.
 
