@@ -1,6 +1,10 @@
 # GameTracker
 
-Consulta la [Política de privacidad](./PRIVACY_POLICY.md) de la aplicación.
+Documentación pública para Google Play:
+
+- [Política de privacidad](./PRIVACY_POLICY.md)
+- [Solicitud de eliminación de cuenta](./ACCOUNT_DELETION.md)
+- [Eliminación de datos sin eliminar la cuenta](./DATA_DELETION.md)
 
 GameTracker is a React + Vite game-discovery and library app backed by a single
 Express API, PostgreSQL, and IGDB.
