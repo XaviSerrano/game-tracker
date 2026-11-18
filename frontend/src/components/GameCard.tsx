@@ -98,7 +98,8 @@ export const GameCard: React.FC<GameCardProps> = ({
           type="button"
           onClick={handleCardClick}
           aria-label={`${t('Ver detalles de')} ${game.name}`}
-          className="relative min-h-[8.5rem] w-[5.5rem] shrink-0 self-stretch overflow-hidden rounded-lg bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          style={{ width: '10.5rem', flex: '0 0 10.5rem' }}
+          className="relative min-h-[8.5rem] shrink-0 self-stretch overflow-hidden rounded-lg bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {game.cover && failedCover !== game.cover ? (
             <img
@@ -140,9 +141,11 @@ export const GameCard: React.FC<GameCardProps> = ({
             </p>
             {showFullLibraryCard && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-md border border-white/10 bg-black/15 px-1.5 py-0.5 text-[10px] font-medium text-slate-200">
-                  {statusLabels[userGameStatus]}
-                </span>
+                {!isMobileCard && (
+                  <span className="rounded-md border border-white/10 bg-black/15 px-1.5 py-0.5 text-[10px] font-medium text-slate-200">
+                    {statusLabels[userGameStatus]}
+                  </span>
+                )}
                 {userGameHours > 0 && (
                   <span className="text-[10px] text-slate-400">{userGameHours} h</span>
                 )}

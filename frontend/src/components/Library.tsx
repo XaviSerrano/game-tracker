@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { UserGame, Game, GameStatus } from '../types.ts';
-import { Search, SortAsc, Star, Flame, Clock, RefreshCw } from 'lucide-react';
+import { Search, SortAsc, Star, Flame, Clock, RefreshCw, ChevronDown } from 'lucide-react';
 import { GameCard } from './GameCard.tsx';
 import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
@@ -141,8 +141,21 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
 
       {/* Categories slider */}
       {wishlistError && <p role="alert" className="text-sm text-red-300">{t('No se pudo actualizar la wishlist.')}</p>}
-      <div className="flex flex-wrap gap-2">
-      {STATUS_TABS.map(tab => (
+      <div className={useMobileCardLayout ? 'relative' : 'flex flex-wrap gap-2'}>
+      {useMobileCardLayout ? (
+        <>
+          {activeTab !== 'ALL' && <GameStatusIcon status={activeTab} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 z-10 size-4 -translate-y-1/2 text-accent" />}
+          <select
+            aria-label={t('Selecciona un estado')}
+            value={activeTab}
+            onChange={event => setActiveTab(event.target.value as GameStatus | 'ALL')}
+            className={`min-h-11 w-full appearance-none rounded-xl border bg-[#0f121d] py-2 pl-4 pr-11 text-base font-semibold outline-none transition focus:ring-1 focus:ring-accent ${activeTab === 'ALL' ? 'border-slate-800 text-slate-200' : 'border-accent/50 pl-11 text-accent'}`}
+          >
+            {STATUS_TABS.map(tab => <option key={tab.value} value={tab.value}>{tab.label}</option>)}
+          </select>
+          <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        </>
+      ) : STATUS_TABS.map(tab => (
         <button
           key={tab.value}
           type="button"
@@ -243,7 +256,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           {[1, 2, 3, 4].map(i => (
             useMobileCardLayout ? (
               <div key={i} className="flex h-40 animate-pulse gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5">
-                <div className="w-[5.5rem] shrink-0 rounded-lg bg-slate-700/70" />
+                <div className="w-[10.5rem] shrink-0 rounded-lg bg-slate-700/70" />
                 <div className="flex min-w-0 flex-1 flex-col py-1">
                   <div className="h-5 w-3/4 rounded bg-slate-700/70" />
                   <div className="mt-2 h-3 w-1/2 rounded bg-slate-700/50" />

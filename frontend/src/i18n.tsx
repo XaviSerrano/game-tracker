@@ -388,6 +388,8 @@ const translations: Record<string, string> = Object.fromEntries([
   ['Crear mi Diario Gamer', 'Create my gaming journal'] as const,
   ['No pudimos recopilar los datos de este videojuego.', 'We could not load this game.'] as const,
   ['Desconocido', 'Unknown'] as const,
+  ['Ficha técnica', 'Technical details'] as const,
+  ['Puntuación de IGDB', 'IGDB score'] as const,
   ['Desarrolladora', 'Developer'] as const,
   ['Distribuidora', 'Publisher'] as const,
   ['Fecha de lanzamiento', 'Release date'] as const,

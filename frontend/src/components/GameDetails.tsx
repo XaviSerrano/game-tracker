@@ -29,7 +29,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Bookmark,
-  BookmarkPlus
+  BookmarkPlus,
+  Gamepad2
 } from 'lucide-react';
 import { GameStatusIcon } from './GameStatusIcon.tsx';
 import { Breadcrumbs } from './Breadcrumbs.tsx';
@@ -259,7 +260,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [updatingListId, setUpdatingListId] = useState<string | null>(null);
   
   // Form states for library tracking
-  const [status, setStatus] = useState<GameStatus>('WISHLIST');
+  const [status, setStatus] = useState<GameStatus | null>('WISHLIST');
   const [rating, setRating] = useState<number>(0);
   const [hoursPlayed, setHoursPlayed] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
@@ -281,7 +282,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     label: t(option.label),
     helper: t(option.helper)
   }));
-  const selectedProgressOption = progressPhaseOptions.find(option => option.value === status) || progressPhaseOptions[0];
+  const selectedProgressOption = progressPhaseOptions.find(option => option.value === status);
   // Screenshot gallery
   const [selectedScreenshot, setSelectedScreenshot] = useState(0);
   const [fullscreenScreenshot, setFullscreenScreenshot] = useState<number | null>(null);
@@ -440,10 +441,36 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   }, [fullscreenScreenshot, screenshots.length]);
 
 
-  const saveTracking = async (nextStatus: GameStatus, successMessage = t('¡Biblioteca actualizada con éxito!')) => {
+  const saveTracking = async (nextStatus: GameStatus | null, successMessage = t('¡Biblioteca actualizada con éxito!')) => {
     if (requireSession()) return;
     setMessage('');
     try {
+      if (nextStatus === null) {
+        if (!userGame || userGame.status === 'WISHLIST') {
+          setStatus('WISHLIST');
+          return;
+        }
+
+        const res = await apiFetch(`/api/library/${gameId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Failed to remove game tracking');
+
+        setUserGame(null);
+        setStatus('WISHLIST');
+        setIsInWishlist(false);
+        setRating(0);
+        setHoursPlayed(0);
+        setNotes('');
+        setStartedAt('');
+        setCompletedAt('');
+        setMessage(t('Juego eliminado de tu biblioteca y wishlist.'));
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+
       const res = await apiFetch('/api/library', {
         method: 'POST',
         headers: {
@@ -742,9 +769,19 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     );
   }
 
+  const parsedReleaseDate = game.releaseDate && game.releaseDate !== 'Unknown'
+    ? new Date(game.releaseDate)
+    : null;
+  const releaseYear = parsedReleaseDate && !Number.isNaN(parsedReleaseDate.getTime())
+    ? parsedReleaseDate.getUTCFullYear()
+    : null;
+  const formattedReleaseDate = parsedReleaseDate && !Number.isNaN(parsedReleaseDate.getTime())
+    ? new Intl.DateTimeFormat(dateLocale, { dateStyle: 'long', timeZone: 'UTC' }).format(parsedReleaseDate)
+    : t('Desconocido');
+
   return (
     <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white relative">
-      <div className="relative isolate overflow-hidden pb-8 pt-24 md:pb-12 md:pt-28">
+      <div className="relative isolate overflow-hidden pb-8 pt-12 md:pb-12 md:pt-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-full max-h-[34rem] overflow-hidden">
           <img
             src={screenshots[0] || game.cover}
@@ -758,7 +795,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
         <div className="pointer-events-none absolute inset-x-0 top-4 z-10 mx-auto w-[calc(100%-2rem)] md:w-4/5">
           <Breadcrumbs
-            className="pointer-events-auto absolute left-0 top-0"
+            className="pointer-events-auto absolute left-0 top-0 hidden md:block"
             items={
               breadcrumbParentLabel === t('Inicio')
                 ? [
@@ -788,7 +825,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="pointer-events-auto absolute left-0 top-8 inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white group"
+            className="pointer-events-auto absolute left-0 top-0 inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white group md:top-8"
           >
             <ArrowLeft className="w-4 h-4 transition group-hover:-translate-x-0.5" />
             {t('Volver a')} {breadcrumbParentLabel}
@@ -796,16 +833,67 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         </div>
 
         <div className="mx-auto flex w-[calc(100%-2rem)] flex-col gap-6 md:w-4/5 md:flex-row md:items-start md:gap-8">
-          <img
-            src={game.cover}
-            alt={game.name}
-            referrerPolicy="no-referrer"
-            className="aspect-[3/4] w-36 shrink-0 rounded-lg object-cover shadow-xl md:w-44"
-          />
+          <div className="grid w-full grid-cols-[8.75rem_minmax(0,1fr)] items-start gap-3 md:contents">
+            <img
+              src={game.cover}
+              alt={game.name}
+              referrerPolicy="no-referrer"
+              className="aspect-[3/4] w-full self-start rounded-xl border border-white/10 object-cover shadow-xl md:w-44 md:shrink-0"
+            />
+            <div className="min-w-0 space-y-3 md:hidden">
+              {game.rating ? (
+                <div aria-label={`${t('Puntuación de IGDB')}: ${game.rating}/100`} className="px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">IGDB Score</p>
+                  <div className="mt-1 flex items-baseline gap-1 text-amber-300">
+                    <span className="text-4xl font-black leading-none tracking-tight">{game.rating}</span>
+                    <span className="text-xs font-semibold text-amber-200">/100</span>
+                  </div>
+                </div>
+              ) : null}
+
+              <details className="group overflow-hidden rounded-xl border border-slate-700/80 bg-[#10141d]/90 open:border-slate-600">
+                <summary className="flex min-h-11 list-none cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-xs font-semibold text-slate-100 transition hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
+                  <span>{t('Ficha técnica')}</span>
+                  <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <dl className="space-y-3 border-t border-white/[0.08] px-3 py-3">
+                  <div className="min-w-0">
+                    <dt className="text-[10px] font-medium text-slate-400">{t('Desarrolladora')}</dt>
+                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{game.developers?.join(', ') || t('Desconocido')}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] font-medium text-slate-400">{t('Distribuidora')}</dt>
+                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{game.publishers?.join(', ') || t('Desconocido')}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] font-medium text-slate-400">{t('Fecha de lanzamiento')}</dt>
+                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{formattedReleaseDate}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-[10px] font-medium text-slate-400">{t('Plataformas')}</dt>
+                    <dd className="mt-1 flex flex-wrap gap-1">
+                      {game.platforms.length > 0 ? game.platforms.map(platform => (
+                        <a
+                          key={platform}
+                          href={getStoreUrl(platform, game.name, storeLinks)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-7 items-center rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] leading-tight text-slate-100 transition hover:border-white/20 hover:bg-white/[0.07]"
+                          title={`${t('Comprar en')} ${platform}`}
+                        >
+                          {platform}
+                        </a>
+                      )) : <span className="text-xs text-slate-100">{t('Desconocido')}</span>}
+                    </dd>
+                  </div>
+                </dl>
+              </details>
+            </div>
+          </div>
           <div className="min-w-0 flex-1 space-y-4 text-left">
             <div>
               <div className="flex flex-wrap items-center gap-1 text-xs text-slate-300">
-                <span>{game.releaseDate && game.releaseDate !== 'Unknown' && !Number.isNaN(new Date(game.releaseDate).getTime()) ? new Date(game.releaseDate).getFullYear() : t('Desconocido')}</span>
+                <span>{releaseYear ?? t('Desconocido')}</span>
               </div>
               <h1 className="text-2xl md:text-4xl font-bold font-display text-white tracking-tight mt-1.5">
                 {game.name}
@@ -851,7 +939,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
             </div>
 
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-4 border-t border-white/15 pt-4 sm:grid-cols-3">
+            <dl className="hidden grid-cols-1 gap-x-6 gap-y-4 border-t border-white/15 pt-4 md:grid sm:grid-cols-3">
               <div className="min-w-0">
                 <dt className="text-xs text-slate-400">{t('Desarrolladora')}</dt>
                 <dd className="mt-1 break-words text-sm text-slate-200">{game.developers?.join(', ') || t('Desconocido')}</dd>
@@ -862,16 +950,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
               <div className="min-w-0">
                 <dt className="text-xs text-slate-400">{t('Fecha de lanzamiento')}</dt>
-                <dd className="mt-1 text-sm text-slate-200">
-                  {game.releaseDate && game.releaseDate !== 'Unknown' && !Number.isNaN(new Date(game.releaseDate).getTime())
-                    ? new Intl.DateTimeFormat(dateLocale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(game.releaseDate))
-                    : t('Desconocido')}
-                </dd>
+                <dd className="mt-1 text-sm text-slate-200">{formattedReleaseDate}</dd>
               </div>
             </dl>
 
             {game.platforms.length > 0 && (
-              <div className="space-y-2 pt-1">
+              <div className="hidden space-y-2 pt-1 md:block">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Plataformas')}</p>
                 <div className="flex flex-wrap gap-2">
                   {game.platforms.map(platform => {
@@ -972,10 +1056,12 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                     className="w-full bg-[#07090e] border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-accent transition flex items-center justify-between"
                   >
                     <span className="flex items-center gap-2">
-                      <GameStatusIcon status={selectedProgressOption.value} className="mt-0.5 size-4 shrink-0 text-accent" />
+                      {selectedProgressOption
+                        ? <GameStatusIcon status={selectedProgressOption.value} className="mt-0.5 size-4 shrink-0 text-accent" />
+                        : <Gamepad2 className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden="true" />}
                       <span id="progress-value" className="text-left">
-                        <span className="font-semibold text-slate-200 block">{selectedProgressOption.label}</span>
-                        <span className="text-[10px] text-slate-500 block mt-0.5">{selectedProgressOption.helper}</span>
+                        <span className="font-semibold text-slate-200 block">{selectedProgressOption?.label || t('Sin estado')}</span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">{selectedProgressOption?.helper || t(status === null ? 'Al guardar, se eliminará de tu biblioteca y wishlist.' : 'Selecciona un estado de progreso.')}</span>
                       </span>
                     </span>
                     <ChevronDown className={`w-4 h-4 text-slate-500 transition ${progressMenuOpen ? 'rotate-180' : ''}`} />
@@ -991,7 +1077,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                             type="button"
                             aria-pressed={active}
                             onClick={() => {
-                              setStatus(option.value);
+                              setStatus(current => current === option.value ? null : option.value);
                               setProgressMenuOpen(false);
                             }}
                             className={`w-full text-left rounded-lg px-2.5 py-2 transition cursor-pointer flex items-start gap-2 ${

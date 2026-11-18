@@ -76,7 +76,7 @@ const GameSkeletons: React.FC<{ count?: number; native?: boolean }> = ({ count =
   <div className={`mx-auto grid w-full grid-cols-1 ${native ? 'gap-3' : 'max-w-[16rem] gap-x-4 gap-y-6 sm:max-w-none sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'}`}>
     {Array.from({ length: count }, (_, index) => native ? (
       <div key={index} className="flex h-40 animate-pulse gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5">
-        <div className="w-[5.5rem] shrink-0 rounded-lg bg-slate-700/70" />
+        <div className="w-[10.5rem] shrink-0 rounded-lg bg-slate-700/70" />
         <div className="flex min-w-0 flex-1 flex-col py-1">
           <div className="h-5 w-3/4 rounded bg-slate-700/70" />
           <div className="mt-2 h-3 w-1/2 rounded bg-slate-700/50" />
@@ -128,6 +128,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const [statusGame, setStatusGame] = useState<Game | null>(null);
   const [shortSearchForced, setShortSearchForced] = useState(() => filters.query.trim().length === 1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const skipUrlSync = useRef(false);
   const forceShortSearch = useRef(filters.query.trim().length === 1);
   const isUserSearch = filters.query.trim().startsWith('@');
@@ -376,6 +377,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
 
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (useMobileCardLayout) searchInputRef.current?.blur();
     forceShortSearch.current = true;
     setShortSearchForced(filters.query.trim().length === 1);
     setFilters(current => ({ ...current, page: 0 }));
@@ -495,6 +497,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             <Search aria-hidden="true" className="absolute left-4 top-3.5 h-4 w-4 text-slate-500" />
             <input
               id="discover-search"
+              ref={searchInputRef}
               type="search"
               placeholder={t('Busca juegos o @usuarios...')}
               value={filters.query}

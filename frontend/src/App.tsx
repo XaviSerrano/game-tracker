@@ -699,7 +699,7 @@ export default function App() {
 
       {/* 3. CORE VIEWPORT */}
       <main className="flex-1 min-w-0">
-        <div className={`w-full mx-auto py-4 md:py-6 ${selectedGameId !== null || isKnownGamePath ? '' : (routeTab || activeTab) === 'discover' ? 'max-w-[96rem] px-3 md:px-6' : 'max-w-6xl px-3 md:px-5'}`}>
+        <div className={`w-full mx-auto ${selectedGameId !== null || isKnownGamePath ? 'pt-0 pb-4 md:py-6' : 'py-4 md:py-6'} ${selectedGameId !== null || isKnownGamePath ? '' : (routeTab || activeTab) === 'discover' ? 'max-w-[96rem] px-3 md:px-6' : 'max-w-6xl px-3 md:px-5'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={
@@ -739,6 +739,7 @@ export default function App() {
               aria-label={item.label}
               onClick={(event) => {
                 event.preventDefault();
+                window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
                 handleNavigation(item.id);
               }}
               className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0 transition text-center ${

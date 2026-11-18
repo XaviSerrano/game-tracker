@@ -938,12 +938,27 @@ class GameDatabase {
     userId: string,
     gameId: number
   ): Promise<boolean> {
-    const result = await this.pool.query(
-      `DELETE FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2`,
-      [userId, gameId]
-    );
-
-    return (result.rowCount ?? 0) > 0;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `DELETE FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2`,
+        [userId, gameId]
+      );
+      await client.query(
+        `DELETE FROM activities
+         WHERE "userId" = $1 AND "gameId" = $2
+           AND type IN ('COMPLETED', 'WISHLIST', 'PLAYING', 'PLAYED', 'ABANDONED')`,
+        [userId, gameId]
+      );
+      await client.query('COMMIT');
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async setWishlist(userId: string, gameId: number, enabled: boolean): Promise<UserGame | null> {
