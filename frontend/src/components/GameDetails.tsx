@@ -275,6 +275,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
+  const [technicalSheetOpen, setTechnicalSheetOpen] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [libraryReady, setLibraryReady] = useState(false);
   const progressPhaseOptions = PROGRESS_PHASE_OPTIONS.map(option => ({
@@ -851,43 +852,14 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 </div>
               ) : null}
 
-              <details className="group overflow-hidden rounded-xl border border-slate-700/80 bg-[#10141d]/90 open:border-slate-600">
-                <summary className="flex min-h-11 list-none cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-xs font-semibold text-slate-100 transition hover:bg-white/[0.04] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
-                  <span>{t('Ficha técnica')}</span>
-                  <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180" />
-                </summary>
-                <dl className="space-y-3 border-t border-white/[0.08] px-3 py-3">
-                  <div className="min-w-0">
-                    <dt className="text-[10px] font-medium text-slate-400">{t('Desarrolladora')}</dt>
-                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{game.developers?.join(', ') || t('Desconocido')}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[10px] font-medium text-slate-400">{t('Distribuidora')}</dt>
-                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{game.publishers?.join(', ') || t('Desconocido')}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[10px] font-medium text-slate-400">{t('Fecha de lanzamiento')}</dt>
-                    <dd className="mt-0.5 break-words text-xs leading-4 text-slate-100">{formattedReleaseDate}</dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[10px] font-medium text-slate-400">{t('Plataformas')}</dt>
-                    <dd className="mt-1 flex flex-wrap gap-1">
-                      {game.platforms.length > 0 ? game.platforms.map(platform => (
-                        <a
-                          key={platform}
-                          href={getStoreUrl(platform, game.name, storeLinks)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex min-h-7 items-center rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] leading-tight text-slate-100 transition hover:border-white/20 hover:bg-white/[0.07]"
-                          title={`${t('Comprar en')} ${platform}`}
-                        >
-                          {platform}
-                        </a>
-                      )) : <span className="text-xs text-slate-100">{t('Desconocido')}</span>}
-                    </dd>
-                  </div>
-                </dl>
-              </details>
+              <button
+                type="button"
+                onClick={() => setTechnicalSheetOpen(true)}
+                className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-slate-700/80 bg-[#10141d]/90 px-3 py-2.5 text-left text-xs font-semibold text-slate-100 transition hover:border-slate-600 hover:bg-[#151b27] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <span>{t('Ficha técnica')}</span>
+                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
+              </button>
             </div>
           </div>
           <div className="min-w-0 flex-1 space-y-4 text-left">
@@ -1425,6 +1397,58 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         </div>
 
       </div>
+
+      {technicalSheetOpen && (
+        <Dialog label={t('Ficha técnica')} onClose={() => setTechnicalSheetOpen(false)} closeOnBackdrop>
+          <section className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700 bg-[#0f121d] shadow-2xl" onClick={event => event.stopPropagation()}>
+            <header className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-3.5">
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-white">{t('Ficha técnica')}</h2>
+                <p className="mt-0.5 truncate text-xs text-slate-400">{game.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTechnicalSheetOpen(false)}
+                aria-label={t('Cerrar')}
+                className="flex size-11 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </header>
+            <dl className="max-h-[min(65dvh,34rem)] divide-y divide-white/[0.08] overflow-y-auto px-4">
+              <div className="grid grid-cols-[minmax(6.5rem,0.8fr)_minmax(0,1.4fr)] gap-3 py-3">
+                <dt className="text-xs text-slate-400">{t('Desarrolladora')}</dt>
+                <dd className="break-words text-right text-sm leading-5 text-slate-100">{game.developers?.join(', ') || t('Desconocido')}</dd>
+              </div>
+              <div className="grid grid-cols-[minmax(6.5rem,0.8fr)_minmax(0,1.4fr)] gap-3 py-3">
+                <dt className="text-xs text-slate-400">{t('Distribuidora')}</dt>
+                <dd className="break-words text-right text-sm leading-5 text-slate-100">{game.publishers?.join(', ') || t('Desconocido')}</dd>
+              </div>
+              <div className="grid grid-cols-[minmax(6.5rem,0.8fr)_minmax(0,1.4fr)] gap-3 py-3">
+                <dt className="text-xs text-slate-400">{t('Fecha de lanzamiento')}</dt>
+                <dd className="break-words text-right text-sm leading-5 text-slate-100">{formattedReleaseDate}</dd>
+              </div>
+              <div className="py-3">
+                <dt className="text-xs text-slate-400">{t('Plataformas')}</dt>
+                <dd className="mt-2 flex flex-wrap gap-2">
+                  {game.platforms.length > 0 ? game.platforms.map(platform => (
+                    <a
+                      key={platform}
+                      href={getStoreUrl(platform, game.name, storeLinks)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs text-slate-100 transition hover:border-white/20 hover:bg-white/[0.07]"
+                      title={`${t('Comprar en')} ${platform}`}
+                    >
+                      {platform}
+                    </a>
+                  )) : <span className="text-sm text-slate-100">{t('Desconocido')}</span>}
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </Dialog>
+      )}
 
       {/* Add to Custom List modal */}
       {listModalOpen && (
