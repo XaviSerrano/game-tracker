@@ -85,6 +85,7 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({ file, onCancel, on
           className="relative mx-auto cursor-grab touch-none select-none overflow-hidden rounded-xl bg-[#07090e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:cursor-grabbing"
           style={{ width: BOX, height: BOX }}
           onPointerDown={(event) => {
+            if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
             event.currentTarget.setPointerCapture(event.pointerId);
             dragRef.current = { x: event.clientX, y: event.clientY };
           }}
@@ -98,6 +99,7 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({ file, onCancel, on
           }}
           onPointerUp={() => { dragRef.current = null; }}
           onPointerCancel={() => { dragRef.current = null; }}
+          onLostPointerCapture={() => { dragRef.current = null; }}
           onWheel={(event) => changeZoom(zoom - event.deltaY * 0.002)}
           onKeyDown={(event) => {
             const moves: Record<string, [number, number]> = {

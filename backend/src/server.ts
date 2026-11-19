@@ -5,7 +5,7 @@ import nodemailer from 'nodemailer';
 import { db, initDb } from './db.ts';
 import { IgdbService } from './services/igdb.ts';
 import { translateText } from './services/translate.ts';
-import type { Activity, ActivityType, User, UserGame, CustomList, Review } from '../../shared/types.ts';
+import type { Activity, ActivityType, User, UserGame, CustomList, Review, GameStatus } from '../../shared/types.ts';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -929,24 +929,40 @@ app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) =>
   const user = req.currUser!;
   const { gameId, status, rating, hoursPlayed, notes, startedAt, completedAt } = req.body;
 
-  if (gameId === undefined || !status) {
-    return res.status(400).json({ error: 'Campos gameId y status son requeridos.' });
+  const parsedGameId = Number(gameId);
+  const validStatuses: GameStatus[] = ['WISHLIST', 'PLAYING', 'PLAYED', 'COMPLETED', 'ABANDONED'];
+  if (!Number.isSafeInteger(parsedGameId) || parsedGameId <= 0 || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'ID de juego o estado inválido.' });
+  }
+
+  const parsedRating = rating === undefined ? undefined : Number(rating);
+  if (parsedRating !== undefined && (!Number.isInteger(parsedRating) || parsedRating < 0 || parsedRating > 5)) {
+    return res.status(400).json({ error: 'La valoración debe ser un número entero entre 0 y 5.' });
+  }
+
+  const parsedHours = hoursPlayed === undefined ? undefined : Number(hoursPlayed);
+  if (parsedHours !== undefined && (!Number.isFinite(parsedHours) || parsedHours < 0 || parsedHours > 1_000_000)) {
+    return res.status(400).json({ error: 'Las horas jugadas deben estar entre 0 y 1.000.000.' });
+  }
+
+  if (notes !== undefined && typeof notes !== 'string') {
+    return res.status(400).json({ error: 'Las notas deben ser texto.' });
   }
 
   // Verify game details exist
-  const game = await db.getGame(gameId);
+  const game = await db.getGame(parsedGameId);
   if (!game) {
     return res.status(404).json({ error: 'Videojuego no encontrado en el sistema. Búscalo en IGDB primero.' });
   }
 
-  const existing = await db.getUserGame(user.id, gameId);
+  const existing = await db.getUserGame(user.id, parsedGameId);
   const userGame: UserGame = {
     userId: user.id,
-    gameId: parseInt(gameId),
+    gameId: parsedGameId,
     status,
     isInWishlist: status === 'WISHLIST' || (existing?.isInWishlist ?? false),
-    rating: rating !== undefined ? parseInt(rating) : (existing ? existing.rating : 0),
-    hoursPlayed: hoursPlayed !== undefined ? parseFloat(hoursPlayed) : (existing ? existing.hoursPlayed : 0),
+    rating: parsedRating !== undefined ? parsedRating : (existing ? existing.rating : 0),
+    hoursPlayed: parsedHours !== undefined ? parsedHours : (existing ? existing.hoursPlayed : 0),
     notes: notes !== undefined ? notes : (existing ? existing.notes : ''),
     startedAt: startedAt !== undefined ? startedAt : (existing ? existing.startedAt : null),
     completedAt: completedAt !== undefined ? completedAt : (existing ? existing.completedAt : null),

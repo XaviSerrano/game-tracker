@@ -1106,6 +1106,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   id="hours-played"
                   type="number"
                   min="0"
+                  max="1000000"
                   step="0.5"
                   placeholder="0"
                   value={hoursPlayed === 0 ? '' : hoursPlayed}
