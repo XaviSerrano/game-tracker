@@ -476,6 +476,7 @@ const translations: Record<string, string> = Object.fromEntries([
   ['Sin puntuar', 'Unrated'] as const,
   ['estrellas', 'stars'] as const,
   ['Horas Jugadas', 'Hours Played'] as const,
+  ['Juegos completados', 'Completed games'] as const,
   ['Completado el', 'Completed on'] as const,
   ['Guardar Diario de Juego', 'Save Game Journal'] as const,
   ['Detalles', 'Details'] as const,

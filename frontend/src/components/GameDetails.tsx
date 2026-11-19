@@ -1107,9 +1107,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                   type="number"
                   min="0"
                   step="0.5"
-                  value={hoursPlayed}
-                  onChange={(e) => setHoursPlayed(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-2.5 text-xs text-white placeholder-slate-700 transition outline-none"
+                  placeholder="0"
+                  value={hoursPlayed === 0 ? '' : hoursPlayed}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setHoursPlayed(value === '' ? 0 : Math.max(0, parseFloat(value) || 0));
+                  }}
+                  className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-2.5 text-xs text-white placeholder-slate-600 transition outline-none"
                 />
               </div>
 
