@@ -23,7 +23,10 @@ the frontend origin. Direct cross-origin API calls are not required.
    ```
 
 2. Copy `backend/.env.example` to `backend/.env` and set a PostgreSQL
-   `DATABASE_URL` plus `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET`.
+   `DATABASE_URL` plus `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET`. To enable
+   Google sign-in, set the same Google OAuth web client ID as
+   `GOOGLE_CLIENT_ID` in `backend/.env` and `VITE_GOOGLE_CLIENT_ID` in
+   `frontend/.env`.
 3. Start both processes with `npm run dev`, either from the repository root or
    from `frontend/`. Run `npm run dev:vite` in `frontend/` only when the backend
    is already running separately.
@@ -47,6 +50,7 @@ Configure these values in the Render service environment:
 | `DATABASE_SSL_CA` | No | PEM-encoded CA certificate if the PostgreSQL provider uses a private CA; do not use an unverified certificate. |
 | `IGDB_CLIENT_ID` | Yes | Twitch Developer application client ID |
 | `IGDB_CLIENT_SECRET` | Yes | Keep private; backend only |
+| `GOOGLE_CLIENT_ID` | For Google sign-in | Public OAuth web client ID; must match the frontend client ID |
 | `PUBLIC_APP_URL` | Yes | Public frontend URL used in password-reset links. Required in production; local development defaults to `http://localhost:3000`. |
 | `SMTP_HOST` | For email delivery | SMTP server |
 | `SMTP_PORT` | No | Defaults to `587` |
@@ -70,9 +74,16 @@ Set the Vercel project root directory to `frontend/` and use:
 - Output directory: `dist`
 
 Check that the Render URL in `frontend/vercel.json` is the public URL of the
-deployed API. Its API rewrite must remain before the SPA fallback. No frontend
-environment variables are needed. Never define database, Twitch client secret,
-or SMTP credentials as Vercel `VITE_*` variables.
+deployed API. Its API rewrite must remain before the SPA fallback. Set
+`VITE_GOOGLE_CLIENT_ID` to the same OAuth web client ID used by the backend.
+Never define database, Twitch client secret, or SMTP credentials as Vercel
+`VITE_*` variables.
+
+In Google Cloud Console, create a Web application OAuth client and add the local
+and production frontend origins to its authorized JavaScript origins. Configure
+the same client ID in both Render and Vercel. Google sign-in is currently
+available on the web; the Capacitor Android app needs a separate native Google
+sign-in integration.
 
 The API is accessed through Vercel rewrites, so backend CORS is not needed for
 the browser deployment model. The Android app uses Capacitor's native HTTP

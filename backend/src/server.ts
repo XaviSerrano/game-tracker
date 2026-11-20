@@ -2,12 +2,14 @@ import './env.ts';
 import crypto from 'crypto';
 import express from 'express';
 import nodemailer from 'nodemailer';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { db, initDb } from './db.ts';
 import { IgdbService } from './services/igdb.ts';
 import { translateText } from './services/translate.ts';
 import type { Activity, ActivityType, User, UserGame, CustomList, Review, GameStatus } from '../../shared/types.ts';
 
 const app = express();
+const googleAuthClient = new OAuth2Client();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const MAX_ACTIVE_SESSIONS_PER_USER = 5;
@@ -235,6 +237,12 @@ const loginRateLimit = createRateLimiter(
   15 * 60 * 1000,
   (req) => `${getRequestIp(req)}:${normalizeEmail((req.body as { email?: unknown } | undefined)?.email)}`
 );
+const googleAuthRateLimit = createRateLimiter(
+  'auth_google',
+  15,
+  15 * 60 * 1000,
+  (req) => getRequestIp(req)
+);
 const registerRateLimit = createRateLimiter(
   'auth_register',
   5,
@@ -354,6 +362,109 @@ app.post('/api/auth/register', registerRateLimit, async (req, res) => {
   res.status(201).json({ user: newUser });
 });
 
+app.post('/api/auth/google', googleAuthRateLimit, async (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  if (!clientId) {
+    return res.status(503).json({ error: 'ID de cliente de Google no configurado.' });
+  }
+
+  const credential = req.body?.credential;
+  if (typeof credential !== 'string' || credential.length > 8192) {
+    return res.status(400).json({ error: 'La cuenta de Google no se pudo verificar.' });
+  }
+
+  let profile: TokenPayload | null;
+  try {
+    const ticket = await googleAuthClient.verifyIdToken({ idToken: credential, audience: clientId });
+    profile = ticket.getPayload();
+  } catch (error) {
+    console.error('Google credential verification failed:', error);
+    recordSecurityEvent(req, 'GOOGLE_LOGIN_FAILED', 'invalid_google_credential');
+    return res.status(401).json({ error: 'La cuenta de Google no se pudo verificar.' });
+  }
+
+  const email = profile?.email?.trim().toLowerCase() ?? '';
+  const emailVerified = profile?.email_verified === true;
+  const googleSub = profile?.sub ?? '';
+  if (!profile || !googleSub || !email || !emailVerified) {
+    recordSecurityEvent(req, 'GOOGLE_LOGIN_FAILED', 'invalid_google_claims');
+    return res.status(401).json({ error: 'La cuenta de Google no se pudo verificar.' });
+  }
+
+  const emailDomain = email.split('@')[1];
+  const googleIsAuthoritativeForEmail = emailDomain === 'gmail.com' ||
+    (typeof profile.hd === 'string' && profile.hd.toLowerCase() === emailDomain);
+  if (!googleIsAuthoritativeForEmail) {
+    return res.status(400).json({ error: 'Para usar Google, necesitas una cuenta de Gmail o Google Workspace.' });
+  }
+
+  try {
+    let authUser = await db.getAuthUserByGoogleSub(googleSub);
+    let created = false;
+
+    if (!authUser) {
+      const emailUser = await db.getAuthUserByEmail(email);
+      if (emailUser) {
+        const linked = await db.linkGoogleSub(emailUser.id, googleSub);
+        if (!linked) {
+          return res.status(409).json({ error: 'Este correo ya está asociado a otra cuenta de Google.' });
+        }
+        authUser = await db.getAuthUserByGoogleSub(googleSub);
+      } else {
+        const sourceName = profile.given_name || profile.name || email.split('@')[0];
+        const baseUsername = sourceName
+          .normalize('NFKD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9_]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .slice(0, 24) || 'gamer';
+        let username = baseUsername;
+        for (let suffix = 2; await db.getUserByUsername(username); suffix += 1) {
+          username = `${baseUsername.slice(0, 19)}_${suffix}`;
+        }
+
+        const picture = typeof profile.picture === 'string' && profile.picture.startsWith('https://')
+          ? profile.picture
+          : DEFAULT_AVATAR;
+        const user: User = {
+          id: `user_${crypto.randomUUID()}`,
+          username,
+          email,
+          avatar: picture,
+          bio: '',
+          createdAt: new Date().toISOString()
+        };
+        await db.createUser(user, undefined, googleSub);
+        authUser = await db.getAuthUserByGoogleSub(googleSub);
+        created = true;
+      }
+    }
+
+    if (!authUser) {
+      return res.status(500).json({ error: 'No se pudo iniciar sesión con Google.' });
+    }
+
+    const user = (await db.getUser(authUser.id))!;
+    if (created) {
+      await db.addActivity({
+        id: `act_${Date.now()}`,
+        userId: user.id,
+        type: 'FOLLOWED',
+        details: 'se unió a GameTracker 🎮',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    const token = await createSessionToken(user.id);
+    setSessionCookie(res, token);
+    recordSecurityEvent(req, 'GOOGLE_LOGIN_SUCCESS', created ? 'account_created' : 'session_created', user.id);
+    res.status(created ? 201 : 200).json({ user });
+  } catch (error) {
+    console.error('Google sign-in failed:', error);
+    res.status(500).json({ error: 'No se pudo iniciar sesión con Google.' });
+  }
+});
+
 app.post('/api/auth/login', loginRateLimit, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -452,18 +563,41 @@ app.post('/api/auth/logout', authenticate, async (req: AuthenticatedRequest, res
 
 app.post('/api/auth/delete-account', authenticate, deleteAccountRateLimit, async (req: AuthenticatedRequest, res) => {
   const password = req.body?.password;
-  if (typeof password !== 'string' || !password) {
-    return res.status(400).json({ error: 'Introduce tu contraseña.' });
-  }
+  const googleCredential = req.body?.googleCredential;
 
   try {
     const user = await db.getAuthUserById(req.currUser!.id);
-    if (!user || !verifyPassword(password, user.passwordHash || undefined, user.passwordSalt || undefined)) {
-      recordSecurityEvent(req, 'ACCOUNT_DELETE_FAILED', 'invalid_password', req.currUser!.id);
-      return res.status(403).json({ error: 'Contraseña incorrecta.' });
+    if (!user) return res.status(403).json({ error: 'No se pudo verificar la cuenta.' });
+
+    const passwordIsValid = typeof password === 'string' && password.length > 0 &&
+      verifyPassword(password, user.passwordHash || undefined, user.passwordSalt || undefined);
+    let verifiedGoogleSub: string | undefined;
+    if (!passwordIsValid && typeof googleCredential === 'string' && user.googleSub && process.env.GOOGLE_CLIENT_ID) {
+      try {
+        const ticket = await googleAuthClient.verifyIdToken({
+          idToken: googleCredential,
+          audience: process.env.GOOGLE_CLIENT_ID.trim()
+        });
+        const payload = ticket.getPayload();
+        if (payload?.sub === user.googleSub && payload.email_verified) {
+          verifiedGoogleSub = payload.sub;
+        }
+      } catch {
+        verifiedGoogleSub = undefined;
+      }
     }
 
-    const deleted = await db.deleteAccount(user.id, user.passwordHash!, user.passwordSalt!);
+    if (!passwordIsValid && !verifiedGoogleSub) {
+      recordSecurityEvent(req, 'ACCOUNT_DELETE_FAILED', 'invalid_password', req.currUser!.id);
+      return res.status(403).json({ error: 'No se pudo verificar la cuenta.' });
+    }
+
+    const deleted = await db.deleteAccount(
+      user.id,
+      passwordIsValid ? user.passwordHash || undefined : undefined,
+      passwordIsValid ? user.passwordSalt || undefined : undefined,
+      verifiedGoogleSub
+    );
     if (!deleted) {
       return res.status(409).json({ error: 'La cuenta ha cambiado. Vuelve a iniciar sesión e inténtalo de nuevo.' });
     }
@@ -477,6 +611,12 @@ app.post('/api/auth/delete-account', authenticate, deleteAccountRateLimit, async
 
 app.get('/api/auth/me', authenticate, (req: AuthenticatedRequest, res) => {
   res.json(req.currUser);
+});
+
+app.get('/api/auth/methods', authenticate, async (req: AuthenticatedRequest, res) => {
+  const user = await db.getAuthUserById(req.currUser!.id);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+  res.json({ hasPassword: Boolean(user.passwordHash), hasGoogle: Boolean(user.googleSub) });
 });
 
 

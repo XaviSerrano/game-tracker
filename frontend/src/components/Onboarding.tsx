@@ -4,6 +4,7 @@ import { ArrowLeft, Compass, Eye, EyeOff, KeyRound, LogIn, Mail, UserPlus } from
 import { User } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { LanguageSelector } from './LanguageSelector.tsx';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 
 interface OnboardingProps {
   onLogin: (user: User) => void;
@@ -129,6 +130,25 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
       if (!res.ok) {
         throw new Error(data.error || 'Fallo de inicio de sesión');
       }
+      onLogin(data.user);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    clearMessages();
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión con Google.');
       onLogin(data.user);
     } catch (err: any) {
       setError(err.message);
@@ -322,13 +342,16 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onLogin, onGoHome, initi
           </div>
         )}
 
+        {!isForgot && !isReset && (
+          <GoogleSignInButton
+            text={isRegister ? 'signup_with' : 'signin_with'}
+            onCredential={handleGoogleCredential}
+            disabled={loading}
+          />
+        )}
+
         {mode === 'login' && (
           <div>
-
-            <div className="relative flex py-4 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-            </div>
-
             <form onSubmit={(e) => { e.preventDefault(); handleSignIn(email, password); }} className="space-y-4">
               <div>
                 <label htmlFor="login-email" className={fieldLabelClassName}>

@@ -5,6 +5,7 @@ import { Trophy, Swords, PenSquare, Users, Star, X, Search, UserCheck, UserPlus,
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
 import { AvatarCropper } from './AvatarCropper.tsx';
+import { GoogleSignInButton } from './GoogleSignInButton.tsx';
 
 const DEFAULT_AVATAR = '/default-avatar.svg';
 
@@ -69,8 +70,31 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [editMessage, setEditMessage] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [deleteGoogleCredential, setDeleteGoogleCredential] = useState('');
+  const [accountAuthMethods, setAccountAuthMethods] = useState<{ hasPassword: boolean; hasGoogle: boolean } | null>(null);
+  const [authMethodsLoading, setAuthMethodsLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!deleteOpen) return;
+    let active = true;
+    setAuthMethodsLoading(true);
+    setAccountAuthMethods(null);
+    apiFetch('/api/auth/methods', { headers: { Authorization: `Bearer ${token}` } })
+      .then(async response => {
+        if (!response.ok) throw new Error('No se pudieron consultar los métodos de acceso.');
+        return response.json();
+      })
+      .then(methods => {
+        if (active) setAccountAuthMethods(methods);
+      })
+      .catch(error => {
+        if (active) setDeleteError(t(error instanceof Error ? error.message : 'No se pudieron consultar los métodos de acceso.'));
+      })
+      .finally(() => { if (active) setAuthMethodsLoading(false); });
+    return () => { active = false; };
+  }, [deleteOpen, t, token]);
 
 const isOwnProfile = userId === currentUser.id;
 
@@ -410,13 +434,17 @@ try {
 
 const handleDeleteAccount = async (event: React.FormEvent) => {
   event.preventDefault();
+  if (!deletePassword && !deleteGoogleCredential) {
+    setDeleteError(t('Confirma tu identidad con tu contraseña o Google.'));
+    return;
+  }
   setDeleteError('');
   setDeleting(true);
   try {
     const response = await apiFetch('/api/auth/delete-account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ password: deletePassword })
+      body: JSON.stringify({ password: deletePassword || undefined, googleCredential: deleteGoogleCredential || undefined })
     });
     if (!response.ok) {
       const data = await response.json();
@@ -426,6 +454,7 @@ const handleDeleteAccount = async (event: React.FormEvent) => {
   } catch (error) {
     console.error('Account deletion failed:', error);
     setDeleteError(t(error instanceof Error ? error.message : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'));
+      setDeleteGoogleCredential('');
   } finally {
     setDeleting(false);
   }
@@ -937,13 +966,25 @@ return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-w
         <p className="text-sm leading-relaxed text-slate-300">
           {t('Esta acción es irreversible. Se eliminarán tu cuenta, biblioteca, reseñas, listas y relaciones. Los registros de seguridad se conservarán desvinculados de tu cuenta.')}
         </p>
-        <label htmlFor="delete-account-password" className="block text-sm font-semibold text-slate-300">{t('Confirma tu contraseña')}</label>
-        <input id="delete-account-password" type="password" autoComplete="current-password" required value={deletePassword}
-          onChange={event => setDeletePassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-slate-700 bg-[#07090e] px-3 text-white" />
+        {authMethodsLoading && <p role="status" className="text-sm text-slate-400">{t('Comprobando métodos de acceso...')}</p>}
+        {!authMethodsLoading && accountAuthMethods?.hasPassword && (
+          <div className="space-y-2">
+            <label htmlFor="delete-account-password" className="block text-sm font-semibold text-slate-300">{t('Confirma tu contraseña')}</label>
+            <input id="delete-account-password" type="password" autoComplete="current-password" required={!deleteGoogleCredential} value={deletePassword}
+              onChange={event => setDeletePassword(event.target.value)} className="min-h-12 w-full rounded-lg border border-slate-700 bg-[#07090e] px-3 text-white" />
+          </div>
+        )}
+        {!authMethodsLoading && accountAuthMethods?.hasGoogle && (
+          <div className="space-y-2">
+            <p className="text-sm text-slate-300">{t('También puedes verificar con Google para confirmar la eliminación.')}</p>
+            <GoogleSignInButton text="signin_with" disabled={deleting || Boolean(deleteGoogleCredential)} onCredential={credential => { setDeleteGoogleCredential(credential); setDeleteError(''); }} />
+            {deleteGoogleCredential && <p role="status" className="text-sm text-emerald-300">{t('Google verificado. Pulsa Eliminar mi cuenta para continuar.')}</p>}
+          </div>
+        )}
         {deleteError && <p role="alert" className="text-sm text-red-300">{deleteError}</p>}
         <div className="flex flex-wrap gap-3">
           <button type="button" disabled={deleting} onClick={() => setDeleteOpen(false)} className="min-h-12 rounded-lg bg-slate-800 px-4 text-sm font-semibold text-white disabled:opacity-50">{t('Cancelar')}</button>
-          <button type="submit" disabled={deleting} className="min-h-12 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50">{t(deleting ? 'Eliminando...' : 'Eliminar mi cuenta')}</button>
+          <button type="submit" disabled={deleting || authMethodsLoading || !accountAuthMethods} className="min-h-12 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50">{t(deleting ? 'Eliminando...' : 'Eliminar mi cuenta')}</button>
         </div>
       </form>
     </Dialog>

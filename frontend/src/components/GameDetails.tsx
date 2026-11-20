@@ -975,7 +975,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-accent" />
-                {t('Tú diario de Juego (Track)')}
+                {t('Tu diario de Juego (Track)')}
               </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button

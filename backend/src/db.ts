@@ -16,6 +16,7 @@ interface StoredUser extends User {
   passwordSalt?: string | null;
   passwordResetTokenHash?: string | null;
   passwordResetExpiresAt?: string | null;
+  googleSub?: string | null;
 }
 
 interface StatsGameSummary {
@@ -139,7 +140,8 @@ export async function initDb(): Promise<void> {
       "passwordHash" TEXT,
       "passwordSalt" TEXT,
       "passwordResetTokenHash" TEXT,
-      "passwordResetExpiresAt" TEXT
+      "passwordResetExpiresAt" TEXT,
+      "googleSub" TEXT
     );
 
     CREATE TABLE IF NOT EXISTS games (
@@ -258,6 +260,8 @@ export async function initDb(): Promise<void> {
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS "timeToBeat" TEXT NOT NULL DEFAULT '{}'`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS developers TEXT`);
   await pool.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS publishers TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "googleSub" TEXT`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_googleSub ON users("googleSub") WHERE "googleSub" IS NOT NULL`);
   await pool.query(
     `UPDATE users SET avatar = '/default-avatar.svg' WHERE avatar = '' OR avatar LIKE 'https://api.dicebear.com/%'`
   );
@@ -449,6 +453,24 @@ class GameDatabase {
     return (rows[0] as StoredUser) ?? null;
   }
 
+  async getAuthUserByGoogleSub(googleSub: string): Promise<StoredUser | null> {
+    const { rows } = await this.pool.query(
+      `SELECT * FROM users WHERE "googleSub" = $1`,
+      [googleSub]
+    );
+
+    return (rows[0] as StoredUser) ?? null;
+  }
+
+  async linkGoogleSub(userId: string, googleSub: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      `UPDATE users SET "googleSub" = $2 WHERE id = $1 AND ("googleSub" IS NULL OR "googleSub" = $2)`,
+      [userId, googleSub]
+    );
+
+    return rowCount === 1;
+  }
+
   async getAuthUserById(userId: string): Promise<StoredUser | null> {
     const { rows } = await this.pool.query(
       `SELECT * FROM users WHERE id = $1`,
@@ -458,13 +480,22 @@ class GameDatabase {
     return (rows[0] as StoredUser) ?? null;
   }
 
-  async deleteAccount(userId: string, passwordHash: string, passwordSalt: string): Promise<boolean> {
+  async deleteAccount(
+    userId: string,
+    passwordHash?: string,
+    passwordSalt?: string,
+    googleSub?: string
+  ): Promise<boolean> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
       const deleted = await client.query(
-        'DELETE FROM users WHERE id = $1 AND "passwordHash" = $2 AND "passwordSalt" = $3 RETURNING id',
-        [userId, passwordHash, passwordSalt]
+        `DELETE FROM users
+         WHERE id = $1 AND (
+           ("passwordHash" = $2 AND "passwordSalt" = $3) OR
+           ($4::text IS NOT NULL AND "googleSub" = $4)
+         ) RETURNING id`,
+        [userId, passwordHash ?? null, passwordSalt ?? null, googleSub ?? null]
       );
       if (deleted.rowCount) {
         await client.query(
@@ -487,7 +518,8 @@ class GameDatabase {
     auth?: {
       passwordHash: string;
       passwordSalt: string;
-    }
+    },
+    googleSub?: string
   ): Promise<User> {
     const existing = await this.getAuthUserById(user.id);
 
@@ -499,9 +531,9 @@ class GameDatabase {
       `
         INSERT INTO users (
           id, username, email, avatar, bio, "createdAt",
-          "passwordHash", "passwordSalt", "passwordResetTokenHash", "passwordResetExpiresAt"
+          "passwordHash", "passwordSalt", "passwordResetTokenHash", "passwordResetExpiresAt", "googleSub"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL, $9)
       `,
       [
         user.id,
@@ -511,7 +543,8 @@ class GameDatabase {
         user.bio ?? '',
         user.createdAt,
         auth?.passwordHash ?? null,
-        auth?.passwordSalt ?? null
+        auth?.passwordSalt ?? null,
+        googleSub ?? null
       ]
     );
 

@@ -20,11 +20,13 @@ origin directly.
 | GET | `/health` | Service health check | No |
 | POST | `/api/auth/register` | Register a user and create a session | No |
 | POST | `/api/auth/login` | Authenticate and create a session | No |
+| POST | `/api/auth/google` | Verify a Google ID token and create a session | No |
 | POST | `/api/auth/forgot-password` | Request a password-reset link | No |
 | POST | `/api/auth/reset-password` | Set a password with a reset token | No |
 | POST | `/api/auth/logout` | Revoke the current session | Yes |
-| POST | `/api/auth/delete-account` | Delete the current account after password confirmation | Yes |
+| POST | `/api/auth/delete-account` | Delete the current account after password or Google re-verification | Yes |
 | GET | `/api/auth/me` | Return the current user | Yes |
+| GET | `/api/auth/methods` | Return the current user's available sign-in methods | Yes |
 | GET | `/api/users?search=...` | Search public usernames | No |
 | GET | `/api/users/:id` | Read a public profile and follow counts | No |
 | PUT | `/api/users/profile` | Update the current profile | Yes |
@@ -56,8 +58,9 @@ origin directly.
 | PUT | `/api/lists/:id` | Update an owned list | Yes |
 | DELETE | `/api/lists/:id` | Delete an owned list | Yes |
 
-`POST /api/auth/delete-account` requires `{ "password": "..." }`. It returns
-204 on success, revokes all sessions through deletion, removes account-owned
+`POST /api/auth/delete-account` requires either `{ "password": "..." }` or
+`{ "googleCredential": "..." }` for an account linked to Google. It returns 204
+on success, revokes all sessions through deletion, removes account-owned
 content and follows, and removes the user's likes from other reviews. Security
 events remain with their user reference set to null; IP and user-agent fields
 are retained. A failed cleanup rolls back the deletion.
