@@ -833,7 +833,8 @@ app.get('/api/discover/popular', async (req, res) => {
   try {
     const games = await IgdbService.getPopularNow(500);
     const start = page * limit;
-    res.json({ items: games.slice(start, start + limit), page, hasMore: start + limit < games.length });
+    const items = await IgdbService.withGameDurations(games.slice(start, start + limit));
+    res.json({ items, page, hasMore: start + limit < games.length });
   } catch (err: any) {
     console.error('Error loading popular games:', err);
     const limited = typeof err?.message === 'string' && err.message.includes('(429)');
@@ -1057,7 +1058,9 @@ app.get('/api/users/:id/library', async (req, res) => {
       };
     }));
 
-    res.json(completeLibrary);
+    const enrichedGames = await IgdbService.withGameDurations(completeLibrary.map(item => item.game));
+    const enrichedById = new Map(enrichedGames.map(game => [game.igdbId, game]));
+    res.json(completeLibrary.map(item => ({ ...item, game: enrichedById.get(item.game.igdbId) || item.game })));
   } catch (err: any) {
     console.error('Error loading library for user', userId, err);
     res.status(500).json({ error: err.message });
@@ -1305,8 +1308,12 @@ app.get(
           };
         })
       );
-
-      res.json(fullLists);
+      const enrichedGames = await IgdbService.withGameDurations(fullLists.flatMap(list => list.games));
+      const enrichedById = new Map(enrichedGames.map(game => [game.igdbId, game]));
+      res.json(fullLists.map(list => ({
+        ...list,
+        games: list.games.map(game => enrichedById.get(game.igdbId) || game)
+      })));
     } catch (error) {
       console.error('Error obteniendo las listas:', error);
 
@@ -1369,10 +1376,12 @@ app.get('/api/lists/:id', async (req, res) => {
     return game;
   }))).filter(Boolean);
 
+  const enrichedGames = await IgdbService.withGameDurations(games);
+
   res.json({
     ...list,
     author,
-    games
+    games: enrichedGames
   });
 });
 

@@ -572,6 +572,65 @@ export class IgdbService {
     return result.items;
   }
 
+  static async withGameDurations(games: Game[]): Promise<Game[]> {
+    const durationCacheKey = (id: number) => `game-duration:${id}`;
+    const ids = [...new Set(games
+      .filter(game => game.timeToBeat?.normally == null && game.averagePlaytimeHours == null)
+      .map(game => game.igdbId))];
+    const durations = new Map<number, Game['timeToBeat'] | null>();
+    const missing = ids.filter(id => {
+      const cached = cacheGet<{ timeToBeat: Game['timeToBeat'] | null }>(durationCacheKey(id));
+      if (!cached) return true;
+      durations.set(id, cached.timeToBeat);
+      return false;
+    });
+
+    if (missing.length) {
+      try {
+        const token = await getTwitchToken();
+        const { clientId } = getIgdbCredentials();
+        const response = await fetchIgdb('https://api.igdb.com/v4/game_time_to_beats', {
+          method: 'POST',
+          headers: {
+            'Client-ID': clientId,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'text/plain'
+          },
+          body: `fields game_id,hastily,normally,completely; where game_id = (${missing.join(',')}); limit ${missing.length};`
+        });
+        if (response.ok) {
+          const data: unknown = await response.json();
+          if (Array.isArray(data)) {
+            for (const item of data) {
+              if (!Number.isSafeInteger(item?.game_id)) continue;
+              const timeToBeat = {
+                hastily: secondsToHours(item.hastily),
+                normally: secondsToHours(item.normally),
+                completely: secondsToHours(item.completely)
+              };
+              const hasDuration = Object.values(timeToBeat).some(value => typeof value === 'number');
+              durations.set(item.game_id, hasDuration ? timeToBeat : null);
+            }
+            for (const id of missing) {
+              const timeToBeat = durations.get(id) ?? null;
+              durations.set(id, timeToBeat);
+              cacheSet(durationCacheKey(id), { timeToBeat }, 6 * 60 * 60 * 1000);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Could not load game durations:', error);
+      }
+    }
+
+    return games.map(game => {
+      const timeToBeat = durations.get(game.igdbId);
+      return timeToBeat
+        ? { ...game, timeToBeat, averagePlaytimeHours: timeToBeat.normally ?? game.averagePlaytimeHours }
+        : game;
+    });
+  }
+
   static async searchCatalog(options: GameSearchOptions): Promise<GameSearchResult> {
     const query = options.query.trim();
     const page = Math.max(0, Math.floor(options.page));
@@ -711,8 +770,9 @@ export class IgdbService {
     }
 
     const start = page * limit;
+    const items = await this.withGameDurations(games.slice(start, start + limit));
     const result: GameSearchResult = {
-      items: games.slice(start, start + limit),
+      items,
       page,
       hasMore: games.length > start + limit || (candidateLimit < 500 && candidates.size >= candidateLimit)
     };
@@ -1417,6 +1477,17 @@ export class IgdbService {
       popular,
       topRated: topRatedData.map(mapIgdbGame).slice(0, 24)
     };
+    const allGames = await this.withGameDurations([
+      ...home.newReleases,
+      ...home.upcoming,
+      ...home.popular,
+      ...home.topRated
+    ]);
+    const enrichedById = new Map(allGames.map(game => [game.igdbId, game]));
+    home.newReleases = home.newReleases.map(game => enrichedById.get(game.igdbId) || game);
+    home.upcoming = home.upcoming.map(game => enrichedById.get(game.igdbId) || game);
+    home.popular = home.popular.map(game => enrichedById.get(game.igdbId) || game);
+    home.topRated = home.topRated.map(game => enrichedById.get(game.igdbId) || game);
     cacheSet(cacheKey, home, 2 * 60 * 60 * 1000);
     return home;
   }

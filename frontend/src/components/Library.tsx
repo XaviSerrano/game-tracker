@@ -7,6 +7,7 @@ import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
 import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
 import { GameStatusIcon } from './GameStatusIcon.tsx';
+import { CustomListPicker } from './CustomListPicker.tsx';
 
 interface LibraryProps {
   userId: string;
@@ -27,6 +28,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [wishlistError, setWishlistError] = useState(false);
   const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
   const [statusGame, setStatusGame] = useState<(UserGame & { game: Game }) | null>(null);
+  const [customListGame, setCustomListGame] = useState<Game | null>(null);
 
   const fetchLibrary = async () => {
     setLoading(true);
@@ -309,6 +311,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
               userGameHours={item.hoursPlayed}
               userGameNotes={item.notes}
               onSelectGame={onSelectGame}
+              onAddToCustomList={setCustomListGame}
               onManageStatus={() => setStatusGame(item)}
               statusActionDisabled={togglingWishlistId !== null}
               onToggleWishlist={handleToggleWishlist}
@@ -327,6 +330,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           onRemoved={gameId => setCompleteLib(previous => previous.filter(item => item.gameId !== gameId))}
         />
       )}
+      <CustomListPicker game={customListGame} userId={userId} token={token} onClose={() => setCustomListGame(null)} />
     </div>
   );
 };

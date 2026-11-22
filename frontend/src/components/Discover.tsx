@@ -6,12 +6,14 @@ import { GameCard } from './GameCard.tsx';
 import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
 import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
+import { CustomListPicker } from './CustomListPicker.tsx';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
   onSelectUser: (userId: string) => void;
   token?: string;
   onAuthRequired?: () => void;
+  userId?: string;
 }
 
 interface DiscoverFilters {
@@ -97,7 +99,7 @@ const GameSkeletons: React.FC<{ count?: number; native?: boolean }> = ({ count =
   </div>
 );
 
-export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired }) => {
+export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired, userId }) => {
   const { t } = useLanguage();
   const useMobileCardLayout = useIsMobileLayout();
   const [filters, setFilters] = useState<DiscoverFilters>(readFiltersFromUrl);
@@ -127,6 +129,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [savingWishlistGameId, setSavingWishlistGameId] = useState<number | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const [statusGame, setStatusGame] = useState<Game | null>(null);
+  const [customListGame, setCustomListGame] = useState<Game | null>(null);
   const [shortSearchForced, setShortSearchForced] = useState(() => filters.query.trim().length === 1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const skipUrlSync = useRef(false);
@@ -447,6 +450,10 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         game={game}
         variant={useMobileCardLayout ? 'mobile' : 'default'}
         onSelectGame={onSelectGame}
+        onAddToCustomList={() => {
+          if (!token || !userId) onAuthRequired?.();
+          else setCustomListGame(game);
+        }}
         onManageStatus={() => {
           if (!token) {
             onAuthRequired?.();
@@ -729,6 +736,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           }}
         />
       )}
+      {userId && token && <CustomListPicker game={customListGame} userId={userId} token={token} onClose={() => setCustomListGame(null)} />}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Game, GameStatus } from '../types.ts';
-import { Bookmark, Gamepad2, Star, Trash2 } from 'lucide-react';
+import { Bookmark, BookmarkPlus, Clock3, Gamepad2, Star, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 
 interface GameCardProps {
@@ -23,6 +23,7 @@ interface GameCardProps {
   onSelectGame: (gameId: number) => void;
   onManageStatus?: (game: Game) => void;
   onRemoveFromList?: () => void;
+  onAddToCustomList?: (game: Game) => void;
   statusActionDisabled?: boolean;
   onToggleWishlist?: (
     gameId: number,
@@ -46,6 +47,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   onSelectGame,
   onManageStatus,
   onRemoveFromList,
+  onAddToCustomList,
   statusActionDisabled = false,
   onToggleWishlist,
   togglingWishlistId,
@@ -62,6 +64,11 @@ export const GameCard: React.FC<GameCardProps> = ({
   const isMobileCard = variant === 'mobile';
 
   const bookmarkActive = isInWishlist ?? userGameStatus === 'WISHLIST';
+  const averageDuration = game.timeToBeat?.normally ?? game.averagePlaytimeHours;
+  const durationText = averageDuration != null ? `${averageDuration} h ${t('de media')}` : `-- h ${t('de media')}`;
+  const durationLabel = averageDuration != null
+    ? `${t('Duración media')}: ${averageDuration} ${t('horas')}`
+    : t('Duración media no disponible');
   const hasProgress = userGameStatus !== undefined && userGameStatus !== 'WISHLIST';
   const statusLabels: Record<GameStatus, string> = {
     WISHLIST: t('Pendiente'),
@@ -87,8 +94,6 @@ export const GameCard: React.FC<GameCardProps> = ({
     const releaseYear = game.releaseDate && game.releaseDate !== 'Unknown'
       ? game.releaseDate.slice(0, 4)
       : '';
-    const summary = game.summary?.trim();
-    const hasSummary = summary && summary.toLowerCase() !== 'no summary available.';
 
     return (
       <div
@@ -122,7 +127,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             type="button"
             onClick={handleCardClick}
             aria-label={`${t('Ver detalles de')} ${game.name}`}
-            className="flex min-h-0 min-w-0 flex-1 flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="flex min-w-0 flex-1 flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <div className="flex min-w-0 items-start justify-between gap-2">
               <h3 className="line-clamp-2 min-w-0 text-[17px] font-bold leading-tight text-white group-hover:text-accent-hover">
@@ -136,16 +141,22 @@ export const GameCard: React.FC<GameCardProps> = ({
               ) : null}
             </div>
 
-            <p className="mt-1 truncate text-[11px] font-medium text-slate-300">
-              {[releaseYear, ...game.genres.slice(0, 2)].filter(Boolean).join(' · ') || t('Videojuego')}
+            <p className="mt-2 line-clamp-1 text-sm font-semibold leading-5 text-slate-100">
+              {game.genres.slice(0, 2).join(' · ') || t('Videojuego')}
             </p>
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
+              {releaseYear && <span>{releaseYear}</span>}
+              {releaseYear && <span aria-hidden="true" className="text-slate-600">·</span>}
+              <span className="inline-flex items-center gap-1" aria-label={durationLabel} title={durationLabel}>
+                <Clock3 className="size-3.5 text-accent" aria-hidden="true" />
+                <span>{durationText}</span>
+              </span>
+            </div>
             {showFullLibraryCard && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {!isMobileCard && (
-                  <span className="rounded-md border border-white/10 bg-black/15 px-1.5 py-0.5 text-[10px] font-medium text-slate-200">
-                    {statusLabels[userGameStatus]}
-                  </span>
-                )}
+                <span className="rounded-md border border-white/10 bg-black/15 px-1.5 py-0.5 text-[10px] font-medium text-slate-200">
+                  {statusLabels[userGameStatus]}
+                </span>
                 {userGameHours > 0 && (
                   <span className="text-[10px] text-slate-400">{userGameHours} h</span>
                 )}
@@ -157,19 +168,18 @@ export const GameCard: React.FC<GameCardProps> = ({
                 )}
               </div>
             )}
-            <p className="mt-2 line-clamp-4 text-[13px] leading-[1.4rem] text-slate-200">
-              {hasSummary ? summary : t('Sin descripción.')}
-            </p>
             {showFullLibraryCard && userGameNotes && (
               <p className="mt-1 line-clamp-1 text-[11px] italic text-slate-400">{userGameNotes}</p>
             )}
           </button>
 
-          <div className="flex min-w-0 items-end justify-between gap-2 pt-2">
-            <p className="min-w-0 truncate text-[10px] leading-5 text-slate-400">
-              {game.platforms.slice(0, 2).join(' · ')}
-            </p>
+          <div className="flex min-w-0 items-center justify-end gap-1.5 pt-2">
             <div className="flex shrink-0 items-center gap-1.5">
+              {onAddToCustomList && (
+                <button type="button" aria-label={`${t('Añadir a lista personalizada')}: ${game.name}`} title={t('Añadir a lista personalizada')} onClick={event => { event.stopPropagation(); onAddToCustomList(game); }} className="flex size-11 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:border-accent/40 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                  <BookmarkPlus className="size-4" aria-hidden="true" />
+                </button>
+              )}
               {onToggleWishlist && (
                 <button
                   type="button"
@@ -252,6 +262,11 @@ export const GameCard: React.FC<GameCardProps> = ({
         )}
 
         {/* Wishlist */}
+        {onAddToCustomList && !isFeedCard && (
+          <button type="button" aria-label={`${t('Añadir a lista personalizada')}: ${game.name}`} title={t('Añadir a lista personalizada')} onClick={event => { event.stopPropagation(); onAddToCustomList(game); }} className={`absolute left-2 ${onToggleWishlist && onManageStatus ? 'top-[6.5rem]' : onToggleWishlist || onManageStatus ? 'top-14' : 'top-2'} flex size-10 items-center justify-center rounded-full border border-slate-700 bg-black/85 text-slate-300 transition hover:border-accent/40 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}>
+            <BookmarkPlus className="size-4" aria-hidden="true" />
+          </button>
+        )}
         {onToggleWishlist && !isFeedCard && (
           <button
             type="button"
@@ -399,6 +414,10 @@ export const GameCard: React.FC<GameCardProps> = ({
                       .join(' · ')}
                   </p>
                 )}
+                <p className="inline-flex min-h-4 items-center gap-1 truncate text-xs text-slate-400" aria-label={durationLabel} title={durationLabel}>
+                    <Clock3 className="size-3 shrink-0 text-accent" aria-hidden="true" />
+                    {durationText}
+                </p>
               </div>
             )}
           </>
@@ -407,6 +426,12 @@ export const GameCard: React.FC<GameCardProps> = ({
         {isFeedCard && (
           <p className="text-xs text-slate-400 mt-0.5 truncate">
             {game.genres?.slice(0, 1).join(', ') || t('Videojuego')}
+          </p>
+        )}
+        {!isFeedCard && showFullLibraryCard && (
+          <p className="mt-1 inline-flex items-center gap-1 truncate text-xs text-slate-400" aria-label={durationLabel} title={durationLabel}>
+            <Clock3 className="size-3 shrink-0 text-accent" aria-hidden="true" />
+            {durationText}
           </p>
         )}
       </div>

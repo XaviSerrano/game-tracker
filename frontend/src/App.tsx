@@ -410,8 +410,9 @@ export default function App() {
     );
   }
 
-  // Keep the prerendered landing visible while the session is verified.
-  if (loading && !(pathname === '/' && !currentUser)) {
+  // Resolve the cookie session before showing either the signed-in app or the
+  // signed-out landing, so returning users do not briefly appear logged out.
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -573,7 +574,7 @@ export default function App() {
           />
         );
       case 'discover':
-        return <Discover onSelectGame={handleSelectGame} onSelectUser={handleSelectUser} token={token} />;
+        return <Discover onSelectGame={handleSelectGame} onSelectUser={handleSelectUser} token={token} userId={currentUser.id} />;
       case 'library':
         return <Library userId={currentUser.id} onSelectGame={handleSelectGame} token={token} />;
       case 'lists':
