@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { randomUUID } from 'crypto';
 
 import type {
   User,
@@ -8,7 +9,9 @@ import type {
   CustomList,
   Activity,
   ActivityType,
-  GameStatus
+  GameStatus,
+  RoadmapSuggestion,
+  RoadmapSuggestionStatus
 } from '../../shared/types.ts';
 
 interface StoredUser extends User {
@@ -171,7 +174,6 @@ export async function initDb(): Promise<void> {
       "hoursPlayed" DOUBLE PRECISION NOT NULL DEFAULT 0,
       "startedAt" TEXT,
       "completedAt" TEXT,
-      notes TEXT NOT NULL DEFAULT '',
       "updatedAt" TEXT NOT NULL,
       "addedAt" TEXT,
       PRIMARY KEY ("userId", "gameId")
@@ -216,6 +218,25 @@ export async function initDb(): Promise<void> {
       "followingId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       PRIMARY KEY ("followerId", "followingId"),
       CHECK ("followerId" != "followingId")
+    );
+
+    CREATE TABLE IF NOT EXISTS roadmapSuggestions (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'CONSIDERING' CHECK (status IN ('COMPLETED', 'CONSIDERING', 'PLANNED', 'IN_PROGRESS')),
+      response TEXT NOT NULL DEFAULT '',
+      "respondedBy" TEXT REFERENCES users(id) ON DELETE SET NULL,
+      "respondedAt" TEXT,
+      "createdBy" TEXT REFERENCES users(id) ON DELETE SET NULL,
+      "createdAt" TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS roadmapVotes (
+      "suggestionId" TEXT NOT NULL REFERENCES roadmapSuggestions(id) ON DELETE CASCADE,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      "createdAt" TEXT NOT NULL,
+      PRIMARY KEY ("suggestionId", "userId")
     );
 
     CREATE TABLE IF NOT EXISTS activities (
@@ -266,11 +287,29 @@ export async function initDb(): Promise<void> {
     `UPDATE users SET avatar = '/default-avatar.svg' WHERE avatar = '' OR avatar LIKE 'https://api.dicebear.com/%'`
   );
   await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "addedAt" TEXT`);
+  await pool.query(`ALTER TABLE "userGames" DROP COLUMN IF EXISTS notes`);
+  await pool.query(`ALTER TABLE roadmapSuggestions ADD COLUMN IF NOT EXISTS response TEXT NOT NULL DEFAULT ''`);
+  await pool.query(`ALTER TABLE roadmapSuggestions ADD COLUMN IF NOT EXISTS "respondedBy" TEXT REFERENCES users(id) ON DELETE SET NULL`);
+  await pool.query(`ALTER TABLE roadmapSuggestions ADD COLUMN IF NOT EXISTS "respondedAt" TEXT`);
   await pool.query(`ALTER TABLE "userGames" ADD COLUMN IF NOT EXISTS "isInWishlist" BOOLEAN`);
   await pool.query(`UPDATE "userGames" SET "isInWishlist" = (status = 'WISHLIST') WHERE "isInWishlist" IS NULL`);
   await pool.query(`ALTER TABLE "userGames" ALTER COLUMN "isInWishlist" SET DEFAULT FALSE`);
   await pool.query(`ALTER TABLE "userGames" ALTER COLUMN "isInWishlist" SET NOT NULL`);
   await pool.query(`UPDATE "userGames" SET "addedAt" = "updatedAt" WHERE "addedAt" IS NULL`);
+
+  await pool.query(`
+    INSERT INTO roadmapSuggestions (id, title, description, status, "createdAt")
+    VALUES
+      ('library-tracking', 'Biblioteca y seguimiento de progreso', 'Registra qué estás jugando, qué has terminado y qué quieres jugar después.', 'COMPLETED', $1),
+      ('ratings-and-hours', 'Valoraciones, horas y fechas de juego', 'Añade contexto a tu biblioteca con valoraciones y seguimiento de tiempo.', 'COMPLETED', $1),
+      ('lists-and-profiles', 'Listas personalizadas y perfiles sociales', 'Organiza colecciones y descubre lo que comparte la comunidad.', 'COMPLETED', $1),
+      ('mobile-polish', 'Mejorar la experiencia móvil', 'Revisar navegación, formularios, safe areas y rendimiento en pantallas pequeñas.', 'IN_PROGRESS', $1),
+      ('store-launch', 'Publicar la app en Google Play y App Store', 'Preparar builds, capturas y validación en dispositivos reales.', 'PLANNED', $1),
+      ('push-notifications', 'Notificaciones push', 'Recibir avisos útiles sobre actividad y novedades de la comunidad.', 'PLANNED', $1),
+      ('offline-mode', 'Modo sin conexión', 'Consultar la biblioteca y registrar cambios cuando no haya conexión.', 'CONSIDERING', $1),
+      ('smart-recommendations', 'Recomendaciones personalizadas', 'Encontrar juegos nuevos a partir de tus gustos y actividad.', 'CONSIDERING', $1)
+    ON CONFLICT (id) DO NOTHING
+  `, [nowIso()]);
 
   console.log('📦 PostgreSQL: esquema verificado/creado correctamente');
 }
@@ -328,7 +367,6 @@ function hydrateUserGame(row: any): UserGame {
     hoursPlayed: Number(row.hoursPlayed ?? 0),
     startedAt: row.startedAt ?? null,
     completedAt: row.completedAt ?? null,
-    notes: row.notes ?? '',
     updatedAt: row.updatedAt
   };
 }
@@ -935,9 +973,9 @@ class GameDatabase {
       `
         INSERT INTO "userGames" (
           "userId", "gameId", status, rating, "hoursPlayed",
-          "startedAt", "completedAt", notes, "updatedAt", "addedAt", "isInWishlist"
+          "startedAt", "completedAt", "updatedAt", "addedAt", "isInWishlist"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT ("userId", "gameId")
         DO UPDATE SET
           status = excluded.status,
@@ -945,7 +983,6 @@ class GameDatabase {
           "hoursPlayed" = excluded."hoursPlayed",
           "startedAt" = excluded."startedAt",
           "completedAt" = excluded."completedAt",
-          notes = excluded.notes,
           "updatedAt" = excluded."updatedAt"
         RETURNING *
       `,
@@ -957,7 +994,6 @@ class GameDatabase {
         updatedUserGame.hoursPlayed ?? 0,
         updatedUserGame.startedAt ?? null,
         updatedUserGame.completedAt ?? null,
-        updatedUserGame.notes ?? '',
         updatedAt,
         updatedAt,
         updatedUserGame.isInWishlist
@@ -998,7 +1034,7 @@ class GameDatabase {
     if (!enabled) {
       const deleted = await this.pool.query(
         `DELETE FROM "userGames" WHERE "userId" = $1 AND "gameId" = $2 AND status = 'WISHLIST'
-         AND rating = 0 AND "hoursPlayed" = 0 AND notes = '' AND "startedAt" IS NULL AND "completedAt" IS NULL`,
+         AND rating = 0 AND "hoursPlayed" = 0 AND "startedAt" IS NULL AND "completedAt" IS NULL`,
         [userId, gameId]
       );
       if (deleted.rowCount) return null;
@@ -1242,6 +1278,106 @@ class GameDatabase {
   // ==================================================
   // FOLLOWS
   // ==================================================
+
+  async getRoadmapSuggestions(userId: string | null): Promise<RoadmapSuggestion[]> {
+    const { rows } = await this.pool.query(
+      `SELECT
+         s.id,
+         s.title,
+         s.description,
+         s.status,
+         s.response,
+         responseUser.username AS "respondedBy",
+         s."respondedAt",
+         (s."createdBy" IS NOT NULL) AS "isCommunitySuggestion",
+         s."createdAt",
+         COUNT(v."userId")::int AS "voteCount",
+         COALESCE(BOOL_OR(v."userId" = $1::text), FALSE) AS "hasVoted"
+       FROM roadmapSuggestions s
+       LEFT JOIN users responseUser ON responseUser.id = s."respondedBy"
+       LEFT JOIN roadmapVotes v ON v."suggestionId" = s.id
+       GROUP BY s.id, responseUser.username
+       ORDER BY
+         CASE s.status
+           WHEN 'IN_PROGRESS' THEN 1
+           WHEN 'PLANNED' THEN 2
+           WHEN 'CONSIDERING' THEN 3
+           WHEN 'COMPLETED' THEN 4
+         END,
+         COUNT(v."userId") DESC,
+         s."createdAt" DESC`,
+      [userId]
+    );
+
+    return rows.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description ?? '',
+      status: row.status as RoadmapSuggestionStatus,
+      response: row.response ?? '',
+      respondedBy: row.respondedBy ?? null,
+      respondedAt: row.respondedAt ?? null,
+      isCommunitySuggestion: Boolean(row.isCommunitySuggestion),
+      createdAt: row.createdAt,
+      voteCount: Number(row.voteCount ?? 0),
+      hasVoted: Boolean(row.hasVoted)
+    }));
+  }
+
+  async createRoadmapSuggestion(userId: string, title: string, description: string): Promise<RoadmapSuggestion> {
+    const id = randomUUID();
+    await this.pool.query(
+      `INSERT INTO roadmapSuggestions (id, title, description, status, "createdBy", "createdAt")
+       VALUES ($1, $2, $3, 'CONSIDERING', $4, $5)`,
+      [id, title, description, userId, nowIso()]
+    );
+    const suggestion = (await this.getRoadmapSuggestions(userId)).find(item => item.id === id);
+    if (!suggestion) throw new Error('Could not load the new roadmap suggestion.');
+    return suggestion;
+  }
+
+  async toggleRoadmapVote(userId: string, suggestionId: string): Promise<boolean> {
+    const deleted = await this.pool.query(
+      `DELETE FROM roadmapVotes WHERE "suggestionId" = $1 AND "userId" = $2 RETURNING "userId"`,
+      [suggestionId, userId]
+    );
+    if (deleted.rowCount) return false;
+
+    const inserted = await this.pool.query(
+      `INSERT INTO roadmapVotes ("suggestionId", "userId", "createdAt")
+       VALUES ($1, $2, $3)
+       ON CONFLICT ("suggestionId", "userId") DO NOTHING
+       RETURNING "userId"`,
+      [suggestionId, userId, nowIso()]
+    );
+    return inserted.rowCount === 1;
+  }
+
+  async updateRoadmapSuggestion(
+    suggestionId: string,
+    status: RoadmapSuggestionStatus,
+    response: string,
+    responderId: string
+  ): Promise<void> {
+    await this.pool.query(
+      `UPDATE roadmapSuggestions
+       SET status = $2, response = $3, "respondedBy" = $4, "respondedAt" = $5
+       WHERE id = $1`,
+      [suggestionId, status, response, response ? responderId : null, response ? nowIso() : null]
+    );
+  }
+
+  async followUsersByUsername(followerId: string, usernames: string[]): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO follows ("followerId", "followingId")
+       SELECT $1, id
+       FROM users
+       WHERE LOWER(username) = ANY($2::text[])
+         AND id <> $1
+       ON CONFLICT ("followerId", "followingId") DO NOTHING`,
+      [followerId, usernames.map(username => username.toLowerCase())]
+    );
+  }
 
   async getFollowers(userId: string): Promise<string[]> {
     const { rows } = await this.pool.query(

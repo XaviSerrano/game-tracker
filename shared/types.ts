@@ -42,7 +42,6 @@ export interface UserGame {
   hoursPlayed: number;
   startedAt: string | null;
   completedAt: string | null;
-  notes: string;
   updatedAt: string;
 }
 
@@ -73,6 +72,22 @@ export interface CustomListItem {
 export interface Follow {
   followerId: string;
   followingId: string;
+}
+
+export type RoadmapSuggestionStatus = 'COMPLETED' | 'CONSIDERING' | 'PLANNED' | 'IN_PROGRESS';
+
+export interface RoadmapSuggestion {
+  id: string;
+  title: string;
+  description: string;
+  status: RoadmapSuggestionStatus;
+  response: string;
+  respondedBy: string | null;
+  respondedAt: string | null;
+  isCommunitySuggestion: boolean;
+  voteCount: number;
+  hasVoted: boolean;
+  createdAt: string;
 }
 
 export type ActivityType = 'COMPLETED' | 'WISHLIST' | 'PLAYING' | 'PLAYED' | 'ABANDONED' | 'REVIEWED' | 'LIST_CREATED' | 'FOLLOWED';

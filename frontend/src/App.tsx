@@ -10,7 +10,8 @@ import {
   BarChart2,
   User as UserIcon,
   LogOut,
-  Search
+  Search,
+  Map
 } from 'lucide-react';
 
 import { User } from './types.ts';
@@ -21,6 +22,8 @@ import { useLanguage } from './i18n.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
 import { Dialog } from './components/Dialog.tsx';
 import { HeroCarousel } from './components/HeroCarousel.tsx';
+import { LegalPage, type LegalPageKind } from './components/LegalPage.tsx';
+import { Roadmap } from './components/Roadmap.tsx';
 
 const Onboarding = lazy(() => import('./components/Onboarding.tsx').then(m => ({ default: m.Onboarding })));
 const HomeFeed = lazy(() => import('./components/HomeFeed.tsx').then(m => ({ default: m.HomeFeed })));
@@ -31,14 +34,15 @@ const CustomLists = lazy(() => import('./components/CustomLists.tsx').then(m => 
 const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => ({ default: m.UserProfile })));
 const StatsDashboard = lazy(() => import('./components/StatsDashboard.tsx').then(m => ({ default: m.StatsDashboard })));
 
-type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile';
+type MainTab = 'feed' | 'discover' | 'library' | 'lists' | 'stats' | 'profile' | 'roadmap';
 const SECTION_PATHS: Record<MainTab, string> = {
   feed: '/',
   discover: '/discover',
   library: '/library',
   lists: '/lists',
   stats: '/stats',
-  profile: '/profile'
+  profile: '/profile',
+  roadmap: '/roadmap'
 };
 
 export default function App() {
@@ -131,11 +135,15 @@ export default function App() {
   };
 
   const gamePathMatch = pathname.match(/^\/game\/([^/]+)\/?$/);
+  const legalPages: Record<string, LegalPageKind> = {
+    '/privacy': 'privacy', '/terms': 'terms', '/cookies': 'cookies'
+  };
+  const legalPageKind = legalPages[pathname] ?? null;
   const gamePathId = gamePathMatch ? Number(decodeURIComponent(gamePathMatch[1])) : null;
   const isGamePath = gamePathMatch !== null;
   const isKnownGamePath = isGamePath && Number.isInteger(gamePathId) && gamePathId > 0;
   const routeTab = (Object.entries(SECTION_PATHS).find(([, path]) => path === pathname)?.[0] || null) as MainTab | null;
-  const isNotFoundPath = pathname !== '/' && !isGamePath && !routeTab;
+  const isNotFoundPath = pathname !== '/' && !isGamePath && !routeTab && !legalPageKind;
   const showGameNotFound = isGamePath && !isKnownGamePath;
   const currentGameMetadata = gameMetadata?.gameId === gamePathId ? gameMetadata : null;
 
@@ -146,9 +154,13 @@ export default function App() {
       library: t('Biblioteca de videojuegos | GameTracker'),
       lists: t('Listas de videojuegos | GameTracker'),
       stats: t('Estadísticas de videojuegos | GameTracker'),
-      profile: t('Perfil de jugador | GameTracker')
+      profile: t('Perfil de jugador | GameTracker'),
+      roadmap: t('Roadmap y sugerencias | GameTracker')
     };
-    const pageTitle = pathname === '/'
+    const legalTitle = legalPageKind ? ({ privacy: 'Política de privacidad', terms: 'Condiciones de uso', cookies: 'Política de cookies' } as const)[legalPageKind] : null;
+    const pageTitle = legalTitle
+      ? `${t(legalTitle)} | GameTracker`
+      : pathname === '/'
       ? t(currentUser ? 'Tu actividad de videojuegos | GameTracker' : 'Organiza tu colección de videojuegos | GameTracker')
       : pathname === '/discover'
         ? titles.discover
@@ -161,7 +173,9 @@ export default function App() {
             : routeTab
               ? titles[routeTab]
               : t('Página no encontrada | GameTracker');
-    const fullDescription = pathname === '/discover'
+    const fullDescription = pathname === '/roadmap'
+      ? t('Vota sugerencias, comparte ideas y descubre qué está considerando el equipo de GameTracker.')
+      : pathname === '/discover'
       ? t('Explora videojuegos por género, plataforma, año y valoración. Descubre próximos lanzamientos y encuentra tu siguiente aventura en el catálogo de GameTracker.')
       : isNotFoundPath || showGameNotFound
         ? t('No encontramos la página que buscas. Explora el catálogo de videojuegos de GameTracker.')
@@ -171,9 +185,9 @@ export default function App() {
     const description = fullDescription.length > 160
       ? `${fullDescription.slice(0, 157).trimEnd()}...`
       : fullDescription;
-    const isPublicRoute = pathname === '/' || pathname === '/discover' || isKnownGamePath;
+    const isPublicRoute = pathname === '/' || pathname === '/discover' || pathname === '/roadmap' || isKnownGamePath;
     const isIndexable = isPublicRoute && !currentUser && !resetTokenInUrl;
-    const canonicalPath = pathname === '/' || pathname === '/discover'
+    const canonicalPath = pathname === '/' || pathname === '/discover' || pathname === '/roadmap'
       ? pathname
       : isKnownGamePath ? `/game/${gamePathId}` : null;
     const canonicalUrl = canonicalPath && !resetTokenInUrl
@@ -208,7 +222,7 @@ export default function App() {
     document.querySelector('meta[property="og:locale"]')?.setAttribute('content', language === 'es' ? 'es_ES' : 'en_US');
     document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', pageTitle);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
-  }, [currentGameMetadata, currentUser, gamePathId, isKnownGamePath, isNotFoundPath, language, pathname, resetTokenInUrl, routeTab, showGameNotFound, t]);
+  }, [currentGameMetadata, currentUser, gamePathId, isKnownGamePath, isNotFoundPath, language, legalPageKind, pathname, resetTokenInUrl, routeTab, showGameNotFound, t]);
 
   if (isNotFoundPath || showGameNotFound) {
     return (
@@ -283,6 +297,14 @@ export default function App() {
     navigateTo('/discover');
   };
 
+  const handleGoRoadmap = () => {
+    setActiveTab('roadmap');
+    setSelectedGameId(null);
+    setSelectedUserId(null);
+    window.scrollTo(0, 0);
+    navigateTo('/roadmap');
+  };
+
   const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
     setAuthInitialMode(mode);
     setAuthNotice('');
@@ -290,7 +312,7 @@ export default function App() {
   };
 
   const getGameParentLabel = (path: string) => {
-    switch (path) {
+    switch (path.split(/[?#]/, 1)[0]) {
       case '/':
         return t('Inicio');
       case '/discover':
@@ -301,6 +323,8 @@ export default function App() {
         return t('Listas');
       case '/stats':
         return t('Estadísticas');
+      case '/roadmap':
+        return t('Roadmap');
       case '/profile':
         return t('Mi Perfil');
       default:
@@ -311,7 +335,7 @@ export default function App() {
   // Subnavigation shortcuts
   const handleSelectGame = (gameId: number) => {
     // Guardamos desde qué sección se abrió el juego
-    setGameReturnPath(pathname);
+    setGameReturnPath(`${window.location.pathname}${window.location.search}${window.location.hash}`);
 
     navigateTo(`/game/${gameId}`);
     setSelectedGameId(null);
@@ -322,9 +346,10 @@ export default function App() {
     setSelectedGameId(null);
     setSelectedUserId(null);
 
+    const previousPath = gameReturnPath.split(/[?#]/, 1)[0] || '/';
     const previousTab = (
       Object.entries(SECTION_PATHS).find(
-        ([, path]) => path === gameReturnPath
+        ([, path]) => path === previousPath
       )?.[0] || 'feed'
     ) as MainTab;
 
@@ -369,6 +394,9 @@ export default function App() {
             >
               {t('Descubrir juegos')}
             </a>
+            <a href="/roadmap" onClick={event => { event.preventDefault(); handleGoRoadmap(); }} className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300/20 bg-indigo-400/[0.08] px-3 py-1.5 text-xs font-bold text-indigo-200 transition hover:border-indigo-300/40 hover:bg-indigo-400/[0.14] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300">
+              <Map className="size-3.5" aria-hidden="true" />{t('Roadmap')}
+            </a>
             <a
               href="#"
               onClick={(event) => {
@@ -379,6 +407,9 @@ export default function App() {
             >
               {t('Volver arriba')}
             </a>
+            <a href="/privacy" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Privacidad')}</a>
+            <a href="/terms" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Condiciones de uso')}</a>
+            <a href="/cookies" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Cookies')}</a>
           </nav>
         </div>
 
@@ -389,6 +420,13 @@ export default function App() {
       </div>
     </footer>
   );
+
+  if (legalPageKind) {
+    return <>
+      <LegalPage kind={legalPageKind} onHome={handleGoHome} />
+      {renderFooter(false)}
+    </>;
+  }
 
   if (resetTokenInUrl) {
     return (
@@ -430,6 +468,7 @@ export default function App() {
         {pathname === '/' ? (
           <LandingPage
             onDiscover={handleGoDiscover}
+            onGoRoadmap={handleGoRoadmap}
             onOpenAuth={handleOpenAuth}
             onGoHome={handleGoHome}
           />
@@ -448,6 +487,9 @@ export default function App() {
                 <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-5 w-auto" />
               </a>
               <div className="flex max-w-full items-center gap-3">
+                <a href="/roadmap" onClick={event => { event.preventDefault(); handleGoRoadmap(); }} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-indigo-300/20 bg-indigo-400/[0.08] px-3 text-xs font-bold text-indigo-200 transition hover:bg-indigo-400/[0.14] hover:text-white focus-visible:outline-2 focus-visible:outline-indigo-300">
+                  <Map className="size-3.5" aria-hidden="true" />{t('Roadmap')}
+                </a>
                 <LanguageSelector compact />
                 <button type="button" onClick={() => handleOpenAuth('login')} className="rounded-xl bg-accent px-4 py-2 text-xs font-bold text-on-accent transition hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                   {t('Iniciar sesión / Registrarse')}
@@ -472,6 +514,8 @@ export default function App() {
                   breadcrumbParentLabel={getGameParentLabel(gameReturnPath)}
                   onGoBackToParent={handleBackFromGame}
                 />
+              ) : pathname === '/roadmap' ? (
+                <Roadmap currentUser={null} token={null} onRequireAuth={() => handleOpenAuth('login')} />
               ) : (
                 <Discover
                   onSelectGame={handleSelectGame}
@@ -600,6 +644,8 @@ export default function App() {
             onSelectUser={handleSelectUser}
           />
         );
+      case 'roadmap':
+        return <Roadmap currentUser={currentUser} token={token} onRequireAuth={() => handleOpenAuth('login')} />;
       default:
         return null;
     }
@@ -612,6 +658,7 @@ export default function App() {
     { id: 'lists', label: t('Listas'), icon: List },
     { id: 'stats', label: t('Estadísticas'), mobileLabel: t('Estad.'), icon: BarChart2 },
     { id: 'profile', label: t('Mi Perfil'), mobileLabel: t('Perfil'), icon: UserIcon },
+    { id: 'roadmap', label: t('Roadmap'), mobileLabel: t('Roadmap'), icon: Map },
   ] as const;
 
   const isNavItemActive = (id: MainTab) =>
@@ -723,7 +770,7 @@ export default function App() {
       {renderFooter(true)}
 
       {/* 5. MOBILE BOTTOM NAV */}
-      <nav aria-label={t('Navegación principal')} className="fixed inset-x-0 bottom-0 z-20 grid min-h-16 grid-cols-6 items-center border-t border-slate-850 bg-[#0f121d] px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 md:hidden" style={{ paddingLeft: 'max(0.25rem, env(safe-area-inset-left))', paddingRight: 'max(0.25rem, env(safe-area-inset-right))' }}>
+      <nav aria-label={t('Navegación principal')} className="fixed inset-x-0 bottom-0 z-20 grid min-h-16 grid-cols-7 items-center border-t border-slate-850 bg-[#0f121d] px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 md:hidden" style={{ paddingLeft: 'max(0.25rem, env(safe-area-inset-left))', paddingRight: 'max(0.25rem, env(safe-area-inset-right))' }}>
         {navItems.map(item => {
           const active =
             (routeTab || activeTab) === item.id &&
@@ -743,7 +790,7 @@ export default function App() {
                 window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
                 handleNavigation(item.id);
               }}
-              className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0 transition text-center ${
+              className={`relative flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0 transition text-center ${item.id === 'roadmap' ? 'rounded-lg bg-indigo-400/[0.07]' : ''} ${
                 active
                   ? 'text-accent'
                   : 'text-slate-400 hover:text-slate-200'

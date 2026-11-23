@@ -16,6 +16,7 @@ import { useLanguage } from '../i18n.tsx';
 
 interface LandingPageProps {
   onDiscover: () => void;
+  onGoRoadmap: () => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
   onGoHome: () => void;
 }
@@ -69,7 +70,7 @@ const features = [
   }
 ];
 
-export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGoHome }) => {
+export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onGoRoadmap, onOpenAuth, onGoHome }) => {
   const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -105,6 +106,9 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
             <a href="/discover" onClick={handleDiscover} className="text-sm font-semibold text-slate-300 transition hover:text-white">
               {t('Descubrir juegos')}
             </a>
+            <a href="/roadmap" onClick={event => { event.preventDefault(); onGoRoadmap(); }} className="rounded-full border border-indigo-300/20 bg-indigo-400/[0.08] px-3 py-1.5 text-xs font-bold text-indigo-200 transition hover:border-indigo-300/40 hover:bg-indigo-400/[0.14] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300">
+              {t('Roadmap')}
+            </a>
           </nav>
 
           <div className="flex shrink-0 items-center justify-self-end gap-1.5 sm:gap-2 lg:col-start-3 lg:row-start-1">
@@ -139,6 +143,9 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
                 </a>
                 <a href="/discover" onClick={event => { setMobileMenuOpen(false); handleDiscover(event); }} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-accent">
                   {t('Descubrir juegos')}
+                </a>
+                <a href="/roadmap" onClick={event => { event.preventDefault(); setMobileMenuOpen(false); onGoRoadmap(); }} className="flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-indigo-200 transition hover:bg-indigo-400/10 focus-visible:outline-2 focus-visible:outline-indigo-300">
+                  {t('Roadmap')}
                 </a>
               </nav>
               <div className="mt-2 border-t border-white/[0.07] px-2 pt-3">
@@ -395,12 +402,18 @@ export const LandingPage: FC<LandingPageProps> = ({ onDiscover, onOpenAuth, onGo
               <a href="/discover" onClick={handleDiscover} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Descubrir juegos')}
               </a>
+              <a href="/roadmap" onClick={event => { event.preventDefault(); onGoRoadmap(); }} className="text-indigo-300 transition hover:text-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-300">
+                {t('Roadmap')}
+              </a>
               <a href="#funciones" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Funciones')}
               </a>
               <a href="#como-funciona" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Cómo funciona')}
               </a>
+              <a href="/privacy" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Privacidad')}</a>
+              <a href="/terms" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Condiciones de uso')}</a>
+              <a href="/cookies" className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">{t('Cookies')}</a>
               <a href="#" onClick={event => { event.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
                 {t('Volver arriba')}
               </a>

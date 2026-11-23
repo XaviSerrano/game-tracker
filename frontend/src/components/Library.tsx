@@ -8,6 +8,7 @@ import { useLanguage } from '../i18n.tsx';
 import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
 import { GameStatusIcon } from './GameStatusIcon.tsx';
 import { CustomListPicker } from './CustomListPicker.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 interface LibraryProps {
   userId: string;
@@ -17,6 +18,7 @@ interface LibraryProps {
 
 export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token }) => {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const useMobileCardLayout = useIsMobileLayout();
   const [completeLib, setCompleteLib] = useState<(UserGame & { game: Game })[]>([]);
   const [filteredLib, setFilteredLib] = useState<(UserGame & { game: Game })[]>([]);
@@ -25,7 +27,6 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [sortBy, setSortBy] = useState<'rating' | 'hours' | 'name' | 'date'>('date');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [wishlistError, setWishlistError] = useState(false);
   const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
   const [statusGame, setStatusGame] = useState<(UserGame & { game: Game }) | null>(null);
   const [customListGame, setCustomListGame] = useState<Game | null>(null);
@@ -92,8 +93,6 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
     if (togglingWishlistId !== null) return;
 
     setTogglingWishlistId(gameId);
-    setWishlistError(false);
-
     try {
       const item = completeLib.find(i => i.gameId === gameId);
       if (!item) return;
@@ -108,9 +107,10 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       setCompleteLib(prev => userGame
         ? prev.map(entry => entry.gameId === gameId ? userGame : entry)
         : prev.filter(entry => entry.gameId !== gameId));
+      notice.success(t(item.isInWishlist ? 'Juego removido de tu wishlist.' : '¡Juego añadido a tu wishlist!'));
     } catch (err) {
       console.error(err);
-      setWishlistError(true);
+      notice.error(t('No se pudo actualizar la wishlist.'));
     } finally {
       setTogglingWishlistId(null);
     }
@@ -142,7 +142,6 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
       </div>
 
       {/* Categories slider */}
-      {wishlistError && <p role="alert" className="text-sm text-red-300">{t('No se pudo actualizar la wishlist.')}</p>}
       <div className={useMobileCardLayout ? 'relative' : 'flex flex-wrap gap-2'}>
       {useMobileCardLayout ? (
         <>
@@ -309,7 +308,6 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
               isInWishlist={item.isInWishlist}
               userGameRating={item.rating}
               userGameHours={item.hoursPlayed}
-              userGameNotes={item.notes}
               onSelectGame={onSelectGame}
               onAddToCustomList={setCustomListGame}
               onManageStatus={() => setStatusGame(item)}

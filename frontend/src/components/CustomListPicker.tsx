@@ -4,6 +4,7 @@ import { apiFetch } from '../api.ts';
 import type { CustomList, Game } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 interface CustomListPickerProps {
   game: Game | null;
@@ -14,10 +15,11 @@ interface CustomListPickerProps {
 
 export function CustomListPicker({ game, userId, token, onClose }: CustomListPickerProps) {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const [lists, setLists] = useState<CustomList[]>([]);
   const [membership, setMembership] = useState<Record<string, boolean>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!game) return;
@@ -30,10 +32,10 @@ export function CustomListPicker({ game, userId, token, onClose }: CustomListPic
         if (!cancelled) {
           setLists(data);
           setMembership(Object.fromEntries(data.map(list => [list.id, list.games.some(entry => entry.igdbId === game.igdbId)])));
-          setError(false);
+          setLoadError(false);
         }
       } catch {
-        if (!cancelled) setError(true);
+        if (!cancelled) setLoadError(true);
       }
     };
     void load();
@@ -43,7 +45,7 @@ export function CustomListPicker({ game, userId, token, onClose }: CustomListPic
   const toggleList = async (list: CustomList) => {
     if (!game || updatingId) return;
     setUpdatingId(list.id);
-    setError(false);
+    setLoadError(false);
     try {
       const response = await apiFetch(`/api/lists/${list.id}`, { headers: { Authorization: `Bearer ${token}` } });
       if (!response.ok) throw new Error('Could not load list');
@@ -59,8 +61,9 @@ export function CustomListPicker({ game, userId, token, onClose }: CustomListPic
       });
       if (!update.ok) throw new Error('Could not update list');
       setMembership(previous => ({ ...previous, [list.id]: !contains }));
+      notice.success(contains ? t('Juego eliminado de la lista personalizada.') : t('Juego añadido a la lista personalizada.'));
     } catch {
-      setError(true);
+      notice.error(t('No se pudo actualizar la lista personalizada.'));
     } finally {
       setUpdatingId(null);
     }
@@ -75,8 +78,8 @@ export function CustomListPicker({ game, userId, token, onClose }: CustomListPic
           <button type="button" onClick={onClose} aria-label={t('Cerrar')} className="rounded p-1 text-slate-400 hover:text-white focus-visible:outline-2 focus-visible:outline-accent"><X className="size-4" aria-hidden="true" /></button>
         </header>
         <p className="text-xs text-slate-300">{game.name}</p>
-        {error && <p role="alert" className="text-xs text-red-300">{t('No se pudieron cargar o actualizar tus listas.')}</p>}
-        {lists.length === 0 && !error ? <p className="py-4 text-center text-xs text-slate-400">{t('Todavía no tienes listas personalizadas creadas.')}</p> : (
+        {loadError && <p role="alert" className="text-xs text-red-300">{t('No se pudieron cargar tus listas.')}</p>}
+        {lists.length === 0 && !loadError ? <p className="py-4 text-center text-xs text-slate-400">{t('Todavía no tienes listas personalizadas creadas.')}</p> : (
           <div className="max-h-64 space-y-1.5 overflow-y-auto">
             {lists.map(list => {
               const added = membership[list.id] === true;

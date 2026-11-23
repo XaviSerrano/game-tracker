@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { LanguageProvider } from './i18n.tsx';
+import { ActionNoticeProvider } from './components/ActionNotice.tsx';
 import './index.css';
 
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
@@ -9,7 +10,9 @@ const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ defa
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LanguageProvider>
-      <App />
+      <ActionNoticeProvider>
+        <App />
+      </ActionNoticeProvider>
     </LanguageProvider>
     <Suspense fallback={null}>
       <Analytics />

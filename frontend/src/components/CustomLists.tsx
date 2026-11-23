@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n.tsx';
 import { ConfirmDialog } from './ConfirmDialog.tsx';
 import { GameCard } from './GameCard.tsx';
 import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
+import { useActionNotice } from './ActionNotice.tsx';
 
 interface CustomListsProps {
   currentUser: User;
@@ -16,6 +17,7 @@ interface CustomListsProps {
 
 export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectGame, onSelectUser, token }) => {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const useMobileCardLayout = useIsMobileLayout();
   const [lists, setLists] = useState<(CustomList & { author: User, games: Game[] })[]>([]);
   const [selectedList, setSelectedList] = useState<(CustomList & { author: User, games: Game[] }) | null>(null);
@@ -79,15 +81,16 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
         })
       });
 
-      if (res.ok) {
-        setNewListName('');
-        setNewListDesc('');
-        setSelectedGameIds([]);
-        setIsCreating(false);
-        fetchLists();
-      }
+      if (!res.ok) throw new Error('No se pudo crear la lista.');
+      setNewListName('');
+      setNewListDesc('');
+      setSelectedGameIds([]);
+      setIsCreating(false);
+      void fetchLists();
+      notice.success(t('Lista personalizada creada.'));
     } catch (err) {
       console.error(err);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo crear la lista.'));
     }
   };
 
@@ -99,12 +102,13 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
           'Authorization': `Bearer ${token}`
         }
       });
-      if (res.ok) {
-        setSelectedList(null);
-        fetchLists();
-      }
+      if (!res.ok) throw new Error('No se pudo eliminar la lista.');
+      setSelectedList(null);
+      void fetchLists();
+      notice.success(t('Lista personalizada eliminada.'));
     } catch (err) {
       console.error(err);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo eliminar la lista.'));
     }
   };
 
@@ -154,9 +158,11 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
             : list
         )
       );
+      notice.success(t('Juego eliminado de la lista.'));
 
     } catch (err) {
       console.error(err);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo eliminar el juego de la lista.'));
     }
   };
 

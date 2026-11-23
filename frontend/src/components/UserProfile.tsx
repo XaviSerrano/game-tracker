@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
 import { AvatarCropper } from './AvatarCropper.tsx';
 import { GoogleSignInButton } from './GoogleSignInButton.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 const DEFAULT_AVATAR = '/default-avatar.svg';
 
@@ -33,6 +34,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   onSelectUser,
 }) => {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const [profile, setProfile] = useState<
     | (User & {
         followersCount: number;
@@ -127,14 +129,14 @@ try {
     const libraryGames: any[] = await libRes.json();
 
     const userReviews = libraryGames
-      .filter((lib) => Number(lib.rating) > 0 || lib.notes)
+      .filter((lib) => Number(lib.rating) > 0)
       .map((lib) => ({
         id: `rev_${lib.gameId}`,
         userId,
         gameId: lib.gameId,
         rating: lib.rating,
-        title: lib.notes ? t('Anotación de Diario') : t('Valoración'),
-        content: lib.notes || t('Añadido con nota rápida.'),
+        title: t('Valoración'),
+        content: '',
         likes: [],
         createdAt: lib.updatedAt ?? new Date().toISOString(),
         game: lib.game,
@@ -222,8 +224,11 @@ const saveFavoriteGames = async (nextGames: Game[]) => {
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error || 'No se pudieron guardar los favoritos.');
     setFavoriteGames(Array.isArray(data) ? data : nextGames);
+    notice.success(t('Juegos favoritos actualizados.'));
   } catch (error) {
-    setFavoriteError(error instanceof Error ? error.message : 'No se pudieron guardar los favoritos.');
+    const message = error instanceof Error ? error.message : 'No se pudieron guardar los favoritos.';
+    setFavoriteError(message);
+    notice.error(t(message));
   } finally {
     setFavoriteSaving(false);
   }
@@ -253,10 +258,13 @@ Authorization: `Bearer ${token}`,
 }
 );
 
+  if (!res.ok) throw new Error('No se pudo actualizar el seguimiento.');
+
   if (res.ok) {
     const data = await res.json();
 
     setIsFollowing(data.following);
+    notice.success(t(data.following ? 'Ahora sigues a este jugador.' : 'Has dejado de seguir a este jugador.'));
 
     if (profile) {
       setProfile({
@@ -269,6 +277,7 @@ Authorization: `Bearer ${token}`,
   }
 } catch (err) {
   console.error(err);
+  notice.error(t('No se pudo actualizar el seguimiento.'));
 }
 
 };
@@ -311,6 +320,8 @@ const handleToggleFollowInModal = async (targetUser: User) => {
       }
     });
 
+    if (!res.ok) throw new Error('No se pudo actualizar el seguimiento.');
+
     if (res.ok) {
       const data = await res.json();
       const isNowFollowing = data.following;
@@ -351,9 +362,11 @@ const handleToggleFollowInModal = async (targetUser: User) => {
           setIsFollowing(isNowFollowing);
         }
       }
+      notice.success(t(isNowFollowing ? 'Ahora sigues a este jugador.' : 'Has dejado de seguir a este jugador.'));
     }
   } catch (err) {
     console.error('Error actualizando seguimiento en modal:', err);
+    notice.error(t('No se pudo actualizar el seguimiento.'));
   }
 };
 
@@ -373,7 +386,6 @@ if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
   return;
 }
 
-setEditMessage('');
 setAvatarFile(file);
 };
 
@@ -420,14 +432,9 @@ try {
   );
 
   setIsEditing(false);
-  setEditMessage(t('¡Perfil guardado!'));
-
-  setTimeout(
-    () => setEditMessage(''),
-    3000
-  );
+  notice.success(t('¡Perfil guardado!'));
 } catch (err: any) {
-  setEditMessage(`Error: ${t(err.message)}`);
+  notice.error(t(err instanceof Error ? err.message : 'No se pudo guardar el perfil.'));
 }
 
 };
@@ -450,10 +457,11 @@ const handleDeleteAccount = async (event: React.FormEvent) => {
       const data = await response.json();
       throw new Error(typeof data.error === 'string' ? data.error : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
     }
+    notice.success(t('Cuenta eliminada correctamente.'));
     onAccountDeleted();
   } catch (error) {
     console.error('Account deletion failed:', error);
-    setDeleteError(t(error instanceof Error ? error.message : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'));
+    notice.error(t(error instanceof Error ? error.message : 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'));
       setDeleteGoogleCredential('');
   } finally {
     setDeleting(false);
@@ -496,7 +504,6 @@ return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-w
           <Search aria-hidden="true" className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input id="favorite-game-search" type="search" value={favoriteSearch} onChange={event => setFavoriteSearch(event.target.value)} placeholder={t('Busca un juego...')} className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-10 text-sm text-white placeholder:text-slate-400 focus:border-accent" />
         </div>
-        {favoriteError && <p role="alert" className="mt-3 text-sm text-red-300">{t(favoriteError)}</p>}
         {favoriteSaving && <p role="status" className="mt-3 text-xs text-slate-300">{t('Guardando...')}</p>}
         {favoriteSearchLoading && <p className="py-6 text-center text-xs text-slate-400">{t('Buscando juegos...')}</p>}
         {!favoriteSearchLoading && favoriteSearch.trim().length >= 2 && favoriteResults.length === 0 && !favoriteError && <p className="py-6 text-center text-xs text-slate-400">{t('No se encontraron juegos.')}</p>}
@@ -1025,12 +1032,12 @@ return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-w
 
       <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
         <Trophy className="w-4.5 h-4.5 text-yellow-500" />
-        {t('Valoraciones y Diario')} ({reviews.length})
+        {t('Valoraciones')} ({reviews.length})
       </h3>
 
       {reviews.length === 0 ? (
         <div className="bg-slate-900/30 p-8 rounded-xl border border-slate-850 text-center text-slate-500 text-xs">
-          {t('Este gamer no ha realizado anotaciones o ratings todavía.')}
+          {t('Este gamer todavía no tiene valoraciones.')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -1083,9 +1090,11 @@ return ( <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-w
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed mt-1 line-clamp-3 italic">
-                  "{rev.content}"
-                </p>
+                {rev.content && (
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1 line-clamp-3 italic">
+                    "{rev.content}"
+                  </p>
+                )}
               </div>
             </div>
           ))}

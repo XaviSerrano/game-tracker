@@ -6,7 +6,7 @@ import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { db, initDb } from './db.ts';
 import { IgdbService } from './services/igdb.ts';
 import { translateText } from './services/translate.ts';
-import type { Activity, ActivityType, User, UserGame, CustomList, Review, GameStatus } from '../../shared/types.ts';
+import type { Activity, ActivityType, User, UserGame, CustomList, Review, GameStatus, RoadmapSuggestionStatus } from '../../shared/types.ts';
 
 const app = express();
 const googleAuthClient = new OAuth2Client();
@@ -267,6 +267,19 @@ const deleteAccountRateLimit = createRateLimiter(
   15 * 60 * 1000,
   (req) => `${getRequestIp(req)}:${(req as AuthenticatedRequest).currUser?.id || ''}`
 );
+const roadmapSuggestionRateLimit = createRateLimiter(
+  'roadmap_suggestion',
+  5,
+  60 * 60 * 1000,
+  (req) => (req as AuthenticatedRequest).currUser?.id || getRequestIp(req)
+);
+const roadmapVoteRateLimit = createRateLimiter(
+  'roadmap_vote',
+  60,
+  60 * 60 * 1000,
+  (req) => (req as AuthenticatedRequest).currUser?.id || getRequestIp(req)
+);
+const roadmapStatuses: RoadmapSuggestionStatus[] = ['COMPLETED', 'CONSIDERING', 'PLANNED', 'IN_PROGRESS'];
 
 const buildResetUrl = (token: string) => {
   const resetUrl = new URL('/', parsedPublicAppUrl);
@@ -348,6 +361,7 @@ app.post('/api/auth/register', registerRateLimit, async (req, res) => {
 
   const passwordData = hashPassword(password);
   await db.createUser(newUser, passwordData);
+  await db.followUsersByUsername(id, ['Xavi', 'Gametracker']);
   await db.addActivity({
     id: `act_${Date.now()}`,
     userId: id,
@@ -435,6 +449,7 @@ app.post('/api/auth/google', googleAuthRateLimit, async (req, res) => {
           createdAt: new Date().toISOString()
         };
         await db.createUser(user, undefined, googleSub);
+        await db.followUsersByUsername(user.id, ['Xavi', 'Gametracker']);
         authUser = await db.getAuthUserByGoogleSub(googleSub);
         created = true;
       }
@@ -802,6 +817,70 @@ app.get('/api/social/following/:userId', async (req, res) => {
   res.json(users);
 });
 
+const isRoadmapModerator = (user: User) => ['xavi', 'gametracker'].includes(user.username.trim().toLowerCase());
+
+app.get('/api/roadmap', async (req, res) => {
+  const bearerToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : null;
+  const sessionToken = getCookie(req, SESSION_COOKIE_NAME) || bearerToken;
+  const user = sessionToken ? await db.getUserBySessionToken(sessionToken) : null;
+  res.json(await db.getRoadmapSuggestions(user?.id ?? null));
+});
+
+app.post('/api/roadmap', authenticate, roadmapSuggestionRateLimit, async (req: AuthenticatedRequest, res) => {
+  const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+  const description = typeof req.body?.description === 'string' ? req.body.description.trim() : '';
+  if (title.length < 5 || title.length > 120) {
+    return res.status(400).json({ error: 'El título debe tener entre 5 y 120 caracteres.' });
+  }
+  if (description.length > 600) {
+    return res.status(400).json({ error: 'La descripción no puede superar los 600 caracteres.' });
+  }
+
+  const suggestion = await db.createRoadmapSuggestion(req.currUser!.id, title, description);
+  res.status(201).json(suggestion);
+});
+
+app.post('/api/roadmap/:suggestionId/vote', authenticate, roadmapVoteRateLimit, async (req: AuthenticatedRequest, res) => {
+  const suggestions = await db.getRoadmapSuggestions(req.currUser!.id);
+  if (!suggestions.some(suggestion => suggestion.id === req.params.suggestionId)) {
+    return res.status(404).json({ error: 'Sugerencia no encontrada.' });
+  }
+
+  await db.toggleRoadmapVote(req.currUser!.id, req.params.suggestionId);
+  const suggestion = (await db.getRoadmapSuggestions(req.currUser!.id))
+    .find(item => item.id === req.params.suggestionId);
+  res.json({ suggestion });
+});
+
+app.patch('/api/roadmap/:suggestionId', authenticate, async (req: AuthenticatedRequest, res) => {
+  const moderator = req.currUser!;
+  if (!isRoadmapModerator(moderator)) {
+    return res.status(403).json({ error: 'Solo Xavi y Gametracker pueden responder y cambiar el estado.' });
+  }
+
+  const suggestions = await db.getRoadmapSuggestions(moderator.id);
+  const existing = suggestions.find(suggestion => suggestion.id === req.params.suggestionId);
+  if (!existing) {
+    return res.status(404).json({ error: 'Sugerencia no encontrada.' });
+  }
+
+  const status = req.body?.status ?? existing.status;
+  const response = typeof req.body?.response === 'string' ? req.body.response.trim() : existing.response;
+  if (!roadmapStatuses.includes(status)) {
+    return res.status(400).json({ error: 'El estado de la sugerencia no es válido.' });
+  }
+  if (response.length > 2000) {
+    return res.status(400).json({ error: 'La respuesta no puede superar los 2000 caracteres.' });
+  }
+
+  await db.updateRoadmapSuggestion(existing.id, status, response, moderator.id);
+  const updated = (await db.getRoadmapSuggestions(moderator.id))
+    .find(suggestion => suggestion.id === existing.id);
+  res.json(updated);
+});
+
 // --- ENDPOINTS DE VIDEOJUEGOS ---
 
 const parseIdList = (value: unknown): number[] | null => {
@@ -1070,7 +1149,7 @@ app.get('/api/users/:id/library', async (req, res) => {
 // Guardar o cambiar estado de progreso/puntuación
 app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) => {
   const user = req.currUser!;
-  const { gameId, status, rating, hoursPlayed, notes, startedAt, completedAt } = req.body;
+  const { gameId, status, rating, hoursPlayed, startedAt, completedAt } = req.body;
 
   const parsedGameId = Number(gameId);
   const validStatuses: GameStatus[] = ['WISHLIST', 'PLAYING', 'PLAYED', 'COMPLETED', 'ABANDONED'];
@@ -1088,10 +1167,6 @@ app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) =>
     return res.status(400).json({ error: 'Las horas jugadas deben estar entre 0 y 1.000.000.' });
   }
 
-  if (notes !== undefined && typeof notes !== 'string') {
-    return res.status(400).json({ error: 'Las notas deben ser texto.' });
-  }
-
   // Verify game details exist
   const game = await db.getGame(parsedGameId);
   if (!game) {
@@ -1106,7 +1181,6 @@ app.post('/api/library', authenticate, async (req: AuthenticatedRequest, res) =>
     isInWishlist: status === 'WISHLIST' || (existing?.isInWishlist ?? false),
     rating: parsedRating !== undefined ? parsedRating : (existing ? existing.rating : 0),
     hoursPlayed: parsedHours !== undefined ? parsedHours : (existing ? existing.hoursPlayed : 0),
-    notes: notes !== undefined ? notes : (existing ? existing.notes : ''),
     startedAt: startedAt !== undefined ? startedAt : (existing ? existing.startedAt : null),
     completedAt: completedAt !== undefined ? completedAt : (existing ? existing.completedAt : null),
     updatedAt: new Date().toISOString()
@@ -1239,7 +1313,6 @@ app.post('/api/reviews', authenticate, async (req: AuthenticatedRequest, res) =>
     isInWishlist: existingUg?.isInWishlist ?? false,
     rating: normalizedRating,
     hoursPlayed: existingUg ? existingUg.hoursPlayed : 0,
-    notes: existingUg ? existingUg.notes : '',
     startedAt: existingUg ? existingUg.startedAt : null,
     completedAt: existingUg ? existingUg.completedAt : null,
     updatedAt: new Date().toISOString()

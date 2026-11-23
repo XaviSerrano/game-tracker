@@ -5,6 +5,7 @@ import type { Game, GameStatus, UserGame } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
 import { Dialog } from './Dialog.tsx';
 import { GameStatusIcon } from './GameStatusIcon.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 type ProgressStatus = Exclude<GameStatus, 'WISHLIST'>;
 
@@ -26,18 +27,17 @@ interface GameStatusDialogProps {
 
 export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemoved }: GameStatusDialogProps) {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const initialStatus = status && status !== 'WISHLIST' ? status : null;
   const [selected, setSelected] = useState<ProgressStatus | null>(
     initialStatus
   );
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
   const removing = initialStatus !== null && selected === null;
 
   const save = async () => {
     if (saving || selected === initialStatus) return;
     setSaving(true);
-    setError(false);
     try {
       if (removing) {
         const response = await apiFetch(`/api/library/${game.igdbId}`, {
@@ -48,6 +48,7 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
         const result: { success: boolean } = await response.json();
         if (!result.success) throw new Error('Game was not removed from the library');
         onRemoved(game.igdbId);
+        notice.success(t('Juego eliminado de tu biblioteca.'));
         onClose();
         return;
       }
@@ -65,10 +66,11 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
       if (!response.ok) throw new Error(`Status update failed: ${response.status}`);
       const saved: UserGame & { game: Game } = await response.json();
       onSaved(saved);
+      notice.success(t('Estado del juego actualizado.'));
       onClose();
     } catch (err) {
       console.error('Error saving game status:', err);
-      setError(true);
+      notice.error(t(removing ? 'No se pudo eliminar el juego. Inténtalo de nuevo.' : 'No se pudo guardar el estado. Inténtalo de nuevo.'));
     } finally {
       setSaving(false);
     }
@@ -101,8 +103,7 @@ export function GameStatusDialog({ game, status, token, onClose, onSaved, onRemo
             </button>
           ))}
         </fieldset>
-        {removing && <p className="mt-4 text-sm text-amber-200">{t('Al guardar, se eliminará el juego de tu biblioteca y wishlist, junto con sus horas, valoración, notas y fechas.')}</p>}
-        {error && <p role="alert" className="mt-4 text-sm text-red-300">{t(removing ? 'No se pudo eliminar el juego. Inténtalo de nuevo.' : 'No se pudo guardar el estado. Inténtalo de nuevo.')}</p>}
+        {removing && <p className="mt-4 text-sm text-amber-200">{t('Al guardar, se eliminará el juego de tu biblioteca y wishlist, junto con sus horas, valoración y fechas.')}</p>}
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={saving} className="min-h-10 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/5 disabled:opacity-50">{t('Cancelar')}</button>
           <button type="button" onClick={() => void save()} disabled={saving || selected === initialStatus} className="min-h-10 rounded-xl bg-accent px-4 text-sm font-bold text-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50">

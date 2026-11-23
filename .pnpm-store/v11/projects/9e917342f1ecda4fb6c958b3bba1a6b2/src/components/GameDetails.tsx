@@ -1232,7 +1232,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div>
                 <input
                   type="text"
-                  placeholder="Título corto de la reseña..."
+                  placeholder="Título de la reseña..."
                   value={reviewTitle}
                   required
                   onChange={(e) => setReviewTitle(e.target.value)}

@@ -7,6 +7,7 @@ import { GameStatusDialog } from './GameStatusDialog.tsx';
 import { useLanguage } from '../i18n.tsx';
 import { useIsMobileLayout } from '../hooks/useIsMobileLayout.ts';
 import { CustomListPicker } from './CustomListPicker.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 interface DiscoverProps {
   onSelectGame: (gameId: number) => void;
@@ -101,6 +102,7 @@ const GameSkeletons: React.FC<{ count?: number; native?: boolean }> = ({ count =
 
 export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, token, onAuthRequired, userId }) => {
   const { t } = useLanguage();
+  const notice = useActionNotice();
   const useMobileCardLayout = useIsMobileLayout();
   const [filters, setFilters] = useState<DiscoverFilters>(readFiltersFromUrl);
   const [games, setGames] = useState<Game[]>([]);
@@ -436,9 +438,10 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         if (enabled) next.add(gameId); else next.delete(gameId);
         return next;
       });
-      setQuickActionMessage(enabled ? 'Juego añadido a tu wishlist.' : 'Juego quitado de tu wishlist.');
+      notice.success(t(enabled ? '¡Juego añadido a tu wishlist!' : 'Juego removido de tu wishlist.'));
     } catch (error) {
-      setQuickActionMessage(`Error: ${error instanceof Error ? error.message : 'No se pudo añadir el juego.'}`);
+      console.error('Could not update wishlist:', error);
+      notice.error(t(error instanceof Error ? error.message : 'No se pudo añadir el juego.'));
     } finally {
       setSavingWishlistGameId(null);
     }

@@ -10,7 +10,6 @@ interface GameCardProps {
   userGameStatus?: GameStatus;
   userGameRating?: number;
   userGameHours?: number;
-  userGameNotes?: string;
 
   // Para Discover - info de wishlist rápida
   isInWishlist?: boolean;
@@ -40,7 +39,6 @@ export const GameCard: React.FC<GameCardProps> = ({
   userGameStatus,
   userGameRating,
   userGameHours,
-  userGameNotes,
   isInWishlist,
   variant = 'default',
   showDiscoverMeta = false,
@@ -97,7 +95,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
     return (
       <div
-        className="group flex h-full min-w-0 gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5 text-left transition-colors hover:border-white/15"
+        className="group flex h-full min-h-[14.5rem] min-w-0 gap-3 rounded-xl border border-white/[0.06] bg-[#17243b] p-2.5 text-left transition-colors hover:border-white/15"
       >
         <button
           type="button"
@@ -167,9 +165,6 @@ export const GameCard: React.FC<GameCardProps> = ({
                   </span>
                 )}
               </div>
-            )}
-            {showFullLibraryCard && userGameNotes && (
-              <p className="mt-1 line-clamp-1 text-[11px] italic text-slate-400">{userGameNotes}</p>
             )}
           </button>
 
@@ -393,15 +388,9 @@ export const GameCard: React.FC<GameCardProps> = ({
         {!isFeedCard && (
           <>
             {showFullLibraryCard ? (
-              userGameNotes ? (
-                <p className="text-xs text-slate-400 mt-1 line-clamp-1 italic">
-                  "{userGameNotes}"
-                </p>
-              ) : (
-                <p className="text-xs text-slate-400 mt-1 truncate uppercase font-mono">
-                  {game.genres.slice(0, 1).join(', ') || t('Videojuego')}
-                </p>
-              )
+              <p className="text-xs text-slate-400 mt-1 truncate uppercase font-mono">
+                {game.genres.slice(0, 1).join(', ') || t('Videojuego')}
+              </p>
             ) : (
               <div className="mt-1 space-y-0.5">
                 <p className="min-h-4 truncate text-xs text-slate-400">

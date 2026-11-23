@@ -35,6 +35,7 @@ import {
 import { GameStatusIcon } from './GameStatusIcon.tsx';
 import { Breadcrumbs } from './Breadcrumbs.tsx';
 import { useLanguage } from '../i18n.tsx';
+import { useActionNotice } from './ActionNotice.tsx';
 
 interface GameDetailsProps {
   gameId: number;
@@ -246,6 +247,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   onGoBackToParent
 }) => {
   const { t, language } = useLanguage();
+  const notice = useActionNotice();
   const dateLocale = language === 'en' ? 'en-US' : 'es-ES';
   const progressMenuRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Game | null>(null);
@@ -263,7 +265,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [status, setStatus] = useState<GameStatus | null>('WISHLIST');
   const [rating, setRating] = useState<number>(0);
   const [hoursPlayed, setHoursPlayed] = useState<number>(0);
-  const [notes, setNotes] = useState<string>('');
   const [startedAt, setStartedAt] = useState<string>('');
   const [completedAt, setCompletedAt] = useState<string>('');
 
@@ -271,7 +272,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewContent, setReviewContent] = useState('');
 
-  const [message, setMessage] = useState('');
   const [savingWishlist, setSavingWishlist] = useState(false);
   const [progressMenuOpen, setProgressMenuOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
@@ -338,7 +338,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     setStatus('WISHLIST');
     setRating(0);
     setHoursPlayed(0);
-    setNotes('');
     setStartedAt('');
     setCompletedAt('');
     try {
@@ -374,14 +373,13 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             setStatus(found.status);
             setRating(found.rating);
             setHoursPlayed(found.hoursPlayed);
-            setNotes(found.notes);
             setStartedAt(found.startedAt || '');
             setCompletedAt(found.completedAt || '');
             setIsInWishlist(found.isInWishlist);
           }
           setLibraryReady(true);
         } else {
-          setMessage(`Error: ${t('No se pudo cargar tu biblioteca.')}`);
+          notice.error(t('No se pudo cargar tu biblioteca.'));
         }
 
         const listsRes = await apiFetch(`/api/lists?userId=${currentUser.id}`, {
@@ -396,7 +394,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       }
     } catch (err) {
       console.error(err);
-      if (currentUser && token) setMessage(`Error: ${t('No se pudo cargar tu biblioteca.')}`);
+      if (currentUser && token) notice.error(t('No se pudo cargar tu biblioteca.'));
     } finally {
       setLoading(false);
     }
@@ -444,7 +442,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
 
   const saveTracking = async (nextStatus: GameStatus | null, successMessage = t('¡Biblioteca actualizada con éxito!')) => {
     if (requireSession()) return;
-    setMessage('');
     try {
       if (nextStatus === null) {
         if (!userGame || userGame.status === 'WISHLIST') {
@@ -464,11 +461,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         setIsInWishlist(false);
         setRating(0);
         setHoursPlayed(0);
-        setNotes('');
         setStartedAt('');
         setCompletedAt('');
-        setMessage(t('Juego eliminado de tu biblioteca y wishlist.'));
-        setTimeout(() => setMessage(''), 3000);
+        notice.success(t('Juego eliminado de tu biblioteca y wishlist.'));
         return;
       }
 
@@ -483,7 +478,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           status: nextStatus,
           rating,
           hoursPlayed,
-          notes,
           startedAt: startedAt || null,
           completedAt: completedAt || null
         })
@@ -494,10 +488,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       setUserGame(data);
       setStatus(nextStatus);
       setIsInWishlist(data.isInWishlist);
-      setMessage(successMessage);
-      setTimeout(() => setMessage(''), 3000);
+      notice.success(successMessage);
     } catch (err: any) {
-      setMessage(`Error: ${t(err.message)}`);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo guardar el estado. Inténtalo de nuevo.'));
     }
   };
 
@@ -511,7 +504,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     if (requireSession()) return;
 
     setSavingWishlist(true);
-    setMessage('');
 
     try {
       if (!isInWishlist && !userGame) {
@@ -531,10 +523,9 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       setIsInWishlist(!isInWishlist);
       setUserGame(saveData.userGame);
       if (saveData.userGame) setStatus(saveData.userGame.status);
-      setMessage(isInWishlist ? t('Juego removido de tu wishlist.') : t('¡Juego añadido a tu wishlist!'));
-      setTimeout(() => setMessage(''), 3000);
+      notice.success(isInWishlist ? t('Juego removido de tu wishlist.') : t('¡Juego añadido a tu wishlist!'));
     } catch (err: any) {
-      setMessage(`Error: ${t(err.message)}`);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo actualizar la wishlist.'));
     } finally {
       setSavingWishlist(false);
     }
@@ -559,14 +550,15 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           rating
         })
       });
-      if (res.ok) {
-        setReviewTitle('');
-        setReviewContent('');
-        // Refresh reviews and tracking
-        fetchGameData();
-      }
+      if (!res.ok) throw new Error('No se pudo publicar la reseña.');
+      setReviewTitle('');
+      setReviewContent('');
+      notice.success(t('Reseña publicada.'));
+      // Refresh reviews and tracking
+      void fetchGameData();
     } catch (err) {
       console.error(err);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudo publicar la reseña.'));
     }
   };
 
@@ -638,9 +630,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
         ...prev,
         [listId]: !isCurrentlyInList
       }));
+      notice.success(isCurrentlyInList ? t('Juego eliminado de la lista personalizada.') : t('Juego añadido a la lista personalizada.'));
 
     } catch (err) {
       console.error(err);
+      notice.error(t('No se pudo actualizar la lista personalizada.'));
     } finally {
       setUpdatingListId(null);
     }
@@ -857,7 +851,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 onClick={() => setTechnicalSheetOpen(true)}
                 className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-slate-700/80 bg-[#10141d]/90 px-3 py-2.5 text-left text-xs font-semibold text-slate-100 transition hover:border-slate-600 hover:bg-[#151b27] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
-                <span>{t('Ficha técnica')}</span>
+                <span>{t('Detalles')}</span>
                 <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
               </button>
             </div>
@@ -872,7 +866,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </h1>
             </div>
 
-            <p className="max-w-3xl text-sm leading-7 text-slate-200">
+            <p className="hidden max-w-3xl text-sm leading-7 text-slate-200 md:block">
               {displayedSummary}
             </p>
 
@@ -1010,12 +1004,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </div>
             </div>
 
-            {message && (
-              <div className={`p-2.5 border text-xs rounded-xl ${message.includes('Error') ? 'bg-red-950/40 border-red-500/20 text-red-400' : 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400'}`}>
-                {message}
-              </div>
-            )}
-
             <form onSubmit={handleSaveTracking} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <p id="progress-label" className="block text-xs font-semibold text-slate-400">{t('Fase de Progreso')}</p>
@@ -1139,18 +1127,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-1.5 col-span-1 md:col-span-2">
-                <label htmlFor="game-notes" className="block text-xs font-semibold text-slate-400">{t('Notas privadas de juego')}</label>
-                <textarea
-                  id="game-notes"
-                  placeholder={t('Escribe anotaciones de tus progresos actuales, builds preferidas, jefes difíciles, o recordatorios...')}
-                  value={notes}
-                  rows={2}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-[#07090e] border border-slate-800 focus:border-accent rounded-xl p-3 text-xs text-white placeholder-slate-750 transition outline-none resize-none"
-                ></textarea>
-              </div>
-
               <button
                 type="submit"
                 className="col-span-1 md:col-span-2 w-full bg-accent hover:bg-accent-hover text-on-accent font-bold py-2.5 rounded-xl cursor-pointer text-xs mt-2 transition"
@@ -1190,8 +1166,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div>
                 <input
                   type="text"
-                  aria-label={t('Título corto de la reseña...')}
-                  placeholder={t('Título corto de la reseña...')}
+                  aria-label={t('Título de la reseña...')}
+                  placeholder={t('Título de la reseña...')}
                   value={reviewTitle}
                   required
                   onChange={(e) => setReviewTitle(e.target.value)}
@@ -1404,11 +1380,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
       </div>
 
       {technicalSheetOpen && (
-        <Dialog label={t('Ficha técnica')} onClose={() => setTechnicalSheetOpen(false)} closeOnBackdrop>
+        <Dialog label={t('Detalles')} onClose={() => setTechnicalSheetOpen(false)} closeOnBackdrop>
           <section className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-700 bg-[#0f121d] shadow-2xl" onClick={event => event.stopPropagation()}>
             <header className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-3.5">
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">{t('Ficha técnica')}</h2>
+                <h2 className="text-sm font-bold text-white">{t('Detalles')}</h2>
                 <p className="mt-0.5 truncate text-xs text-slate-400">{game.name}</p>
               </div>
               <button
@@ -1421,6 +1397,10 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               </button>
             </header>
             <dl className="max-h-[min(65dvh,34rem)] divide-y divide-white/[0.08] overflow-y-auto px-4">
+              <div className="py-3">
+                <dt className="text-xs text-slate-400">{t('Descripción')}</dt>
+                <dd className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-100">{displayedSummary || t('Sin descripción.')}</dd>
+              </div>
               <div className="grid grid-cols-[minmax(6.5rem,0.8fr)_minmax(0,1.4fr)] gap-3 py-3">
                 <dt className="text-xs text-slate-400">{t('Desarrolladora')}</dt>
                 <dd className="break-words text-right text-sm leading-5 text-slate-100">{game.developers?.join(', ') || t('Desconocido')}</dd>
