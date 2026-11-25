@@ -698,11 +698,9 @@ export default function App() {
                     event.preventDefault();
                     handleNavigation(item.id);
                   }}
-                  className={`border-b-2 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${
-                    active
-                      ? 'border-accent text-white'
-                      : 'border-transparent text-slate-300 hover:text-white'
-                  }`}
+                  className={item.id === 'roadmap'
+                    ? `inline-flex items-center gap-1.5 rounded-full border border-indigo-300/20 px-3 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-300 ${active ? 'bg-indigo-400/[0.16] text-indigo-100' : 'bg-indigo-400/[0.06] text-indigo-200 hover:bg-indigo-400/[0.14] hover:text-white'}`
+                    : `border-b-2 py-1 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${active ? 'border-accent text-white' : 'border-transparent text-slate-300 hover:text-white'}`}
                 >
                   {item.label}
                 </a>

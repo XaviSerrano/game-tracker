@@ -322,9 +322,11 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
         <GameStatusDialog
           game={statusGame.game}
           status={statusGame.status}
+          initialHours={statusGame.hoursPlayed}
+          initialRating={statusGame.rating}
           token={token}
           onClose={() => setStatusGame(null)}
-          onSaved={saved => setCompleteLib(previous => previous.map(item => item.gameId === saved.gameId ? saved : item))}
+          onSaved={saved => setCompleteLib(previous => previous.map(item => item.gameId === saved.gameId ? { ...item, ...saved, game: item.game } : item))}
           onRemoved={gameId => setCompleteLib(previous => previous.filter(item => item.gameId !== gameId))}
         />
       )}

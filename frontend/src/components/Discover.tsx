@@ -497,7 +497,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
             {t('Descubrir')} {t('Videojuegos')}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
-            {t('Explora lanzamientos, encuentra tu próximo juego y busca en el catálogo de IGDB.')}
           </p>
         </div>
 
@@ -592,7 +591,6 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         <section aria-labelledby="discover-popular" className="space-y-3">
           <div>
             <h3 id="discover-popular" className="text-lg font-bold text-white">{t('Populares ahora')}</h3>
-            <p className="mt-1 text-xs text-slate-500">{t('Juegos con mayor actividad y valoraciones en IGDB.')}</p>
           </div>
           {loadingHome && <GameSkeletons count={18} native={useMobileCardLayout} />}
           {popularGames.length > 0 && (

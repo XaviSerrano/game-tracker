@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowUp, Check, LoaderCircle, MessageSquareText, Plus, Search, Send, ThumbsUp } from 'lucide-react';
+import { Check, LoaderCircle, MessageSquareText, Plus, Search, Send, ThumbsUp, X } from 'lucide-react';
 import { apiFetch } from '../api.ts';
 import type { RoadmapSuggestion, RoadmapSuggestionStatus, User } from '../types.ts';
 import { useLanguage } from '../i18n.tsx';
