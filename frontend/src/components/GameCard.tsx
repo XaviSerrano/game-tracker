@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Game, GameStatus } from '../types.ts';
-import { Bookmark, BookmarkPlus, Clock3, Gamepad2, Star, Trash2 } from 'lucide-react';
+import { Bookmark, BookmarkCheck, BookmarkPlus, Clock3, Gamepad2, Star, Trash2 } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 
 interface GameCardProps {
@@ -13,6 +13,7 @@ interface GameCardProps {
 
   // Para Discover - info de wishlist rápida
   isInWishlist?: boolean;
+  isInCustomList?: boolean;
 
   // Modo visual
   variant?: 'default' | 'feed' | 'mobile';
@@ -40,6 +41,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   userGameRating,
   userGameHours,
   isInWishlist,
+  isInCustomList = false,
   variant = 'default',
   showDiscoverMeta = false,
   onSelectGame,
@@ -74,6 +76,69 @@ export const GameCard: React.FC<GameCardProps> = ({
     PLAYED: t('Jugado'),
     COMPLETED: t('Completado'),
     ABANDONED: t('Abandonado')
+  };
+
+  const renderActions = (compact: boolean) => {
+    if (isFeedCard) return null;
+
+    const buttonClass = compact
+      ? 'flex size-11 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50'
+      : 'grid size-10 shrink-0 place-items-center rounded-full text-slate-300 transition duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50';
+
+    return (
+      <div className={compact ? 'flex min-w-0 items-center justify-end gap-1.5 pt-2' : 'absolute inset-x-0 bottom-0 z-20 flex items-center justify-center gap-0.5 bg-gradient-to-r from-transparent via-[#090b10]/85 to-transparent'}>
+        {onToggleWishlist && (
+          <button
+            type="button"
+            aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
+            aria-pressed={bookmarkActive}
+            title={bookmarkActive ? t('Remover de Wishlist') : t('Añadir a Wishlist')}
+            onClick={event => { event.stopPropagation(); onToggleWishlist(game.igdbId, event); }}
+            disabled={isLoadingWishlist}
+            className={`${buttonClass} ${bookmarkActive ? compact ? 'border-indigo-400/40 bg-indigo-400/10 text-indigo-200 hover:text-indigo-100' : 'bg-indigo-400/20 text-indigo-200 hover:bg-indigo-400/30 hover:text-indigo-100' : ''}`}
+          >
+            <Bookmark className={`size-5 ${bookmarkActive ? 'fill-indigo-300 text-indigo-300' : ''}`} aria-hidden="true" />
+          </button>
+        )}
+        {onManageStatus && (
+          <button
+            type="button"
+            aria-label={`${t('Gestionar estado del juego')}: ${game.name}${hasProgress ? ` (${statusLabels[userGameStatus]})` : ''}`}
+            title={hasProgress ? `${t('Gestionar estado del juego')}: ${statusLabels[userGameStatus]}` : t('Gestionar estado del juego')}
+            onClick={event => { event.stopPropagation(); onManageStatus(game); }}
+            disabled={statusActionDisabled}
+            className={`${buttonClass} ${hasProgress ? compact ? 'text-accent hover:border-accent/30 hover:bg-accent/10' : 'bg-accent/20 text-accent hover:bg-accent/30' : ''}`}
+          >
+            <Gamepad2 className="size-5" aria-hidden="true" />
+          </button>
+        )}
+        {onAddToCustomList && (
+          <button
+            type="button"
+            aria-label={`${t('Añadir a lista personalizada')}: ${game.name}`}
+            title={t('Añadir a lista personalizada')}
+            aria-pressed={isInCustomList}
+            onClick={event => { event.stopPropagation(); onAddToCustomList(game); }}
+            className={`${buttonClass} ${isInCustomList ? compact ? 'border-indigo-400/40 bg-indigo-400/10 text-indigo-200 hover:bg-indigo-400/20' : 'bg-indigo-400/20 text-indigo-200 hover:bg-indigo-400/30 hover:text-indigo-100' : compact ? '' : 'hover:bg-indigo-300/15 hover:text-indigo-100'}`}
+          >
+            {isInCustomList
+              ? <BookmarkCheck className="size-5 fill-indigo-300/30 text-indigo-200" aria-hidden="true" />
+              : <BookmarkPlus className="size-5" aria-hidden="true" />}
+          </button>
+        )}
+        {onRemoveFromList && (
+          <button
+            type="button"
+            aria-label={`${t('Eliminar de la lista')}: ${game.name}`}
+            title={t('Eliminar de la lista')}
+            onClick={event => { event.stopPropagation(); onRemoveFromList(); }}
+            className={`${buttonClass} ${compact ? 'text-red-300 hover:bg-red-500/10' : 'text-red-200 hover:bg-red-400/20 hover:text-red-100'}`}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    );
   };
 
   const handleCardClick = () => {
@@ -168,48 +233,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             )}
           </button>
 
-          <div className="flex min-w-0 items-center justify-end gap-1.5 pt-2">
-            <div className="flex shrink-0 items-center gap-1.5">
-              {onAddToCustomList && (
-                <button type="button" aria-label={`${t('Añadir a lista personalizada')}: ${game.name}`} title={t('Añadir a lista personalizada')} onClick={event => { event.stopPropagation(); onAddToCustomList(game); }} className="flex size-11 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:border-accent/40 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-                  <BookmarkPlus className="size-4" aria-hidden="true" />
-                </button>
-              )}
-              {onToggleWishlist && (
-                <button
-                  type="button"
-                  aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
-                  aria-pressed={bookmarkActive}
-                  onClick={event => { event.stopPropagation(); onToggleWishlist(game.igdbId, event); }}
-                  disabled={isLoadingWishlist}
-                  className={`flex size-11 items-center justify-center rounded-lg border transition disabled:opacity-50 ${bookmarkActive ? 'border-indigo-400/40 bg-indigo-400/10 text-indigo-200' : 'border-white/10 text-slate-300 hover:bg-white/[0.06]'}`}
-                >
-                  <Bookmark className={`size-4 ${bookmarkActive ? 'fill-indigo-300 text-indigo-300' : ''}`} aria-hidden="true" />
-                </button>
-              )}
-              {onManageStatus && (
-                <button
-                  type="button"
-                  aria-label={`${t('Gestionar estado del juego')}: ${game.name}${hasProgress ? ` (${statusLabels[userGameStatus]})` : ''}`}
-                  onClick={event => { event.stopPropagation(); onManageStatus(game); }}
-                  disabled={statusActionDisabled}
-                  className="flex size-11 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <Gamepad2 className="size-4" aria-hidden="true" />
-                </button>
-              )}
-              {onRemoveFromList && (
-                <button
-                  type="button"
-                  aria-label={`${t('Eliminar de la lista')}: ${game.name}`}
-                  onClick={event => { event.stopPropagation(); onRemoveFromList(); }}
-                  className="flex size-11 items-center justify-center rounded-lg border border-red-400/25 text-red-300 transition hover:bg-red-500/10"
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />
-                </button>
-              )}
-            </div>
-          </div>
+          {renderActions(true)}
         </div>
       </div>
     );
@@ -256,69 +280,6 @@ export const GameCard: React.FC<GameCardProps> = ({
           </div>
         )}
 
-        {/* Wishlist */}
-        {onAddToCustomList && !isFeedCard && (
-          <button type="button" aria-label={`${t('Añadir a lista personalizada')}: ${game.name}`} title={t('Añadir a lista personalizada')} onClick={event => { event.stopPropagation(); onAddToCustomList(game); }} className={`absolute left-2 ${onToggleWishlist && onManageStatus ? 'top-[6.5rem]' : onToggleWishlist || onManageStatus ? 'top-14' : 'top-2'} flex size-10 items-center justify-center rounded-full border border-slate-700 bg-black/85 text-slate-300 transition hover:border-accent/40 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}>
-            <BookmarkPlus className="size-4" aria-hidden="true" />
-          </button>
-        )}
-        {onToggleWishlist && !isFeedCard && (
-          <button
-            type="button"
-            aria-label={bookmarkActive ? `${t('Quitar')} ${game.name} ${t('de la wishlist')}` : `${t('Añadir')} ${game.name} ${t('a la wishlist')}`}
-            aria-pressed={bookmarkActive}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleWishlist(game.igdbId, e);
-            }}
-            disabled={isLoadingWishlist}
-            title={
-              bookmarkActive
-                ? t('Remover de Wishlist')
-                : t('Añadir a Wishlist')
-            }
-            className={`
-              absolute top-2 left-2
-              h-10 w-10
-              rounded-full
-              flex items-center justify-center
-              transition
-              cursor-pointer
-              disabled:cursor-not-allowed
-              disabled:opacity-60
-              bg-black/85
-              ${
-                bookmarkActive
-                  ? 'border border-indigo-500/40 text-indigo-300'
-                  : 'border border-slate-700 text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40'
-              }
-            `}
-          >
-            <Bookmark
-              className={`
-                w-4 h-4
-                ${bookmarkActive ? 'fill-indigo-400 text-indigo-400' : ''}
-              `}
-            />
-          </button>
-        )}
-
-        {onManageStatus && !isFeedCard && (
-          <button
-            type="button"
-            aria-label={`${t('Gestionar estado del juego')}: ${game.name}${hasProgress ? ` (${statusLabels[userGameStatus]})` : ''}`}
-            title={hasProgress ? `${t('Gestionar estado del juego')}: ${statusLabels[userGameStatus]}` : t('Gestionar estado del juego')}
-            disabled={statusActionDisabled}
-            onClick={(event) => {
-              event.stopPropagation();
-              onManageStatus(game);
-            }}
-            className={`absolute left-2 ${onToggleWishlist ? 'top-14' : 'top-2'} flex h-10 w-10 items-center justify-center rounded-full border bg-black/85 ${hasProgress ? 'border-accent text-accent' : 'border-slate-700 text-slate-200'} hover:border-accent/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            <Gamepad2 className="size-5" aria-hidden="true" />
-          </button>
-        )}
-
         {/* Rating */}
         {game.rating ? (
           <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md text-[10px] font-bold border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -329,7 +290,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
         {/* Library status */}
         {showFullLibraryCard && (
-          <div className="absolute bottom-2 left-2 right-2 flex justify-between gap-1">
+          <div className="absolute bottom-12 left-2 right-2 z-10 flex justify-between gap-1">
             {(userGameStatus !== 'WISHLIST' || bookmarkActive) && <span
               className={`
                 text-[10px]
@@ -361,6 +322,7 @@ export const GameCard: React.FC<GameCardProps> = ({
             )}
           </div>
         )}
+        {renderActions(false)}
       </div>
 
       {/* Title */}

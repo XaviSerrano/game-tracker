@@ -672,7 +672,7 @@ export default function App() {
       
       {/* 1. TOP HEADER (mismo formato que la landing) */}
       <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0b0d12]/95 backdrop-blur-md">
-        <div className="mx-auto grid min-h-16 w-full max-w-[86rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:gap-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:px-12">
+        <div className="mx-auto grid min-h-16 w-full max-w-[86rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 sm:gap-4 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto] md:px-0 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-0">
           <a
             href="/"
             onClick={(event) => {
@@ -685,7 +685,7 @@ export default function App() {
             <img src="/logo/svg/gametracker-monogram-white.svg" alt="" aria-hidden="true" className="h-6 w-auto sm:h-7" />
           </a>
 
-          <nav aria-label={t('Navegación principal')} className="hidden items-center justify-center gap-4 whitespace-nowrap md:col-span-2 md:col-start-1 md:row-start-2 md:flex md:py-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:py-0 xl:gap-7">
+          <nav aria-label={t('Navegación principal')} className="hidden items-center justify-center gap-4 whitespace-nowrap md:col-span-2 md:col-start-1 md:row-start-2 md:flex md:py-0 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:justify-self-start lg:py-0 xl:gap-7">
             {navItems.filter(item => item.id !== 'profile').map(item => {
               const active = isNavItemActive(item.id);
 

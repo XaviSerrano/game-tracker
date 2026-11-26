@@ -781,9 +781,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div className="mt-1 overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/35 via-slate-950/70 to-violet-950/30 p-3 shadow-[0_12px_35px_rgba(8,145,178,0.08)]">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>
-                    <p className="mt-1 text-[11px] text-slate-500">Estimación orientativa de IGDB</p>
-                  </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">Tiempo de juego</p>                  </div>
                   <Clock className="h-5 w-5 text-cyan-300/80" />
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

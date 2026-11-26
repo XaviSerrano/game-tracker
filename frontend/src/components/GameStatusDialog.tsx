@@ -207,7 +207,7 @@ export function GameStatusDialog({ game, status, initialHours = 0, initialRating
           <>
             <div className="mt-6 space-y-5">
               <label className="block text-sm font-semibold text-slate-300" htmlFor="status-dialog-hours">{t('Horas jugadas')}
-                <input id="status-dialog-hours" type="number" min="0" max="1000000" step="0.5" value={hoursPlayed} onChange={event => setHoursPlayed(Math.max(0, Number(event.target.value) || 0))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-800 bg-[#07090e] px-3 text-sm font-normal text-white outline-none focus:border-accent" />
+                <input id="status-dialog-hours" type="number" min="0" max="1000000" step="0.5" placeholder="0" value={hoursPlayed === 0 ? '' : hoursPlayed} onChange={event => setHoursPlayed(Math.max(0, Number(event.target.value) || 0))} className="mt-2 min-h-11 w-full rounded-xl border border-slate-800 bg-[#07090e] px-3 text-sm font-normal text-white placeholder:text-slate-500 outline-none focus:border-accent" />
               </label>
               <fieldset>
                 <legend className="text-sm font-semibold text-slate-300">{t('Valoración')}</legend>

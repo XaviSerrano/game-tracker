@@ -52,6 +52,7 @@ Configure these values in the Render service environment:
 | `IGDB_CLIENT_SECRET` | Yes | Keep private; backend only |
 | `GOOGLE_CLIENT_ID` | For Google sign-in | Public OAuth web client ID; must match the frontend client ID |
 | `PUBLIC_APP_URL` | Yes | Public frontend URL used in password-reset links. Required in production; local development defaults to `http://localhost:3000`. |
+| `ROADMAP_MODERATOR_USER_IDS` | No | Comma-separated IDs of existing accounts allowed to moderate roadmap suggestions. Usernames do not grant privileges. |
 | `SMTP_HOST` | For email delivery | SMTP server |
 | `SMTP_PORT` | No | Defaults to `587` |
 | `SMTP_SECURE` | No | Set `true` when SMTP requires implicit TLS |

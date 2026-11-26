@@ -11,9 +11,10 @@ interface CustomListPickerProps {
   userId: string;
   token: string;
   onClose: () => void;
+  onMembershipChange?: (gameId: number, isInAnyList: boolean) => void;
 }
 
-export function CustomListPicker({ game, userId, token, onClose }: CustomListPickerProps) {
+export function CustomListPicker({ game, userId, token, onClose, onMembershipChange }: CustomListPickerProps) {
   const { t } = useLanguage();
   const notice = useActionNotice();
   const [lists, setLists] = useState<CustomList[]>([]);
@@ -60,7 +61,9 @@ export function CustomListPicker({ game, userId, token, onClose }: CustomListPic
         body: JSON.stringify({ name: data.name, description: data.description, isPublic: data.isPublic, gameIds })
       });
       if (!update.ok) throw new Error('Could not update list');
-      setMembership(previous => ({ ...previous, [list.id]: !contains }));
+      const nextMembership = { ...membership, [list.id]: !contains };
+      setMembership(nextMembership);
+      onMembershipChange?.(game.igdbId, Object.values(nextMembership).some(Boolean));
       notice.success(contains ? t('Juego eliminado de la lista personalizada.') : t('Juego añadido a la lista personalizada.'));
     } catch {
       notice.error(t('No se pudo actualizar la lista personalizada.'));

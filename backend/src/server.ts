@@ -15,10 +15,24 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const MAX_ACTIVE_SESSIONS_PER_USER = 5;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 const MIN_PASSWORD_LENGTH = 8;
+const USERNAME_PATTERN = /^[\p{L}\p{N}_-]{3,24}$/u;
 const SESSION_COOKIE_NAME = 'gt_session';
 const DEFAULT_AVATAR = '/default-avatar.svg';
 const MAX_AVATAR_LENGTH = 200_000;
 const AVATAR_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+const isValidAvatarDataUrl = (value: string) => {
+  if (value === DEFAULT_AVATAR) return true;
+  if (value.length > MAX_AVATAR_LENGTH) return false;
+  const match = AVATAR_DATA_URL.exec(value);
+  if (!match) return false;
+  const [, format] = match;
+  const encoded = value.slice(value.indexOf(',') + 1);
+  const bytes = Buffer.from(encoded, 'base64');
+  if (bytes.length === 0 || bytes.toString('base64') !== encoded) return false;
+  if (format === 'png') return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  if (format === 'jpeg') return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  return bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+};
 const configuredPublicAppUrl = process.env.PUBLIC_APP_URL?.trim();
 const publicAppUrl =
   configuredPublicAppUrl || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
@@ -66,15 +80,8 @@ interface RateLimitEntry {
 const authRateLimits = new Map<string, RateLimitEntry>();
 
 const getRequestIp = (req: express.Request) => {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
-  }
-
-  if (Array.isArray(forwardedFor) && forwardedFor.length > 0 && forwardedFor[0].trim()) {
-    return forwardedFor[0].split(',')[0].trim();
-  }
-
+  // Express resolves the client IP using the configured trusted proxy chain.
+  // Reading X-Forwarded-For directly lets clients spoof rate-limit identities.
   return req.ip || req.socket.remoteAddress || 'unknown';
 };
 
@@ -84,6 +91,12 @@ const normalizeEmail = (value: unknown) => {
   }
 
   return value.trim().toLowerCase();
+};
+
+const toPublicUser = (user: User | null) => {
+  if (!user) return null;
+  const { email: _email, ...publicUser } = user;
+  return publicUser;
 };
 
 const recordSecurityEvent = (
@@ -289,12 +302,15 @@ const buildResetUrl = (token: string) => {
 
 const sendPasswordResetEmail = async (user: User, rawToken: string) => {
   const resetUrl = buildResetUrl(rawToken);
+  const safeUsername = user.username.replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]!);
   await authMailer.transport.sendMail({
     from: authMailer.from,
     to: user.email,
     subject: 'Recupera tu contraseña de GameTracker',
     text: `Hola ${user.username},\n\nHemos recibido una solicitud para restablecer tu contraseña. Usa este enlace:\n${resetUrl}\n\nSi no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.`,
-    html: `<p>Hola <strong>${user.username}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contraseña.</p><p><a href="${resetUrl}">Restablecer contraseña</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
+    html: `<p>Hola <strong>${safeUsername}</strong>,</p><p>Hemos recibido una solicitud para restablecer tu contraseña.</p><p><a href="${resetUrl}">Restablecer contraseña</a></p><p>Si no solicitaste este cambio, ignora este mensaje. El enlace caduca en 1 hora.</p>`
   });
 
   if (!authMailer.configured) {
@@ -331,6 +347,10 @@ app.post('/api/auth/register', registerRateLimit, async (req, res) => {
   const { username, email, password, bio } = req.body;
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Username, email y contraseña son obligatorios.' });
+  }
+
+  if (typeof username !== 'string' || !USERNAME_PATTERN.test(username.trim())) {
+    return res.status(400).json({ error: 'El nombre de usuario debe tener entre 3 y 24 letras, números, guiones o guiones bajos.' });
   }
 
   if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
@@ -648,7 +668,8 @@ app.get('/api/users', async (req, res) => {
   const currentUser = token ? await db.getUserBySessionToken(token) : null;
 
   const users = await db.searchUsersByUsername(query);
-  res.json(currentUser ? users.filter(user => user.id !== currentUser.id) : users);
+  const visibleUsers = currentUser ? users.filter(user => user.id !== currentUser.id) : users;
+  res.json(visibleUsers.map(({ email: _email, ...user }) => user));
 });
 
 app.get('/api/users/:id', async (req, res) => {
@@ -658,7 +679,7 @@ app.get('/api/users/:id', async (req, res) => {
   }
   const followersCount = (await db.getFollowers(user.id)).length;
   const followingCount = (await db.getFollowing(user.id)).length;
-  res.json({ ...user, followersCount, followingCount });
+  res.json({ ...toPublicUser(user), followersCount, followingCount });
 });
 
 app.get('/api/users/:id/favorites', async (req, res) => {
@@ -696,11 +717,14 @@ app.put('/api/users/profile', authenticate, async (req: AuthenticatedRequest, re
   const user = req.currUser!;
   const { username, bio, avatar } = req.body;
 
+  if (username !== undefined && (typeof username !== 'string' || !USERNAME_PATTERN.test(username.trim()))) {
+    return res.status(400).json({ error: 'El nombre de usuario debe tener entre 3 y 24 letras, números, guiones o guiones bajos.' });
+  }
+
   if (avatar !== undefined && avatar !== '') {
     if (
       typeof avatar !== 'string' ||
-      avatar.length > MAX_AVATAR_LENGTH ||
-      (avatar !== DEFAULT_AVATAR && !AVATAR_DATA_URL.test(avatar))
+      !isValidAvatarDataUrl(avatar)
     ) {
       return res.status(400).json({ error: 'La imagen de perfil no es válida (PNG, JPG o WebP, máx. 150 KB).' });
     }
@@ -730,8 +754,8 @@ app.get('/api/social/feed', async (req, res) => {
 
   const withUsers = async (activities: Activity[]) => Promise.all(activities.map(async (activity) => ({
     ...activity,
-    author: await db.getUser(activity.userId),
-    targetUser: activity.targetUserId ? await db.getUser(activity.targetUserId) : null
+    author: toPublicUser(await db.getUser(activity.userId)),
+    targetUser: activity.targetUserId ? toPublicUser(await db.getUser(activity.targetUserId)) : null
   })));
 
   if (scope === 'following' && userId) {
@@ -808,16 +832,22 @@ app.post('/api/social/follow/:userId', authenticate, async (req: AuthenticatedRe
 app.get('/api/social/followers/:userId', async (req, res) => {
   const ids = await db.getFollowers(req.params.userId);
   const users = (await Promise.all(ids.map(id => db.getUser(id)))).filter(Boolean);
-  res.json(users);
+  res.json(users.map(user => toPublicUser(user!)));
 });
 
 app.get('/api/social/following/:userId', async (req, res) => {
   const ids = await db.getFollowing(req.params.userId);
   const users = (await Promise.all(ids.map(id => db.getUser(id)))).filter(Boolean);
-  res.json(users);
+  res.json(users.map(user => toPublicUser(user!)));
 });
 
-const isRoadmapModerator = (user: User) => ['xavi', 'gametracker'].includes(user.username.trim().toLowerCase());
+const roadmapModeratorIds = new Set(
+  (process.env.ROADMAP_MODERATOR_USER_IDS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean)
+);
+const isRoadmapModerator = (user: User) => roadmapModeratorIds.has(user.id);
 
 app.get('/api/roadmap', async (req, res) => {
   const bearerToken = req.headers.authorization?.startsWith('Bearer ')
@@ -857,7 +887,7 @@ app.post('/api/roadmap/:suggestionId/vote', authenticate, roadmapVoteRateLimit, 
 app.patch('/api/roadmap/:suggestionId', authenticate, async (req: AuthenticatedRequest, res) => {
   const moderator = req.currUser!;
   if (!isRoadmapModerator(moderator)) {
-    return res.status(403).json({ error: 'Solo Xavi y Gametracker pueden responder y cambiar el estado.' });
+    return res.status(403).json({ error: 'No tienes permiso para moderar la hoja de ruta.' });
   }
 
   const suggestions = await db.getRoadmapSuggestions(moderator.id);
@@ -1265,7 +1295,7 @@ app.get('/api/reviews/:gameId', async (req, res) => {
     return {
       ...r,
       rating: tracking?.rating ?? 0,
-      author: author || { username: 'desconocido', avatar: DEFAULT_AVATAR }
+      author: toPublicUser(author) || { username: 'desconocido', avatar: DEFAULT_AVATAR }
     };
   }));
 
@@ -1376,7 +1406,7 @@ app.get(
 
           return {
             ...list,
-            author,
+            author: toPublicUser(author),
             games
           };
         })
@@ -1453,7 +1483,7 @@ app.get('/api/lists/:id', async (req, res) => {
 
   res.json({
     ...list,
-    author,
+    author: toPublicUser(author),
     games: enrichedGames
   });
 });

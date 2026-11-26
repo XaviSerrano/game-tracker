@@ -1,7 +1,7 @@
 import { apiFetch } from '../api.ts';
 import React, { useState, useEffect } from 'react';
 import { CustomList, Game, User } from '../types.ts';
-import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet } from 'lucide-react';
+import { ListPlus, Trash2, Library, CheckSquare, Plus, FileSpreadsheet, Pencil, Save, X } from 'lucide-react';
 import { useLanguage } from '../i18n.tsx';
 import { ConfirmDialog } from './ConfirmDialog.tsx';
 import { GameCard } from './GameCard.tsx';
@@ -21,6 +21,10 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
   const useMobileCardLayout = useIsMobileLayout();
   const [lists, setLists] = useState<(CustomList & { author: User, games: Game[] })[]>([]);
   const [selectedList, setSelectedList] = useState<(CustomList & { author: User, games: Game[] }) | null>(null);
+  const [isEditingList, setIsEditingList] = useState(false);
+  const [editListName, setEditListName] = useState('');
+  const [editListDescription, setEditListDescription] = useState('');
+  const [savingList, setSavingList] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmation, setConfirmation] = useState<
     { type: 'list'; id: string } | { type: 'game'; id: number } | null
@@ -103,12 +107,44 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
         }
       });
       if (!res.ok) throw new Error('No se pudo eliminar la lista.');
+      setIsEditingList(false);
       setSelectedList(null);
       void fetchLists();
       notice.success(t('Lista personalizada eliminada.'));
     } catch (err) {
       console.error(err);
       notice.error(t(err instanceof Error ? err.message : 'No se pudo eliminar la lista.'));
+    }
+  };
+
+  const handleUpdateListDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedList || !editListName.trim() || savingList) return;
+
+    setSavingList(true);
+    try {
+      const name = editListName.trim();
+      const description = editListDescription.trim();
+      const res = await apiFetch(`/api/lists/${selectedList.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, description })
+      });
+      if (!res.ok) throw new Error('No se pudieron guardar los cambios de la lista.');
+
+      const updatedList = { ...selectedList, name, description };
+      setSelectedList(updatedList);
+      setLists(previous => previous.map(list => list.id === updatedList.id ? { ...list, ...updatedList } : list));
+      setIsEditingList(false);
+      notice.success(t('Lista actualizada.'));
+    } catch (err) {
+      console.error(err);
+      notice.error(t(err instanceof Error ? err.message : 'No se pudieron guardar los cambios de la lista.'));
+    } finally {
+      setSavingList(false);
     }
   };
 
@@ -269,7 +305,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
         /* Detailed list representation */
         <div className="space-y-6 animate-fade-in">
           <button
-            onClick={() => setSelectedList(null)}
+            onClick={() => { setIsEditingList(false); setSelectedList(null); }}
             className="text-xs text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1.5"
           >
             {t('← Volver a todas las listas')}
@@ -277,27 +313,74 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
 
           <div className="bg-[#0f121d] border border-slate-800 p-6 rounded-2xl relative overflow-hidden">
             <div className="relative z-10 flex flex-col md:flex-row gap-5 items-start justify-between">
-              <div className="space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 <button
                   onClick={() => onSelectUser(selectedList.userId)}
                   className="inline-flex items-center gap-1.5 p-1 px-2.5 bg-[#07090e] text-slate-400 hover:text-white rounded-full border border-slate-800 text-[10px]"
                 >
                   {t('creada por')} <span className="font-bold text-white hover:text-accent">@{selectedList.author?.username}</span>
                 </button>
-                <h1 className="text-2xl md:text-3xl font-bold font-display text-white tracking-tight">
-                  {selectedList.name}
-                </h1>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedList.description || t('Sin descripción publicada.')}</p>
+                {isEditingList ? (
+                  <form onSubmit={handleUpdateListDetails} className="max-w-2xl space-y-3 pt-1">
+                    <div>
+                      <label htmlFor="edit-list-name" className="mb-1.5 block text-xs font-semibold text-slate-400">{t('Nombre de la lista')}</label>
+                      <input
+                        id="edit-list-name"
+                        required
+                        value={editListName}
+                        onChange={event => setEditListName(event.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-[#07090e] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-accent"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-list-description" className="mb-1.5 block text-xs font-semibold text-slate-400">{t('Descripción pública o temática')}</label>
+                      <textarea
+                        id="edit-list-description"
+                        rows={3}
+                        value={editListDescription}
+                        onChange={event => setEditListDescription(event.target.value)}
+                        className="w-full resize-y rounded-xl border border-slate-700 bg-[#07090e] px-3.5 py-2.5 text-sm leading-relaxed text-white outline-none transition focus:border-accent"
+                      />
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button type="button" onClick={() => setIsEditingList(false)} disabled={savingList} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-700 px-3.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50">
+                        <X aria-hidden="true" className="size-4" />{t('Cancelar')}
+                      </button>
+                      <button type="submit" disabled={savingList || !editListName.trim()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3.5 text-xs font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
+                        <Save aria-hidden="true" className="size-4" />{savingList ? t('Guardando...') : t('Guardar cambios')}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <h1 className="text-2xl md:text-3xl font-bold font-display text-white tracking-tight">{selectedList.name}</h1>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{selectedList.description || t('Sin descripción publicada.')}</p>
+                  </>
+                )}
               </div>
 
               {selectedList.userId === currentUser.id && (
-                <button
-                  onClick={() => setConfirmation({ type: 'list', id: selectedList.id })}
-                  aria-label={t('Eliminar lista')}
-                  className="bg-[#07090e] border border-slate-800 hover:bg-red-500/10 text-red-400 p-2 rounded-xl transition cursor-pointer"
-                >
-                  <Trash2 className="w-4.5 h-4.5" />
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  {!isEditingList && <button
+                    type="button"
+                    onClick={() => {
+                      setEditListName(selectedList.name);
+                      setEditListDescription(selectedList.description || '');
+                      setIsEditingList(true);
+                    }}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-700 bg-[#07090e] px-3.5 text-xs font-semibold text-slate-200 transition hover:border-accent/50 hover:text-white"
+                  >
+                    <Pencil aria-hidden="true" className="size-4" />{t('Editar lista')}
+                  </button>}
+                  {!isEditingList && <button
+                    type="button"
+                    onClick={() => setConfirmation({ type: 'list', id: selectedList.id })}
+                    aria-label={t('Eliminar lista')}
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-800 bg-[#07090e] text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10"
+                  >
+                    <Trash2 aria-hidden="true" className="size-4" />
+                  </button>}
+                </div>
               )}
             </div>
           </div>
@@ -414,7 +497,7 @@ export const CustomLists: React.FC<CustomListsProps> = ({ currentUser, onSelectG
                       </span>
                     </div>
                     <button
-                      onClick={() => setSelectedList(list)}
+                      onClick={() => { setIsEditingList(false); setSelectedList(list); }}
                       className="text-left group cursor-pointer block"
                     >
                       <h3 className="font-bold text-white group-hover:text-accent transition tracking-tight">

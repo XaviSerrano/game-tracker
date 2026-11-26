@@ -30,6 +30,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   const [togglingWishlistId, setTogglingWishlistId] = useState<number | null>(null);
   const [statusGame, setStatusGame] = useState<(UserGame & { game: Game }) | null>(null);
   const [customListGame, setCustomListGame] = useState<Game | null>(null);
+  const [customListGameIds, setCustomListGameIds] = useState<Set<number>>(new Set());
 
   const fetchLibrary = async () => {
     setLoading(true);
@@ -54,6 +55,26 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
   useEffect(() => {
     fetchLibrary();
   }, [userId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadCustomListMembership = async () => {
+      try {
+        const response = await apiFetch(`/api/lists?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error('Could not load custom list memberships.');
+        const lists: { games?: Game[] }[] = await response.json();
+        if (controller.signal.aborted) return;
+        setCustomListGameIds(new Set(lists.flatMap(list => list.games?.map(game => game.igdbId) ?? [])));
+      } catch (error) {
+        if (!controller.signal.aborted) console.error('Error loading custom list memberships:', error);
+      }
+    };
+    void loadCustomListMembership();
+    return () => controller.abort();
+  }, [userId, token]);
 
   useEffect(() => {
     // Filter and sort items
@@ -308,6 +329,7 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
               isInWishlist={item.isInWishlist}
               userGameRating={item.rating}
               userGameHours={item.hoursPlayed}
+              isInCustomList={customListGameIds.has(item.gameId)}
               onSelectGame={onSelectGame}
               onAddToCustomList={setCustomListGame}
               onManageStatus={() => setStatusGame(item)}
@@ -330,7 +352,18 @@ export const Library: React.FC<LibraryProps> = ({ userId, onSelectGame, token })
           onRemoved={gameId => setCompleteLib(previous => previous.filter(item => item.gameId !== gameId))}
         />
       )}
-      <CustomListPicker game={customListGame} userId={userId} token={token} onClose={() => setCustomListGame(null)} />
+      <CustomListPicker
+        game={customListGame}
+        userId={userId}
+        token={token}
+        onClose={() => setCustomListGame(null)}
+        onMembershipChange={(gameId, isInAnyList) => setCustomListGameIds(previous => {
+          const next = new Set(previous);
+          if (isInAnyList) next.add(gameId);
+          else next.delete(gameId);
+          return next;
+        })}
+      />
     </div>
   );
 };

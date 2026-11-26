@@ -132,6 +132,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   const [quickActionMessage, setQuickActionMessage] = useState('');
   const [statusGame, setStatusGame] = useState<Game | null>(null);
   const [customListGame, setCustomListGame] = useState<Game | null>(null);
+  const [customListGameIds, setCustomListGameIds] = useState<Set<number>>(new Set());
   const [shortSearchForced, setShortSearchForced] = useState(() => filters.query.trim().length === 1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const skipUrlSync = useRef(false);
@@ -368,6 +369,31 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
   }, [token, libraryRetry]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    if (!token || !userId) {
+      setCustomListGameIds(new Set());
+      return () => controller.abort();
+    }
+
+    const loadCustomListMembership = async () => {
+      try {
+        const response = await apiFetch(`/api/lists?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error('Could not load custom list memberships.');
+        const lists: { games?: Game[] }[] = await response.json();
+        if (controller.signal.aborted) return;
+        setCustomListGameIds(new Set(lists.flatMap(list => list.games?.map(game => game.igdbId) ?? [])));
+      } catch (error) {
+        if (!controller.signal.aborted) console.error('Error loading custom list memberships:', error);
+      }
+    };
+    void loadCustomListMembership();
+    return () => controller.abort();
+  }, [token, userId]);
+
+  useEffect(() => {
     if (!quickActionMessage || quickActionMessage.startsWith('Error')) return;
     const timeout = window.setTimeout(() => setQuickActionMessage(''), 3000);
     return () => window.clearTimeout(timeout);
@@ -471,6 +497,7 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
         statusActionDisabled={savingWishlistGameId !== null}
         userGameStatus={libraryStatuses.get(game.igdbId)}
         isInWishlist={wishlistIds.has(game.igdbId)}
+        isInCustomList={customListGameIds.has(game.igdbId)}
         showDiscoverMeta
         onToggleWishlist={handleQuickWishlist}
         savingWishlistGameId={savingWishlistGameId}
@@ -737,7 +764,18 @@ export const Discover: React.FC<DiscoverProps> = ({ onSelectGame, onSelectUser, 
           }}
         />
       )}
-      {userId && token && <CustomListPicker game={customListGame} userId={userId} token={token} onClose={() => setCustomListGame(null)} />}
+      {userId && token && <CustomListPicker
+        game={customListGame}
+        userId={userId}
+        token={token}
+        onClose={() => setCustomListGame(null)}
+        onMembershipChange={(gameId, isInAnyList) => setCustomListGameIds(previous => {
+          const next = new Set(previous);
+          if (isInAnyList) next.add(gameId);
+          else next.delete(gameId);
+          return next;
+        })}
+      />}
     </div>
   );
 };

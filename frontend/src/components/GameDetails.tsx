@@ -775,8 +775,8 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
     : t('Desconocido');
 
   return (
-    <div className="space-y-6 pb-20 selection:bg-accent/30 selection:text-white relative">
-      <div className="relative isolate overflow-hidden pb-8 pt-12 md:pb-12 md:pt-28">
+    <div className="space-y-0 pb-20 selection:bg-accent/30 selection:text-white relative md:space-y-6">
+      <div className="relative isolate overflow-hidden pb-0 pt-12 md:pb-12 md:pt-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-full max-h-[34rem] overflow-hidden">
           <img
             src={screenshots[0] || game.cover}
@@ -838,10 +838,11 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
             <div className="min-w-0 space-y-3 md:hidden">
               {game.rating ? (
                 <div aria-label={`${t('Puntuación de IGDB')}: ${game.rating}/100`} className="px-3 py-2.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">IGDB Score</p>
-                  <div className="mt-1 flex items-baseline gap-1 text-amber-300">
-                    <span className="text-4xl font-black leading-none tracking-tight">{game.rating}</span>
-                    <span className="text-xs font-semibold text-amber-200">/100</span>
+                  <span className="block text-xs font-semibold text-slate-300">IGDB Score</span>
+                  <div className="mt-1 flex items-center gap-1 text-yellow-400">
+                    <Star className="size-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+                    <span className="text-2xl font-black font-display text-white">{game.rating}</span>
+                    <span className="text-xs text-slate-600">/100</span>
                   </div>
                 </div>
               ) : null}
@@ -886,7 +887,6 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
               <div className="mb-3">
                 <div>
                   <p className="text-xs font-semibold text-slate-200">{t('Tiempo de juego')}</p>
-                  <p className="mt-1 text-xs text-slate-400">{t('Estimación orientativa de IGDB')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -948,7 +948,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           </div>
 
           {game.rating && (
-            <div className="shrink-0 self-start text-left">
+            <div className="hidden shrink-0 self-start text-left md:block">
               <span className="block text-xs font-semibold text-slate-300">IGDB Score</span>
               <div className="mt-1 flex items-center gap-1 text-yellow-400">
                 <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
@@ -965,7 +965,7 @@ export const GameDetails: React.FC<GameDetailsProps> = ({
           <div className="min-w-0 space-y-8">
           
           {/* Tracking control form */}
-          <div onClickCapture={handlePrivateButtonClick} className="space-y-5 border-t border-slate-800 pt-6">
+          <div onClickCapture={handlePrivateButtonClick} className="space-y-5 border-t-0 pt-0 md:border-t md:pt-6">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h3 className="font-semibold text-slate-300 font-display flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-accent" />
